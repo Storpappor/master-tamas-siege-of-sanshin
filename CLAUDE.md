@@ -39,24 +39,28 @@ Run a single suite with `node --test test/combat.test.js`.
 | Speed, physics, Kiai, combo, score, palette | `src/constants.js` |
 | Attack timing, damage, reach, high/low rules | `ATTACKS`, `HIGH_ATTACKS`, `LOW_ATTACKS` in `src/combat.js` |
 | Enemy stats and behaviour | `ENEMY_TYPES` and `Enemy.update` in `src/entities.js` |
-| Spawn schedule | `LEVEL_1` in `src/level.js` |
+| Zones and waves | `LEVEL_1` in `src/level.js` (zone art in `src/renderer.js`) |
+| Floor depth and hit reach in depth | `DEPTH`, `DEPTH_REACH` in `src/constants.js` |
 | Story and dialogue text | `INTRO_SCREENS` in `src/main.js`, `KAGE_DIALOGUE` in `src/game.js` |
 
 Keep these in sync when they change:
 
-- The HUD's initial enemy count is hard-coded in `index.html` (27 = 26 spawns + boss).
+- The HUD's initial enemy count is hard-coded in `index.html` (22 = 21 regulars + boss).
 - The playthrough test in `test/game.test.js` asserts a clear time of 55-100 s, so balance
   or level changes can fail it. Treat that as a design signal, not just a broken test.
 - `SCORE.timeBonusLimit` assumes the same target length.
 
 ## Gotchas
 
+- A fighter's `y` is height, not a screen position. Draw with `screenY(y, z)`, and sort by `z`.
 - `src/main.js` runs `boot` on import and needs a browser, so tests cannot import it.
 - `index.html` must be served over http; ES modules fail from `file://`.
 - The start buttons stay disabled until the hero sprite sheet has loaded.
-- The canvas bitmap font (`GLYPHS` in `src/sprites.js`) has A-Z, 0-9 and `+-!:.` only;
-  other characters such as `Á` or `Ö` draw as blanks. Story cards and the HUD are HTML, so
-  they are not affected.
+- The canvas bitmap font (`GLYPHS` in `src/sprites.js`) has A-Z, `Ö`, 0-9 and `+-!:.` only;
+  other characters such as `Á` draw as blanks. Story cards and the HUD are HTML, so they
+  are not affected.
+- The street and dojo backgrounds are modelled on the real Sanshin Kan on Södermalm, so
+  check art changes against the club's look (red and sage mats, red padded pillars).
 - Sheet frame order is fixed: idle, step, punch, kick / block, hit, knockdown, victory.
   There is no jump or crouch art: jump borrows victory and crouch borrows hit.
 - The tests prove the level can be cleared by one bot on one seed. They say little about

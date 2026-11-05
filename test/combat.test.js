@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ATTACKS, attackPhase, attackDuration, worldBox, resolveHit, HIGH_ATTACKS } from '../src/combat.js';
-import { GROUND_Y } from '../src/constants.js';
+import { GROUND_Y, DEPTH_REACH } from '../src/constants.js';
 
 const fighter = (over = {}) => ({ x: 100, y: GROUND_Y, facing: 1, blocking: false, crouching: false, ...over });
 
@@ -38,6 +38,12 @@ test('blocking only works when facing the attacker', () => {
   const backTurned = resolveHit(a, fighter({ x: 114, facing: 1, blocking: true }), 'punch');
   assert.equal(backTurned.blocked, false);
   assert.equal(backTurned.damage, ATTACKS.punch.damage);
+});
+
+test('attacks only connect when fighters are close in depth', () => {
+  const a = fighter({ x: 100, z: 20, facing: 1 });
+  assert.equal(resolveHit(a, fighter({ x: 114, z: 20 + DEPTH_REACH, facing: -1 }), 'punch').hit, true);
+  assert.equal(resolveHit(a, fighter({ x: 114, z: 20 + DEPTH_REACH + 1, facing: -1 }), 'punch').hit, false);
 });
 
 test('high kicks pass over a crouching fighter', () => {

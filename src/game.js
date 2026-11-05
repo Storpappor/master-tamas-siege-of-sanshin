@@ -1,12 +1,12 @@
 // Game orchestration: state machine (start → playing → paused/gameover/victory),
-// spawning, hit resolution between fighters, camera, particles and scoring.
+// wave spawning, hit resolution between fighters, camera, particles and scoring.
 // This file has no DOM access so the whole simulation can run in tests.
-import { VIEW_W, HALL_WIDTH, GROUND_Y, PHYSICS, SCORE, KIAI, COMBO } from './constants.js';
+import { VIEW_W, WORLD_WIDTH, GROUND_Y, DEPTH, SHURIKEN_SPEED, screenY, PHYSICS, SCORE, KIAI, COMBO } from './constants.js';
 import { Player, Enemy, separate } from './entities.js';
 import { Spawner, LEVEL_1, totalEnemies } from './level.js';
 import { ATTACKS, resolveHit } from './combat.js';
 
-const NO_INPUT = { left: false, right: false, down: false, block: false, jump: false, punch: false, kick: false, kiai: false };
+const NO_INPUT = { left: false, right: false, up: false, down: false, duck: false, block: false, jump: false, punch: false, kick: false, kiai: false };
 const NULL_UI = { showOverlay() {}, setHud() {}, showDialogue(lines, done) { done(); } };
 
 // Exchange shown immediately before the final battle.
@@ -15,6 +15,20 @@ export const KAGE_DIALOGUE = [
   ['TAMÁS: RESPECT CREATES POWER.'],
 ];
 const NULL_AUDIO = { play() {} };
+
+// How far inside the screen edge enemies must stay once they have walked in.
+const ENEMY_MARGIN = 8;
+
+// Door transition: how near the back wall counts as reaching the door, and how long each part takes.
+const DOOR_REACH_Z = 10;
+const DOOR_HINT_DISTANCE = 100;
+const DOOR_WALK_TIME = 1.2;
+const DOOR_FADE_TIME = 0.4;
+const ARRIVE_X = 30;      // where the player appears inside the next zone
+const ARRIVE_Z = 8;
+
+// Where floating text and particles appear, in screen coordinates.
+const feet = (f) => screenY(f.y, f.z);
 
 export class Game {
   constructor({ input, audio = NULL_AUDIO, ui = NULL_UI, reducedMotion = false, rng = Math.random, level = LEVEL_1 }) {
@@ -31,11 +45,11 @@ export class Game {
   reset() {
     this.player = new Player(90);
     this.enemies = [];
+    this.projectiles = [];  // shuriken in flight: { x, y, z, facing }
     this.spawner = new Spawner(this.level);
     this.score = 0;
     this.elapsed = 0;
     this.defeated = 0;
-    this.defeatedRegular = 0;
     this.particles = [];
     this.texts = [];
     this.camX = 0;
@@ -46,6 +60,21 @@ export class Game {
     this.endTimer = 0;
     this.bonus = null;
     this.combo = 0;         // consecutive hits landed without taking damage
+    this.zoneIndex = 0;
+    this.transition = null; // { phase, t } while walking through a door into the next zone
+    this.fade = 0;          // 0 = clear, 1 = black screen
+  }
+
+  get zone() {
+    return this.level.zones?.[this.zoneIndex] ?? null;
+  }
+
+  // The door out of this zone, once every fight in the zone has been won; otherwise null.
+  get openExit() {
+    const zone = this.zone;
+    if (!zone?.exit || this.spawner.active) return null;
+    const next = this.level.waves[this.spawner.waveIndex];
+    return !next || next.x >= zone.to ? zone.exit : null;
   }
 
   // Score multiplier earned by the current combo.
@@ -58,11 +87,21 @@ export class Game {
     return totalEnemies(this.level) - this.defeated;
   }
 
+  // True while the way ahead is open and the player should keep walking.
+  get showGo() {
+    if (this.state !== 'playing' || this.ending || this.transition || this.elapsed <= 2.2) return false;
+    if (this.spawner.active || this.spawner.finished) return false;
+    // Close to an open door the arrow over the door takes over.
+    const exit = this.openExit;
+    return !(exit && this.player.x > exit.x - DOOR_HINT_DISTANCE);
+  }
+
   start() {
     this.reset();
     this.state = 'playing';
     if (this.input) { this.input.active = true; this.input.reset(); }
     this.ui.showOverlay(null);
+    if (this.level.zones?.length) this.banner = { text: this.level.zones[0].name, life: 2 };
     this.audio.play('start');
     this.syncHud(true);
   }
@@ -92,15 +131,27 @@ export class Game {
     if (this.state !== 'playing') return;
     this.elapsed += dt;
     const p = this.player;
+    if (this.transition) {
+      this.stepTransition(dt);
+      this.updateEffects(dt);
+      this.syncHud();
+      return;
+    }
     const snap = this.ending ? NO_INPUT : (inputOverride || (this.input ? this.input.snapshot() : NO_INPUT));
 
+    // The player can never leave the visible part of the level or walk out of the zone.
+    p.minX = this.camX + 10;
+    p.maxX = Math.min(this.camX + VIEW_W, this.zone?.to ?? WORLD_WIDTH) - 10;
     p.update(dt, snap);
     this.consumeEvent(p);
 
     const alive = this.enemies.filter((e) => !e.dead).length;
-    for (const s of this.spawner.update(dt, { alive, defeatedRegular: this.defeatedRegular })) this.spawn(s);
+    const waveWasActive = Boolean(this.spawner.active);
+    for (const s of this.spawner.update(dt, { playerX: p.x, alive })) this.spawn(s);
+    if (waveWasActive && !this.spawner.active && !this.spawner.finished) this.audio.play('start');
 
     for (const e of this.enemies) {
+      this.confineEnemy(e);
       e.update(dt, p);
       this.consumeEvent(e);
     }
@@ -110,29 +161,114 @@ export class Game {
     for (let i = 0; i < this.enemies.length; i++) {
       for (let j = i + 1; j < this.enemies.length; j++) separate(this.enemies[i], this.enemies[j], 9);
     }
+    p.x = Math.min(p.maxX, Math.max(p.minX, p.x));
 
     this.resolveCombat();
+    this.updateProjectiles(dt);
 
     for (const e of this.enemies) {
       if (e.dead && e.deadTimer > PHYSICS.deathLingerTime) e.remove = true;
     }
     this.enemies = this.enemies.filter((e) => !e.remove);
 
-    // Camera eases toward the player with a small look-ahead in the facing direction.
-    const target = p.x - VIEW_W / 2 + p.facing * 14;
-    this.camX += (target - this.camX) * Math.min(1, dt * 5);
-    this.camX = Math.max(0, Math.min(HALL_WIDTH - VIEW_W, this.camX));
-
+    this.updateCamera(dt);
+    this.checkExit();
     this.updateEffects(dt);
     this.checkEnd(dt);
     this.syncHud();
   }
 
+  // Walking up to an open door starts the way through it.
+  checkExit() {
+    const exit = this.openExit;
+    const p = this.player;
+    if (!exit || this.ending || p.dead || !p.grounded || p.attack) return;
+    if (Math.abs(p.x - exit.x) <= exit.width / 2 && p.z <= DOOR_REACH_Z) {
+      this.transition = { phase: 'enter', t: 0 };
+      if (this.input) this.input.reset();
+      this.audio.play('start');
+    }
+  }
+
+  // Walk into the door, fade to black, appear in the next zone, fade back in.
+  stepTransition(dt) {
+    const tr = this.transition;
+    const p = this.player;
+    tr.t += dt;
+    if (tr.phase === 'enter') {
+      const exit = this.zone.exit;
+      const dx = exit.x - p.x;
+      p.update(dt, { ...NO_INPUT, up: p.z > 0, right: dx > 2, left: dx < -2 });
+      if ((p.z <= 0 && Math.abs(dx) <= 2) || tr.t >= DOOR_WALK_TIME) { tr.phase = 'fadeOut'; tr.t = 0; }
+    } else if (tr.phase === 'fadeOut') {
+      p.update(dt, NO_INPUT);
+      this.fade = Math.min(1, tr.t / DOOR_FADE_TIME);
+      if (tr.t >= DOOR_FADE_TIME) {
+        this.enterNextZone();
+        tr.phase = 'fadeIn';
+        tr.t = 0;
+      }
+    } else {
+      // Step into the room while the picture comes back.
+      p.update(dt, { ...NO_INPUT, right: true });
+      this.fade = Math.max(0, 1 - tr.t / DOOR_FADE_TIME);
+      if (tr.t >= DOOR_FADE_TIME) { this.fade = 0; this.transition = null; }
+    }
+  }
+
+  enterNextZone() {
+    const p = this.player;
+    this.zoneIndex += 1;
+    const zone = this.zone;
+    this.enemies = [];
+    this.projectiles = [];
+    this.camX = zone.from;
+    p.minX = zone.from + 10;
+    p.maxX = zone.from + VIEW_W - 10;
+    p.x = zone.from + ARRIVE_X;
+    p.z = ARRIVE_Z;
+    p.facing = 1;
+    this.banner = { text: zone.name, life: 2 };
+  }
+
+  updateProjectiles(dt) {
+    const p = this.player;
+    this.projectiles = this.projectiles.filter((s) => {
+      s.x += s.facing * SHURIKEN_SPEED * dt;
+      if (s.x < this.camX - 16 || s.x > this.camX + VIEW_W + 16) return false;
+      // A star passes through a player who is still blinking from the last hit.
+      if (p.dead || p.invulnerable > 0) return true;
+      const r = resolveHit(s, p, 'shuriken');
+      if (!r.hit) return true;
+      this.onEnemyHits(s, r, ATTACKS.shuriken);
+      return false;
+    });
+  }
+
+  // Once on screen an enemy stays there, so a locked fight can always be finished.
+  confineEnemy(e) {
+    const left = this.camX + ENEMY_MARGIN;
+    const right = this.camX + VIEW_W - ENEMY_MARGIN;
+    if (e.enterDir && e.x >= left && e.x <= right) e.enterDir = 0;
+    if (!e.enterDir) { e.minX = left; e.maxX = right; }
+  }
+
+  // The camera only moves forward. It holds still at the wave's lock position during a fight.
+  updateCamera(dt) {
+    const p = this.player;
+    const lock = this.spawner.lockX;
+    const target = lock !== null ? lock : p.x - VIEW_W / 2 + p.facing * 14;
+    const eased = this.camX + (target - this.camX) * Math.min(1, dt * 5);
+    const end = this.zone?.to ?? WORLD_WIDTH;
+    this.camX = Math.max(this.camX, Math.min(end - VIEW_W, eased));
+  }
+
   spawn({ side, type }) {
     const p = this.player;
     let x = side === 'left' ? this.camX - 24 : this.camX + VIEW_W + 24;
-    x = Math.max(-30, Math.min(HALL_WIDTH + 30, x));
-    const enemy = new Enemy(type, x, x < p.x ? 1 : -1, this.rng);
+    x = Math.max(-30, Math.min(WORLD_WIDTH + 30, x));
+    const enemy = new Enemy(type, x, x < p.x ? 1 : -1, this.rng, this.rng() * DEPTH);
+    enemy.enterDir = side === 'left' ? 1 : -1;
     this.enemies.push(enemy);
     if (enemy.cfg.boss) {
       this.boss = enemy;
@@ -167,6 +303,7 @@ export class Game {
     }
     for (const e of this.enemies) {
       if (!e.attack || e.attackPhase !== 'active' || e.attack.hits.has(p.id) || p.dead) continue;
+      if (ATTACKS[e.attack.name].ranged) continue;
       const r = resolveHit(e, p, e.attack.name);
       if (!r.hit) continue;
       e.attack.hits.add(p.id);
@@ -181,30 +318,29 @@ export class Game {
     if (r.blocked && !kiai) {
       enemy.takeHit({ damage: 0, blocked: true, direction: r.direction, knockback: atk.knockback });
       this.audio.play('block');
-      this.addText('BLOCK', enemy.x, enemy.y - 48, '#9ad1ff');
+      this.addText('BLOCK', enemy.x, feet(enemy) - 48, '#9ad1ff');
       return;
     }
     const damage = Math.round(atk.damage * (kiai ? KIAI.damageMultiplier : 1));
     const knockback = atk.knockback * (kiai ? KIAI.knockbackMultiplier : 1);
     enemy.takeHit({ damage, blocked: false, direction: r.direction, knockback });
     enemy.lastEvent = null;
-    if (r.blocked) this.addText('BREAK!', enemy.x, enemy.y - 52, '#ffb347');
+    if (r.blocked) this.addText('BREAK!', enemy.x, feet(enemy) - 52, '#ffb347');
 
     this.combo += 1;
     const prevMult = this.comboMultiplierFor(this.combo - 1);
     const mult = this.comboMultiplier;
-    if (mult > prevMult) this.addText(`X${mult} COMBO`, p.x, p.y - 52, '#ffd166');
+    if (mult > prevMult) this.addText(`X${mult} COMBO`, p.x, feet(p) - 52, '#ffd166');
 
     this.score += Math.round(SCORE.hit * mult);
     this.shake = kiai ? 0.18 : 0.12;
     this.audio.play(enemy.dead ? 'enemyDown' : (kiai ? 'hitHeavy' : 'hit'));
-    this.burst(enemy.x + r.direction * 4, enemy.y - 28, kiai ? '#ffb347' : '#fff3c4', kiai ? 10 : 6);
+    this.burst(enemy.x + r.direction * 4, feet(enemy) - 28, kiai ? '#ffb347' : '#fff3c4', kiai ? 10 : 6);
     if (enemy.dead) {
       this.defeated += 1;
-      if (!enemy.cfg.boss) this.defeatedRegular += 1;
       const points = Math.round(enemy.cfg.score * mult);
       this.score += points;
-      this.addText(`+${points}`, enemy.x, enemy.y - 46, '#ffd166');
+      this.addText(`+${points}`, enemy.x, feet(enemy) - 46, '#ffd166');
     }
   }
 
@@ -218,8 +354,8 @@ export class Game {
     if (r.blocked) {
       p.takeHit({ damage: 0, blocked: true, direction: r.direction, knockback: atk.knockback });
       this.audio.play('block');
-      this.addText('BLOCK', p.x, p.y - 48, '#9ad1ff');
-      this.burst(p.x + r.direction * -4, p.y - 28, '#bfe3ff', 4);
+      this.addText('BLOCK', p.x, feet(p) - 48, '#9ad1ff');
+      this.burst(p.x + r.direction * -4, feet(p) - 28, '#bfe3ff', 4);
       return;
     }
     const took = p.takeHit({ damage: r.damage, blocked: false, direction: r.direction, knockback: atk.knockback });
@@ -229,7 +365,7 @@ export class Game {
     p.invulnerable = PHYSICS.invulnerableTime;
     this.shake = 0.2;
     this.audio.play('hurt');
-    this.burst(p.x, p.y - 28, '#ff8a7a', 6);
+    this.burst(p.x, feet(p) - 28, '#ff8a7a', 6);
   }
 
   // Sounds/particles for things fighters notice about themselves (jump, landing).
@@ -238,22 +374,26 @@ export class Game {
     f.lastEvent = null;
     if (!ev) return;
     if (ev === 'jump' && f === this.player) this.audio.play('jump');
+    if (ev === 'throw') {
+      this.projectiles.push({ x: f.x + f.facing * 10, y: f.y, z: f.z, facing: f.facing });
+      this.audio.play('shuriken');
+    }
     if (ev === 'kiai') {
       this.audio.play('kiaiStart');
-      this.addText('KIAI!', f.x, f.y - 54, '#ffb347', 2);
-      this.burst(f.x, f.y - 20, '#ffb347', 12);
+      this.addText('KIAI!', f.x, feet(f) - 54, '#ffb347', 2);
+      this.burst(f.x, feet(f) - 20, '#ffb347', 12);
     }
     if (ev === 'attack' && f === this.player) {
       if (f.kiaiActive) {
         this.audio.play('kiai');
-        this.addText('KIAI!', f.x + f.facing * 6, f.y - 50, '#ffb347');
+        this.addText('KIAI!', f.x + f.facing * 6, feet(f) - 50, '#ffb347');
       } else {
         this.audio.play(/kick/i.test(f.attack?.name || '') ? 'kick' : 'punch');
       }
     }
     if (ev === 'land') {
       if (f === this.player) this.audio.play('land');
-      this.burst(f.x, GROUND_Y - 1, '#d9b27c', 4, 0.5);
+      this.burst(f.x, screenY(GROUND_Y, f.z) - 1, '#d9b27c', 4, 0.5);
     }
   }
 

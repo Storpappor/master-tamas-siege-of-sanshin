@@ -1,21 +1,67 @@
 // Procedural pixel-art fighters and a tiny bitmap font.
 //
-// ART PIPELINE NOTE: every fighter is drawn from a small "skeleton" (joint
-// positions per pose) using filled pixel blocks. To move to hand-drawn sprite
-// sheets later, replace `drawFighter` with an image-based version that maps
-// `poseFor(fighter)` to a sprite frame; nothing else in the game needs to change.
+// ART PIPELINE NOTE: every fighter is drawn from a small "skeleton" (joint positions per
+// pose) using filled pixel blocks, with a dark silhouette stamped behind it so it reads
+// like the outlined hero sprite. To move to hand-drawn sprite sheets later, replace
+// `drawFighter` with an image-based version that maps `poseFor(fighter)` to a sprite frame;
+// nothing else in the game needs to change.
 import { COLORS } from './constants.js';
 import { HIGH_ATTACKS, LOW_ATTACKS } from './combat.js';
 
+const OUTLINE = '#120c0a';
+
+// Numbers describe the build and `head` the costume; every other string is a colour, and
+// paint code must only use these so that a silhouette (see solidPalette) stays one colour.
+const INK = { ink: OUTLINE };
+// Black cloth keeps grey folds and edges, so it does not melt into the dark outline.
+const BLACK_GI = { gi: '#25252b', giShade: '#121216', fold: '#4a4a55', trim: '#74747f' };
 export const FIGHTER_PALETTES = {
-  player:  { skin: COLORS.skin, skinShade: COLORS.skinShade, hair: COLORS.hairBrown, gi: COLORS.giWhite, giShade: COLORS.giWhiteShade, belt: COLORS.beltBlack, headband: null, ponytail: false, bald: false, big: false },
-  striker: { skin: COLORS.skin, skinShade: COLORS.skinShade, hair: COLORS.hairDark, gi: COLORS.giGray, giShade: COLORS.giGrayShade, belt: COLORS.beltWhite, headband: COLORS.headbandRed, ponytail: false, bald: false, big: false },
-  kicker:  { skin: COLORS.skin, skinShade: COLORS.skinShade, hair: COLORS.hairDark, gi: COLORS.giBlue, giShade: COLORS.giBlueShade, belt: COLORS.beltBlue, headband: null, ponytail: true, bald: false, big: false },
-  boss:    { skin: COLORS.skin, skinShade: COLORS.skinShade, hair: COLORS.hairDark, gi: COLORS.giBlack, giShade: COLORS.giBlackShade, belt: COLORS.beltRed, headband: null, ponytail: false, bald: true, big: true },
+  // Fallback only: the hero is normally drawn from his sprite sheet.
+  player: {
+    ...INK, head: 'brawler', scaleX: 1, scaleY: 1, armT: 4, legT: 5, headS: 9, torsoW: 12, sleeve: true, hakama: false,
+    skin: COLORS.skin, skinShade: COLORS.skinShade, hair: COLORS.hairBrown, band: COLORS.giWhiteShade, bandolier: null,
+    gi: COLORS.giWhite, giShade: COLORS.giWhiteShade, fold: COLORS.giWhiteShade, trim: COLORS.giWhiteShade, belt: COLORS.beltBlack,
+    hand: COLORS.skin, shin: COLORS.giWhite, foot: COLORS.skin, eye: COLORS.eye,
+  },
+  // Every enemy is a karate student of the Shadow League in a black gi; size and style follow
+  // what they fight like.
+  // Striker: short and broad, sleeves torn off, taped fists, a long red headband. Hits up close.
+  striker: {
+    ...BLACK_GI, ...INK, head: 'brawler', scaleX: 1.15, scaleY: 0.92, armT: 6, legT: 7, headS: 9, torsoW: 18, sleeve: false, hakama: false,
+    skin: '#e0a878', skinShade: '#b4774f', hair: '#17110e', band: '#d8402f', bandolier: null,
+    belt: '#e07b2c', hand: '#ece6d6', shin: BLACK_GI.gi, foot: '#e0a878', eye: '#1a1210',
+  },
+  // Kicker: tall and lean with long legs, a ponytail and white shin pads. Reaches from afar.
+  kicker: {
+    ...BLACK_GI, ...INK, head: 'ponytail', scaleX: 0.95, scaleY: 1.14, armT: 3, legT: 5, headS: 8, torsoW: 11, sleeve: true, hakama: false,
+    skin: '#e0a878', skinShade: '#b4774f', hair: '#3a2416', band: '#2f5fc4', bandolier: null,
+    belt: '#2f5fc4', hand: '#e0a878', shin: '#e6e4dc', foot: '#e0a878', eye: '#1a1210',
+  },
+  // Thrower: small and wiry, with a flat-top and a white strap of stars across the chest.
+  thrower: {
+    ...BLACK_GI, ...INK, head: 'flattop', scaleX: 0.86, scaleY: 0.84, armT: 3, legT: 4, headS: 8, torsoW: 11, sleeve: true, hakama: false,
+    skin: '#e0a878', skinShade: '#b4774f', hair: '#17110e', band: '#17110e', bandolier: '#dfe6ee',
+    belt: '#e6c94a', hand: '#e0a878', shin: BLACK_GI.gi, foot: '#e0a878', eye: '#1a1210',
+  },
+  // Master Kage: the huge teacher, in a gold-edged gi and wide hakama, with white hair and burning eyes.
+  boss: {
+    ...BLACK_GI, ...INK, head: 'kage', scaleX: 1.35, scaleY: 1.25, armT: 6, legT: 7, headS: 10, torsoW: 19, sleeve: true, hakama: true,
+    skin: '#d8c8b8', skinShade: '#a8947f', hair: '#ece8df', band: '#c8372d', bandolier: null,
+    trim: '#e2a53b', belt: '#e2a53b', hand: '#d8c8b8', shin: BLACK_GI.gi, foot: '#d8c8b8', eye: '#ff4a2e',
+  },
 };
 
-const solidPalette = (c) => ({ skin: c, skinShade: c, hair: c, gi: c, giShade: c, belt: c, headband: c, ponytail: false, bald: true, big: false });
-const FLASH_PALETTE = solidPalette('#fff');
+// Same body and costume shapes, but every colour replaced: used for outlines and hit flashes.
+const solidCache = new Map();
+function solidPalette(kind, pal, color) {
+  const key = `${kind}:${color}`;
+  let solid = solidCache.get(key);
+  if (!solid) {
+    solid = Object.fromEntries(Object.entries(pal).map(([k, v]) => [k, typeof v === 'string' && k !== 'head' ? color : v]));
+    solidCache.set(key, solid);
+  }
+  return solid;
+}
 
 // Joint positions relative to the feet, for a fighter facing right.
 // lead = limbs on the side facing the opponent, rear = the other side.
@@ -65,113 +111,199 @@ export function poseFor(f) {
   return 'idle';
 }
 
-function limb(ctx, x1, y1, x2, y2, t, color) {
-  const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1), 1);
+function rect(ctx, color, x, y, w, h) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, h);
+}
+
+function limb(ctx, a, b, t, color) {
+  const steps = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), 1);
   const off = Math.floor(t / 2);
   ctx.fillStyle = color;
   for (let i = 0; i <= steps; i++) {
-    const px = Math.round(x1 + (x2 - x1) * i / steps);
-    const py = Math.round(y1 + (y2 - y1) * i / steps);
+    const px = Math.round(a[0] + (b[0] - a[0]) * i / steps);
+    const py = Math.round(a[1] + (b[1] - a[1]) * i / steps);
     ctx.fillRect(px - off, py - off, t, t);
   }
 }
 
-// Draw a fighter with its feet at (x, y) in canvas space.
-export function drawFighter(ctx, f, { flash = false, alpha = 1, outline = null } = {}) {
-  // An outline is drawn by stamping a solid silhouette around the fighter first (used for Kiai).
-  if (outline && !flash) {
-    for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-      drawFighter(ctx, { ...f, x: f.x + ox, y: f.y + oy, attackPhase: f.attackPhase }, { flash: outline, alpha });
+// A limb with a darker lower edge, so it reads as rounded instead of flat.
+function shadedLimb(ctx, a, b, t, color, shade) {
+  limb(ctx, a, b, t, shade);
+  limb(ctx, [a[0], a[1] - 1], [b[0], b[1] - 1], t - 1, color);
+}
+
+function paintArm(ctx, pal, shoulder, arm, S, rear) {
+  const elbow = S(arm[0]), hand = S(arm[1]);
+  const color = pal.sleeve ? (rear ? pal.giShade : pal.gi) : (rear ? pal.skinShade : pal.skin);
+  const shade = pal.sleeve ? pal.giShade : pal.skinShade;
+  shadedLimb(ctx, shoulder, elbow, pal.armT, color, shade);
+  shadedLimb(ctx, elbow, hand, pal.armT, color, shade);
+  if (pal.sleeve) rect(ctx, pal.trim, hand[0] - 2, hand[1] - 2, pal.armT, 1);
+  // A big fist makes the strike easy to read at this resolution.
+  rect(ctx, pal.hand, hand[0] - 2, hand[1] - 2, pal.armT + 1, pal.armT);
+  rect(ctx, pal.skinShade, hand[0] - 2, hand[1] + pal.armT - 3, pal.armT + 1, 1);
+}
+
+function paintLeg(ctx, pal, hip, leg, S, rear) {
+  const knee = S(leg[0]), foot = S(leg[1]);
+  const color = rear ? pal.giShade : pal.gi;
+  shadedLimb(ctx, hip, knee, pal.legT, color, pal.giShade);
+  shadedLimb(ctx, knee, foot, pal.legT - 1, pal.shin, pal.giShade);
+  // A crease down the front of the trouser.
+  if (!rear) limb(ctx, [hip[0] + 1, hip[1] + 1], [knee[0] + 1, knee[1]], 1, pal.fold);
+  rect(ctx, pal.foot, foot[0] - 2, foot[1] - 2, pal.legT + 2, 3);
+}
+
+function paintTorso(ctx, pal, sh, hip) {
+  const height = hip[1] - sh[1];
+  const shoulderW = pal.torsoW + 1, waistW = pal.torsoW - 3;
+  for (let i = 0; i < height; i++) {
+    const w = Math.round(shoulderW + (waistW - shoulderW) * i / height);
+    const cx = Math.round(sh[0] + (hip[0] - sh[0]) * i / height);
+    const x = cx - Math.floor(w / 2);
+    rect(ctx, pal.gi, x, sh[1] + i, w, 1);
+    rect(ctx, pal.giShade, x, sh[1] + i, 3, 1);
+    rect(ctx, pal.fold, x + w - 1, sh[1] + i, 1, 1);
+    // Lapels meet in a V on the chest.
+    const lapel = Math.min(i, 5);
+    rect(ctx, pal.trim, cx + 3 - lapel, sh[1] + i, 1, 1);
+    if (i < 6) rect(ctx, pal.skin, cx + 4 - lapel, sh[1] + i, Math.max(1, lapel), 1);
+  }
+  const beltW = waistW + 1;
+  rect(ctx, pal.belt, hip[0] - Math.floor(beltW / 2), hip[1] - 3, beltW, 3);
+  rect(ctx, pal.belt, hip[0] + 1, hip[1], 2, 5);
+  rect(ctx, pal.belt, hip[0] - 2, hip[1], 2, 4);
+}
+
+function paintHead(ctx, pal, head, flutter) {
+  const s = pal.headS;
+  const x = head[0] - Math.floor(s / 2), y = head[1] - Math.floor(s / 2);
+  rect(ctx, pal.skin, x, y, s, s);
+  rect(ctx, pal.skinShade, x, y + s - 1, s, 1);
+  rect(ctx, pal.skinShade, x, y, 2, s);
+
+  if (pal.head === 'ponytail') {
+    // Hair pulled back into a tail that swings, with a focused look.
+    rect(ctx, pal.hair, x - 1, y - 1, s + 1, 3);
+    rect(ctx, pal.hair, x - 1, y, 3, s - 3);
+    rect(ctx, pal.band, x - 2, y + 1, 2, 2);
+    rect(ctx, pal.hair, x - 6, y + 1 + flutter, 5, 2);
+    rect(ctx, pal.hair, x - 8, y + 3 + flutter, 3, 4);
+    rect(ctx, pal.ink, x + s - 4, y + 3, 3, 1);
+    rect(ctx, pal.eye, x + s - 2, y + 4, 1, 1);
+  } else if (pal.head === 'flattop') {
+    // A square flat-top and a sharp, narrow stare.
+    rect(ctx, pal.hair, x - 1, y - 3, s + 1, 4);
+    rect(ctx, pal.hair, x - 1, y + 1, 2, 3);
+    rect(ctx, pal.ink, x + s - 4, y + 3, 4, 1);
+    rect(ctx, pal.eye, x + s - 2, y + 4, 1, 1);
+    rect(ctx, pal.skinShade, x + s - 3, y + s - 2, 2, 1);
+  } else if (pal.head === 'kage') {
+    // White hair swept back to the shoulders.
+    rect(ctx, pal.hair, x - 1, y - 2, s, 3);
+    rect(ctx, pal.hair, x - 3, y, 4, s);
+    rect(ctx, pal.hair, x - 5, y + 4 + flutter, 3, s - 3);
+    rect(ctx, pal.skinShade, x - 2, y + 1, 1, s - 2);
+    rect(ctx, pal.skinShade, x - 4, y + 6 + flutter, 1, s - 6);
+    // Heavy brow, burning eye, red warpaint and a pointed beard.
+    rect(ctx, pal.ink, x + s - 6, y + 2, 6, 1);
+    rect(ctx, pal.eye, x + s - 4, y + 3, 3, 2);
+    rect(ctx, pal.band, x + s - 7, y + 3, 1, 4);
+    rect(ctx, pal.hair, x + 3, y + s - 2, s - 3, 2);
+    rect(ctx, pal.hair, x + s - 4, y + s, 3, 3);
+  } else {
+    // Spiky hair, a tied headband with long tails, and an angry face.
+    rect(ctx, pal.hair, x - 1, y - 1, s + 1, 3);
+    for (let i = 0; i < 3; i++) rect(ctx, pal.hair, x + i * 3, y - 3 + (i % 2), 2, 2);
+    rect(ctx, pal.band, x - 1, y + 2, s + 1, 2);
+    rect(ctx, pal.band, x - 5, y + 2 + flutter, 4, 1);
+    rect(ctx, pal.band, x - 9, y + 3 - flutter, 5, 1);
+    rect(ctx, pal.ink, x + s - 5, y + 4, 4, 1);
+    rect(ctx, pal.eye, x + s - 3, y + 5, 2, 1);
+    rect(ctx, pal.skinShade, x + s - 4, y + s - 2, 3, 1);
+  }
+}
+
+// Maps pose joints to this fighter's build: wide or narrow, short or tall.
+const scaler = (pal) => (p) => [Math.round(p[0] * pal.scaleX), Math.round(p[1] * pal.scaleY)];
+
+// One complete fighter, drawn relative to its feet and facing right.
+function paintBody(ctx, pose, pal, flutter) {
+  const S = scaler(pal);
+  const sh = S(pose.sh), hip = S(pose.hip), head = S(pose.head);
+  const shoulderX = Math.floor(pal.torsoW / 2) - 3;
+
+  paintArm(ctx, pal, [sh[0] - shoulderX, sh[1] + 2], pose.rear.arm, S, true);
+  paintLeg(ctx, pal, [hip[0] - 2, hip[1]], pose.rear.leg, S, true);
+
+  if (pal.hakama && !pose.lying) {
+    // Wide pleated trousers that hang from the belt to below the knee.
+    const top = hip[1], bottom = Math.round(-5 * pal.scaleY), half = 11 + flutter;
+    rect(ctx, pal.gi, hip[0] - half, top, half * 2, bottom - top);
+    for (let px = hip[0] - half + 3; px < hip[0] + half; px += 5) rect(ctx, pal.fold, px, top + 1, 1, bottom - top - 1);
+    rect(ctx, pal.giShade, hip[0] - half, bottom - 1, half * 2, 1);
+  }
+
+  if (pose.lying) {
+    rect(ctx, pal.gi, sh[0], sh[1] - 5, hip[0] - sh[0], 10);
+    rect(ctx, pal.giShade, sh[0], sh[1] + 3, hip[0] - sh[0], 2);
+    rect(ctx, pal.belt, hip[0] - 3, sh[1] - 5, 3, 10);
+  } else {
+    paintLeg(ctx, pal, [hip[0] + 2, hip[1]], pose.lead.leg, S, false);
+    paintTorso(ctx, pal, sh, hip);
+    if (pal.bandolier) {
+      // A strap of stars slung across the chest.
+      limb(ctx, [sh[0] - 4, sh[1] + 1], [hip[0] + 4, hip[1] - 4], 2, pal.bandolier);
+      limb(ctx, [sh[0] - 2, sh[1] + 3], [hip[0] + 2, hip[1] - 4], 1, pal.ink);
     }
   }
-  const pal = flash ? (typeof flash === 'string' ? solidPalette(flash) : FLASH_PALETTE) : (FIGHTER_PALETTES[f.kind] || FIGHTER_PALETTES.player);
-  const big = (FIGHTER_PALETTES[f.kind] || {}).big;
-  const k = big ? 1.2 : 1;
-  const S = (v) => Math.round(v * k);
+  if (pose.lying) paintLeg(ctx, pal, [hip[0] + 2, hip[1]], pose.lead.leg, S, false);
+
+  paintHead(ctx, pal, head, flutter);
+  paintArm(ctx, pal, [sh[0] + shoulderX, sh[1] + 2], pose.lead.arm, S, false);
+}
+
+// Draw a fighter with its feet at (f.x, y) in canvas space; `y` is the on-screen feet position.
+export function drawFighter(ctx, f, { flash = false, alpha = 1, outline = null, y = f.y } = {}) {
+  const pal = FIGHTER_PALETTES[f.kind] || FIGHTER_PALETTES.player;
   const pose = POSES[poseFor(f)];
-  const armT = big ? 4 : 3, legT = big ? 5 : 4, headS = big ? 10 : 8, torsoW = big ? 12 : 10;
+  // Cloth tails swap between two positions as the fighter moves.
+  const flutter = pose.lying ? 0 : Math.floor(f.walkCycle / 2) % 2;
+  const edge = flash ? (typeof flash === 'string' ? flash : '#fff') : (outline || OUTLINE);
+  const silhouette = solidPalette(f.kind, pal, edge);
 
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.translate(Math.round(f.x), Math.round(f.y));
+  ctx.translate(Math.round(f.x), Math.round(y));
   if (f.facing < 0) ctx.scale(-1, 1);
 
-  const sh = [S(pose.sh[0]), S(pose.sh[1])];
-  const hip = [S(pose.hip[0]), S(pose.hip[1])];
-  const head = [S(pose.head[0]), S(pose.head[1])];
-  const pt = (p) => [S(p[0]), S(p[1])];
-
-  const drawArm = (arm, shoulder) => {
-    const [e, h] = [pt(arm[0]), pt(arm[1])];
-    limb(ctx, shoulder[0], shoulder[1], e[0], e[1], armT, pal.gi);
-    limb(ctx, e[0], e[1], h[0], h[1], armT, pal.gi);
-    ctx.fillStyle = pal.skin;
-    ctx.fillRect(h[0] - 1, h[1] - 1, armT, armT);
-  };
-  const drawLeg = (leg, hipPt) => {
-    const [kn, ft] = [pt(leg[0]), pt(leg[1])];
-    limb(ctx, hipPt[0], hipPt[1], kn[0], kn[1], legT, pal.gi);
-    limb(ctx, kn[0], kn[1], ft[0], ft[1], legT, pal.gi);
-    ctx.fillStyle = pal.skin;
-    ctx.fillRect(ft[0] - 2, ft[1] - 2, legT + 1, 3);
-  };
-
-  // Rear limbs first so the lead side reads on top.
-  drawArm(pose.rear.arm, [sh[0] - 1, sh[1] + 1]);
-  drawLeg(pose.rear.leg, [hip[0] - 2, hip[1]]);
-
-  // Torso (gi jacket) and belt.
-  const half = Math.floor(torsoW / 2);
-  if (pose.lying) {
-    ctx.fillStyle = pal.gi;
-    ctx.fillRect(sh[0], sh[1] - half, hip[0] - sh[0], torsoW);
-    ctx.fillStyle = pal.belt;
-    ctx.fillRect(hip[0] - 2, sh[1] - half, 2, torsoW);
-  } else {
-    const h = hip[1] - sh[1];
-    const upper = Math.ceil(h / 2);
-    ctx.fillStyle = pal.gi;
-    ctx.fillRect(sh[0] - half, sh[1], torsoW, upper);
-    ctx.fillRect(hip[0] - half, sh[1] + upper, torsoW, h - upper);
-    // Lapel line gives the jacket its V shape.
-    ctx.fillStyle = pal.giShade;
-    ctx.fillRect(sh[0] + 1, sh[1] + 1, 1, 2);
-    ctx.fillRect(sh[0], sh[1] + 3, 1, 2);
-    ctx.fillRect(sh[0] - 1, sh[1] + 5, 1, 1);
-    ctx.fillStyle = pal.belt;
-    ctx.fillRect(hip[0] - half, hip[1] - 2, torsoW, 2);
-    ctx.fillRect(hip[0] + 1, hip[1], 1, 3); // belt tail
+  for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+    ctx.translate(ox, oy);
+    paintBody(ctx, pose, silhouette, flutter);
+    ctx.translate(-ox, -oy);
   }
-
-  drawLeg(pose.lead.leg, [hip[0] + 2, hip[1]]);
-
-  // Head: skin block, hair cap, one eye on the facing side.
-  const hx = head[0] - Math.floor(headS / 2), hy = head[1] - Math.floor(headS / 2);
-  ctx.fillStyle = pal.skin;
-  ctx.fillRect(hx, hy, headS, headS);
-  if (!pal.bald) {
-    ctx.fillStyle = pal.hair;
-    ctx.fillRect(hx, hy, headS, 3);
-    ctx.fillRect(hx, hy + 3, 2, 2);
-    if (pal.ponytail) ctx.fillRect(hx - 3, hy + 2, 3, 2);
-  } else {
-    ctx.fillStyle = pal.skinShade;
-    ctx.fillRect(hx, hy, headS, 1);
-    ctx.fillStyle = COLORS.eye;
-    ctx.fillRect(hx + headS - 5, hy + 3, 4, 1); // heavy brow
+  paintBody(ctx, pose, flash ? silhouette : pal, flutter);
+  // The star is shown in the raised hand during the wind-up, so the throw can be read in time.
+  if (f.attack?.name === 'enemyThrow' && f.attackPhase === 'startup' && !flash) {
+    const [hx, hy] = scaler(pal)(pose.lead.arm[1]);
+    drawShuriken(ctx, hx, hy - 3, 0);
   }
-  if (pal.headband) {
-    ctx.fillStyle = pal.headband;
-    ctx.fillRect(hx - 1, hy + 2, headS + 1, 2);
-    ctx.fillRect(hx - 3, hy + 3, 2, 1);
-  }
-  ctx.fillStyle = COLORS.eye;
-  ctx.fillRect(hx + headS - 3, hy + 4, 1, 1);
-  ctx.fillStyle = pal.skinShade;
-  ctx.fillRect(hx, hy + headS - 1, headS, 1);
-
-  drawArm(pose.lead.arm, [sh[0] + 1, sh[1] + 1]);
   ctx.restore();
+}
+
+// A four-pointed throwing star centred on (x, y). `spin` 0 or 1 selects the rotation frame.
+export function drawShuriken(ctx, x, y, spin = 0) {
+  const cx = Math.round(x), cy = Math.round(y);
+  const points = spin
+    ? [[-3, -3, 2, 2], [2, -3, 2, 2], [-3, 2, 2, 2], [2, 2, 2, 2], [-2, -2, 5, 5]]
+    : [[0, -4, 1, 9], [-4, 0, 9, 1], [-1, -2, 3, 5], [-2, -1, 5, 3]];
+  ctx.fillStyle = OUTLINE;
+  for (const [px, py, w, h] of points) ctx.fillRect(cx + px - 1, cy + py - 1, w + 2, h + 2);
+  ctx.fillStyle = '#dfe6ee';
+  for (const [px, py, w, h] of points) ctx.fillRect(cx + px, cy + py, w, h);
+  ctx.fillStyle = '#7f8a96';
+  ctx.fillRect(cx, cy, 1, 1);
 }
 
 // ---- 3x5 bitmap font ----------------------------------------------------
@@ -194,6 +326,7 @@ const GLYPHS = {
   U: ['101', '101', '101', '101', '111'], V: ['101', '101', '101', '101', '010'],
   W: ['101', '101', '111', '111', '101'], X: ['101', '101', '010', '101', '101'],
   Y: ['101', '101', '010', '010', '010'], Z: ['111', '001', '010', '100', '111'],
+  'Ö': ['101', '000', '111', '101', '111'],
   '+': ['000', '010', '111', '010', '000'], '-': ['000', '000', '111', '000', '000'],
   '!': ['010', '010', '010', '000', '010'], ':': ['000', '010', '000', '010', '000'],
   '.': ['000', '000', '000', '000', '010'], ' ': ['000', '000', '000', '000', '000'],

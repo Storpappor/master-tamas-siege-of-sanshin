@@ -58,7 +58,9 @@ export function boot(root) {
   input.attachTouch({
     left: root.querySelector('[data-btn="left"]'),
     right: root.querySelector('[data-btn="right"]'),
+    up: root.querySelector('[data-btn="up"]'),
     down: root.querySelector('[data-btn="down"]'),
+    duck: root.querySelector('[data-btn="duck"]'),
     jump: root.querySelector('[data-btn="jump"]'),
     punch: root.querySelector('[data-btn="punch"]'),
     kick: root.querySelector('[data-btn="kick"]'),
