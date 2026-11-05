@@ -1,0 +1,17 @@
+{
+  "name": "master-tamas-siege-of-sanshin",
+  "version": "0.2.0",
+  "private": true,
+  "description": "NES-style side-scrolling karate game: plain HTML5 Canvas and ES modules, no dependencies",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "lint": "node scripts/lint.mjs",
+    "test": "node --test test/",
+    "build": "node scripts/build.mjs",
+    "check": "npm run lint && npm test && npm run build"
+  }
+}
