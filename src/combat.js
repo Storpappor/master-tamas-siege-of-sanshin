@@ -1,5 +1,6 @@
 // Combat rules: attack timings, hit boxes and hit resolution.
 // Everything here is pure (no DOM), so it is easy to unit test and tune.
+import { DEPTH_REACH } from './constants.js';
 
 // Boxes are relative to a fighter's feet position, for a fighter facing right.
 // x grows forward (toward the enemy), y grows downward (so heads are negative).
@@ -15,6 +16,10 @@ export const ATTACKS = {
   enemyLowSweep: { startup: 0.46, active: 0.14, recovery: 0.50, damage: 10, knockback: 55, box: { x: 4, y: -12, w: 22, h: 10 } },
   bossPunch:     { startup: 0.30, active: 0.12, recovery: 0.34, damage: 12, knockback: 45, box: { x: 6, y: -34, w: 16, h: 9 } },
   bossKick:      { startup: 0.44, active: 0.14, recovery: 0.48, damage: 18, knockback: 75, box: { x: 6, y: -42, w: 23, h: 12 } },
+  // Throwing arm: `ranged` means the motion itself never connects; it releases a shuriken.
+  enemyThrow:    { startup: 0.50, active: 0.08, recovery: 0.40, damage: 0, knockback: 0, box: { x: 0, y: 0, w: 0, h: 0 }, ranged: true },
+  // The shuriken in flight, flying at head height: block it, duck it or step out of its path.
+  shuriken:      { startup: 0, active: 0, recovery: 0, damage: 8, knockback: 30, box: { x: -3, y: -36, w: 6, h: 6 } },
 };
 
 // Attacks that pass over a crouching fighter (they aim at head height).
@@ -58,6 +63,10 @@ export function hurtboxFor(fighter) {
 // Returns { hit, blocked, damage, direction }.
 export function resolveHit(attacker, defender, attackName) {
   const attack = ATTACKS[attackName];
+  // Fighters on different parts of the floor walk past each other: depth is checked first.
+  if (Math.abs((attacker.z ?? 0) - (defender.z ?? 0)) > DEPTH_REACH) {
+    return { hit: false, blocked: false, damage: 0, direction: attacker.facing };
+  }
   const hitbox = worldBox(attack.box, attacker.x, attacker.y, attacker.facing);
   const hurtbox = hurtboxFor(defender);
   if (!rectsOverlap(hitbox, hurtbox)) {

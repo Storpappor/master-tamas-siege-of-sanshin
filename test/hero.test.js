@@ -61,7 +61,7 @@ test('hero frames follow the player state machine', () => {
   j.update(STEP, { ...idle, jump: true });
   assert.equal(heroFrameIndex(j), 7, 'jump borrows the raised-arm pose');
   const c = new Player(100);
-  c.update(STEP, { ...idle, down: true });
+  c.update(STEP, { ...idle, duck: true });
   assert.equal(heroFrameIndex(c), 5, 'crouch borrows the low pose');
   const h = new Player(100);
   h.takeHit({ damage: 10, blocked: false, direction: 1, knockback: 10 });

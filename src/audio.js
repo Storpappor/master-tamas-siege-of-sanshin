@@ -7,6 +7,7 @@ const SOUNDS = {
   block:     (s) => { s.tone({ freq: 900, end: 700, dur: 0.05, type: 'square', vol: 0.35 }); s.tone({ freq: 1400, end: 1000, dur: 0.06, type: 'square', vol: 0.2, delay: 0.03 }); },
   jump:      (s) => s.tone({ freq: 260, end: 620, dur: 0.14, type: 'square', vol: 0.3 }),
   land:      (s) => s.noise({ dur: 0.04, vol: 0.2, freq: 300 }),
+  shuriken:  (s) => { s.noise({ dur: 0.14, vol: 0.35, freq: 3200 }); s.tone({ freq: 1500, end: 2400, dur: 0.1, type: 'triangle', vol: 0.12 }); },
   hurt:      (s) => { s.tone({ freq: 220, end: 80, dur: 0.22, type: 'sawtooth', vol: 0.5 }); s.noise({ dur: 0.1, vol: 0.3, freq: 500 }); },
   enemyDown: (s) => { s.tone({ freq: 420, end: 60, dur: 0.3, type: 'square', vol: 0.45 }); },
   bossAppear:(s) => { [110, 110, 98, 82].forEach((f, i) => s.tone({ freq: f, dur: 0.2, type: 'square', vol: 0.4, delay: i * 0.22 })); },

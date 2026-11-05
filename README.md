@@ -1,7 +1,7 @@
 # Master Tamás: Siege of Sanshin
 
-An original, NES-inspired side-scrolling karate game. Defend the dojo against the
-Shadow League and face Master Kage at the end of the hall.
+An original, NES-inspired side-scrolling karate game. Fight your way along the street on
+Södermalm, drive the Shadow League out of the Sanshin Kan dojo and face Master Kage at the end.
 
 **Play it in your browser:** https://storpappor.github.io/master-tamas-siege-of-sanshin/
 
@@ -9,15 +9,17 @@ Shadow League and face Master Kage at the end of the hall.
 
 | Action | Keyboard | Phone |
 |---|---|---|
-| Move | ← → or A D | ◀ ▶ buttons |
-| Crouch | ↓ or S | ▼ button |
-| Jump | Space (or ↑ / W) | Jump |
+| Move (also into and out of the floor) | ← → ↑ ↓ or W A S D | ◀ ▶ ▲ ▼ buttons |
+| Duck | C | Duck |
+| Jump | Space | Jump |
 | Punch / Kick / Block | J / K / L | Punch / Kick / Block |
 | Kiai (double damage, breaks guards) | I | Kiai |
 | Pause | P or Esc | Pause button |
 
 Tips: duck under high kicks, jump over low sweeps, hold block to absorb a strike,
-and land hits without getting hit to build a combo multiplier.
+block, duck or sidestep throwing stars, step up or down to line up a strike or slip out of one, and land hits without getting
+hit to build a combo multiplier. Each fight holds the screen until it is won; then follow
+the GO arrow. At the end of the street, walk up to the door to enter the dojo.
 
 ## For developers
 
@@ -44,12 +46,12 @@ assets/            tamas-hero-spritesheet.png (4x2 frames, transparent)
 src/
   main.js          boot: DOM wiring, input, audio, sprite loading, game loop
   game.js          state machine, spawning, hit resolution, scoring, dialogue
-  entities.js      Player (input-driven) and Enemy AI (striker / kicker / boss)
+  entities.js      Player (input-driven) and Enemy AI (striker / kicker / thrower / boss)
   combat.js        attack timings, hit boxes, block rules (pure functions)
-  level.js         spawn schedule for the training hall
+  level.js         zones and position-triggered waves (Spawner)
   heroSprite.js    hero sprite sheet: frame detection, scaling, drawing
   sprites.js       procedurally drawn enemies + 3x5 bitmap font
-  renderer.js      dojo background, camera, pixel-perfect canvas scaling
+  renderer.js      zone backgrounds, depth sorting, GO prompt, pixel-perfect scaling
   audio.js         synthesized sound effects (Web Audio)
   input.js         keyboard + multi-touch buttons
   ui.js            HUD, overlays and the NES-style story cards
@@ -63,4 +65,7 @@ scripts/           zero-dependency dev server, lint and build helpers
 - The simulation runs at a fixed 60 Hz step; rendering runs per animation frame.
 - Game logic never touches the DOM, which is what makes the headless playthrough test possible.
 - One fixed hitbox per fighter, independent of the artwork frame being shown.
+- Fighters have x (along the level), z (depth on the floor) and y (height). `y` is not a screen position: draw with `screenY(y, z)`. Attacks connect only within `DEPTH_REACH` in z.
+- The camera only moves forward. Reaching a wave locks it until the wave is beaten, and everyone stays on screen so a fight can always be finished.
+- Zones are separate scenes in one world strip. A zone's `exit` door opens when its waves are won; walking up to it fades to the next zone.
 - Enemies are drawn procedurally; to give them sprite sheets, follow the pattern in `heroSprite.js`.

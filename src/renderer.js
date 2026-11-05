@@ -1,113 +1,320 @@
 // Canvas renderer: draws the world into a small native-resolution buffer and
 // scales it up with nearest-neighbour filtering for crisp pixels.
-import { VIEW_W, VIEW_H, GROUND_Y, HALL_WIDTH, COLORS } from './constants.js';
-import { drawFighter, drawText } from './sprites.js';
+import { VIEW_W, VIEW_H, GROUND_Y, FLOOR_TOP, WORLD_WIDTH, COLORS, screenY } from './constants.js';
+import { LEVEL_1 } from './level.js';
+import { drawFighter, drawShuriken, drawText } from './sprites.js';
 import { heroFrameIndex } from './heroSprite.js';
 
-const BG = {
-  ceiling: '#2d1d13', ceilingTrim: '#4a3121', wall: '#d8c7a1', wallShade: '#c6b48d',
-  rail: '#6b452b', railLight: '#8a5c38', paper: '#f1e9d2', lattice: '#5c3b25',
-  pillar: '#4b2f1c', pillarLight: '#6a4327', floorA: '#a9733f', floorB: '#946235',
-  floorSeam: '#7a4f2a', baseboard: '#3f2816', scroll: '#f6f1e3', ink: '#1d1a1a',
-  lantern: '#e2a53b', lanternGlow: '#f3c86d', lanternFrame: '#3a2415',
-  signFrame: '#2e1b10', signWood: '#5a3a22', signWoodLight: '#6e4a2c', signText: '#f0c85a', signTextShadow: '#3a2008',
+// The street outside the real Sanshin Kan dojo on Södermalm, Stockholm.
+const STREET = {
+  plaster: '#cfc9ba', plasterShade: '#bdb7a8', stone: '#a9a596', stoneLine: '#97937f', stoneJoint: '#858170',
+  frame: '#2e6b4b', glass: '#39434a', glassLight: '#5d6a70', awning: '#2a6345', awningLight: '#3c8058',
+  wood: '#a8662e', woodDark: '#6f3f1c', woodPane: '#3a2a1e', shutter: '#d9d7d0', recess: '#4d493f',
+  orange: '#d8963f', orangeShade: '#c4832f', surround: '#ece6d8', plinth: '#97958e', plinthDot: '#7f7d76', bars: '#23201e',
+  pipe: '#17181c', sign: '#17161a', signText: '#f4f1e6', dot: '#c8372d',
+  slab: '#b6b1a4', slabSeam: '#9b9689', kerb: '#8d897e', road: '#3a3b42', roadDot: '#4a4b52',
+  night: 'rgba(16,22,58,0.14)', lit: '#e8c16a', redGlow: '#d8402f',
 };
 
-// Wooden name boards on the back wall. Panels and scrolls are skipped where a board hangs.
-const SIGN_TEXT = 'SANSHIN KAN KARATE';
-const SIGN_W = 160, SIGN_H = 26, SIGN_Y = 42;
-const SIGN_CENTERS = [160, HALL_WIDTH - 160];
-const inSignZone = (x0, x1) => SIGN_CENTERS.some((cx) => x1 > cx - SIGN_W / 2 - 8 && x0 < cx + SIGN_W / 2 + 8);
+// The training hall: white walls, low ceiling with ducts, red padded pillars, red and sage mats.
+const DOJO = {
+  wall: '#f1e3dd', wallShade: '#dfcdc6', ceiling: '#efe4d8', ceilingShade: '#d8c9bb', duct: '#a9a49b', ductLight: '#c6c1b8',
+  tube: '#ffffff', tubeGlow: '#fff6d8', red: '#d6402c', redDark: '#ad2f20', redLight: '#e4604c', stripe: '#f6f1ea', cap: '#3a3532',
+  column: '#f5ebe6', columnShade: '#dccdc6', wood: '#5a3522', woodLight: '#7a4c30', staff: '#b98d57',
+  frame: '#1f1a18', paper: '#efe6cf', ink: '#2a2523', mirror: '#d3dcda', mirrorLight: '#e6edeb', mirrorFrame: '#8f8a84',
+  bag: '#1a1a1e', bagLight: '#34343a', skin: '#d6b08c', matRed: '#d8402c', matRedDark: '#bf3423', matGreen: '#9aa184', matGreenDark: '#858c70',
+};
 
-// Pre-render the whole hall once; the camera just slides across it.
-function buildHall(createCanvas) {
-  const c = createCanvas(HALL_WIDTH, VIEW_H);
-  const g = c.getContext('2d');
+const DOOR_TOP = 88;
 
-  g.fillStyle = BG.wall; g.fillRect(0, 0, HALL_WIDTH, VIEW_H);
-  g.fillStyle = BG.ceiling; g.fillRect(0, 0, HALL_WIDTH, 18);
-  g.fillStyle = BG.ceilingTrim; g.fillRect(0, 18, HALL_WIDTH, 3);
-  g.fillStyle = BG.wallShade; g.fillRect(0, 21, HALL_WIDTH, 2);
+// Pixel size of the HUD-independent GO prompt, in native pixels.
+const GO_X = VIEW_W - 58;
+const GO_Y = 30;
 
-  // Shoji (paper) panels with a wooden lattice.
-  for (let x = 20; x < HALL_WIDTH; x += 96) {
-    if (inSignZone(x - 2, x + 50)) continue;
-    g.fillStyle = BG.lattice; g.fillRect(x - 2, 36, 52, 84);
-    g.fillStyle = BG.paper; g.fillRect(x, 38, 48, 80);
-    g.fillStyle = BG.lattice;
-    for (let i = 0; i <= 48; i += 12) g.fillRect(x + i, 38, 1, 80);
-    for (let j = 0; j <= 80; j += 16) g.fillRect(x, 38 + j, 48, 1);
-    g.fillRect(x + 47, 38, 1, 80);
-    g.fillRect(x, 117, 48, 1);
+// Run `paint` with drawing limited to one zone, so each zone's patterns stay inside it.
+function inZone(g, zone, paint) {
+  g.save();
+  g.beginPath();
+  g.rect(zone.from, 0, zone.to - zone.from, VIEW_H);
+  g.clip();
+  paint(zone.from, zone.to);
+  g.restore();
+}
+
+function box(g, color, x, y, w, h) {
+  g.fillStyle = color;
+  g.fillRect(x, y, w, h);
+}
+
+// ---- Street ---------------------------------------------------------------
+
+// Green-framed window with a bare-branch reflection and an awning over it.
+function greenWindow(g, x, y, w, h, awning, lit, litList) {
+  if (awning) {
+    box(g, STREET.awning, x - 3, y - 6, w + 6, 4);
+    box(g, STREET.awningLight, x - 3, y - 6, w + 6, 1);
+  }
+  box(g, STREET.frame, x, y, w, h);
+  box(g, STREET.glass, x + 2, y + 2, w - 4, h - 4);
+  box(g, STREET.frame, x + Math.floor(w / 2), y + 2, 1, h - 4);
+  if (lit) litList.push([x + 2, y + 2, w - 4, h - 4]);
+  else for (let i = 0; i < 4; i++) box(g, STREET.glassLight, x + 4 + i * 4, y + h - 5 - i * 3, 1, 3 + i);
+}
+
+// Wooden double door with rows of small panes, as at the dojo entrance.
+function woodenDoor(g, x, w) {
+  const top = DOOR_TOP, h = FLOOR_TOP - top;
+  box(g, STREET.recess, x - 2, top - 2, w + 4, h + 2);
+  box(g, STREET.wood, x, top, w, h);
+  box(g, STREET.woodDark, x + Math.floor(w / 2), top, 1, h);
+  const leaf = Math.floor(w / 2);
+  for (const lx of [x, x + leaf]) {
+    for (let px = lx + 3; px < lx + leaf - 3; px += 4) box(g, STREET.woodPane, px, top + 4, 2, 14);
+    box(g, STREET.woodDark, lx + 2, top + 21, leaf - 4, 1);
+  }
+}
+
+function beigeBuilding(g, x, w, lits, { door = null } = {}) {
+  box(g, STREET.plaster, x, 0, w, 84);
+  box(g, STREET.plasterShade, x, 80, w, 4);
+  // Stone-clad ground floor with fine horizontal veining.
+  box(g, STREET.stone, x, 84, w, FLOOR_TOP - 84);
+  for (let y = 86; y < FLOOR_TOP; y += 3) box(g, STREET.stoneLine, x, y, w, 1);
+  for (let jx = x + 14; jx < x + w; jx += 34) box(g, STREET.stoneJoint, jx, 84, 1, FLOOR_TOP - 84);
+
+  for (let wx = x + 18, i = 0; wx < x + w - 44; wx += 66, i++) {
+    greenWindow(g, wx, 6, 40, 22, false, i % 3 === 1, lits);
+    greenWindow(g, wx, 42, 40, 30, true, i % 4 === 3, lits);
   }
 
-  // Hanging scrolls between some panels, with an abstract brush circle.
-  for (let x = 82; x < HALL_WIDTH; x += 192) {
-    if (inSignZone(x - 1, x + 17)) continue;
-    g.fillStyle = BG.ink; g.fillRect(x - 1, 34, 18, 2);
-    g.fillStyle = BG.scroll; g.fillRect(x, 36, 16, 44);
-    g.fillStyle = BG.ink;
-    const cx = x + 8, cy = 56;
-    for (let a = 0; a < Math.PI * 1.75; a += 0.25) {
-      g.fillRect(Math.round(cx + Math.cos(a) * 5), Math.round(cy + Math.sin(a) * 5), 2, 2);
+  if (door) {
+    const doorX = door.x - door.width / 2;
+    woodenDoor(g, doorX, door.width);
+    // The neighbouring entrance and white shutter.
+    woodenDoor(g, doorX - 88, 36);
+    box(g, STREET.shutter, doorX - 42, 92, 30, FLOOR_TOP - 92);
+    box(g, STREET.recess, doorX - 42, 90, 30, 2);
+  } else {
+    woodenDoor(g, x + Math.floor(w / 2) - 18, 36);
+  }
+}
+
+function orangeBuilding(g, x, w, lits) {
+  box(g, STREET.orange, x, 0, w, 98);
+  box(g, STREET.orangeShade, x, 92, w, 6);
+  // Plain upper windows in white surrounds.
+  for (let wx = x + 22, i = 0; wx < x + w - 38; wx += 62, i++) {
+    box(g, STREET.surround, wx - 3, 5, 34, 34);
+    box(g, STREET.glass, wx, 8, 28, 28);
+    box(g, STREET.surround, wx + 13, 8, 2, 28);
+    if (i % 2 === 0) lits.push([wx, 8, 13, 28]);
+    // Arched windows on the floor below.
+    box(g, STREET.surround, wx - 3, 54, 34, 36);
+    box(g, STREET.surround, wx + 1, 50, 26, 4);
+    box(g, STREET.surround, wx + 5, 47, 18, 3);
+    box(g, STREET.glass, wx, 58, 28, 30);
+    box(g, STREET.glass, wx + 3, 54, 22, 4);
+    box(g, STREET.glass, wx + 7, 51, 14, 3);
+    box(g, STREET.surround, wx + 13, 52, 2, 36);
+  }
+  // Rough grey plinth with a barred basement window.
+  box(g, STREET.plinth, x, 98, w, FLOOR_TOP - 98);
+  for (let py = 100; py < FLOOR_TOP; py += 4) {
+    for (let px = x + (py % 8 === 0 ? 2 : 6); px < x + w; px += 8) box(g, STREET.plinthDot, px, py, 1, 1);
+  }
+  for (let wx = x + 28; wx < x + w - 34; wx += 124) {
+    box(g, STREET.redGlow, wx, 104, 22, 12);
+    for (let bx = wx; bx < wx + 22; bx += 4) box(g, STREET.bars, bx, 104, 1, 12);
+  }
+}
+
+function paintStreet(g, from, to, zone) {
+  const lits = [];
+  // The street ends at the dojo's own building, right next to the way in.
+  const dojoW = 340;
+  const buildings = [
+    [from, 216, 'orange'],
+    [from + 216, 240, 'beige'],
+    [from + 456, 204, 'orange'],
+    [to - dojoW, dojoW, 'dojo'],
+  ];
+  for (const [x, w, kind] of buildings) {
+    if (kind === 'orange') orangeBuilding(g, x, w, lits);
+    else beigeBuilding(g, x, w, lits, { door: kind === 'dojo' ? zone.exit : null });
+    box(g, STREET.pipe, x + w - 2, 0, 2, FLOOR_TOP);
+  }
+
+  // Light stone pavement, kerb, then the road.
+  box(g, STREET.slab, from, FLOOR_TOP, to - from, 24);
+  for (let y = FLOOR_TOP, row = 0; y < FLOOR_TOP + 24; y += 8, row++) {
+    box(g, STREET.slabSeam, from, y, to - from, 1);
+    for (let x = from + (row % 2 ? 12 : 0); x < to; x += 24) box(g, STREET.slabSeam, x, y, 1, 8);
+  }
+  box(g, STREET.kerb, from, FLOOR_TOP + 24, to - from, 2);
+  box(g, STREET.road, from, FLOOR_TOP + 26, to - from, VIEW_H - FLOOR_TOP - 26);
+  for (let y = FLOOR_TOP + 28, row = 0; y < VIEW_H; y += 3, row++) {
+    for (let x = from + (row * 7) % 11; x < to; x += 11) box(g, STREET.roadDot, x, y, 1, 1);
+  }
+
+  // Midnight in Stockholm: dim everything, then let the lit windows and the club sign shine through.
+  box(g, STREET.night, from, 0, to - from, VIEW_H);
+  for (const [x, y, w, h] of lits) box(g, STREET.lit, x, y, w, h);
+  const signX = zone.exit.x - 40; // centred over the dojo door
+  box(g, STREET.sign, signX, 72, 80, 15);
+  box(g, STREET.dot, signX + 38, 74, 4, 3);
+  drawText(g, 'SANSHIN KAN KARATE', signX + 40, 79, { color: STREET.signText, align: 'center' });
+}
+
+// ---- Dojo -----------------------------------------------------------------
+
+function framedPaper(g, x, y, w, h) {
+  box(g, DOJO.frame, x, y, w, h);
+  box(g, DOJO.paper, x + 1, y + 1, w - 2, h - 2);
+  box(g, DOJO.ink, x + 3, y + 3, w - 6, 1);
+  box(g, DOJO.ink, x + 3, y + 6, w - 8, 1);
+}
+
+// Red padded pillar with two white bands, vertical lettering and a dark foot.
+function pillar(g, x, belts) {
+  const w = 18, top = 26, bottom = FLOOR_TOP + 7;
+  box(g, DOJO.column, x, 12, w, top - 12);
+  box(g, DOJO.columnShade, x, 12, 3, top - 12);
+  box(g, DOJO.red, x, top, w, bottom - top);
+  box(g, DOJO.redDark, x, top, 3, bottom - top);
+  box(g, DOJO.redLight, x + w - 2, top, 2, bottom - top);
+  box(g, DOJO.cap, x, top, w, 3);
+  box(g, DOJO.cap, x, bottom - 3, w, 3);
+  box(g, DOJO.stripe, x, 86, w, 4);
+  box(g, DOJO.stripe, x, 94, w, 4);
+  for (let y = 34; y < 80; y += 7) box(g, DOJO.stripe, x + 8, y, 3, 4);
+  if (belts) {
+    const colors = ['#1a1a1e', '#2f5fc4', '#7a2f8f', '#1a1a1e'];
+    colors.forEach((c, i) => box(g, c, x + 11 + i * 2, 34, 2, 60 + (i % 2) * 6));
+  }
+}
+
+function clubBanner(g, x) {
+  const w = 176, h = 24, y = 24;
+  box(g, DOJO.redDark, x - 1, y - 1, w + 2, h + 2);
+  box(g, DOJO.red, x, y, w, h);
+  box(g, DOJO.stripe, x + 8, y, 4, h);
+  // The club name between two white emblems.
+  for (const [cx, inner] of [[x + 34, DOJO.red], [x + 154, DOJO.stripe]]) {
+    box(g, DOJO.stripe, cx - 4, y + 6, 8, 12);
+    box(g, DOJO.stripe, cx - 6, y + 8, 12, 8);
+    box(g, DOJO.red, cx - 3, y + 8, 6, 8);
+    box(g, inner, cx - 1, y + 10, 2, 4);
+  }
+  drawText(g, 'SANSHIN KAN', x + w / 2 + 6, y + 7, { color: DOJO.stripe, scale: 2, align: 'center' });
+}
+
+function mirror(g, x, w, reflection) {
+  const y = 30, h = FLOOR_TOP - y - 8;
+  box(g, DOJO.mirrorFrame, x - 1, y - 1, w + 2, h + 2);
+  box(g, DOJO.mirror, x, y, w, h);
+  // Mats and a pillar seen in the glass.
+  box(g, DOJO.matRed, x, y + h - 14, w, 14);
+  box(g, DOJO.matGreen, x + 4, y + h - 10, w - 16, 5);
+  box(g, DOJO.red, x + reflection, y + 8, 10, h - 22);
+  box(g, DOJO.stripe, x + reflection, y + 44, 10, 2);
+  box(g, DOJO.stripe, x + reflection, y + 48, 10, 2);
+  for (let i = 0; i < 3; i++) box(g, DOJO.mirrorLight, x + w - 22 + i * 6, y + 4 + i * 3, 2, 12);
+}
+
+function heavyBag(g, x) {
+  box(g, DOJO.bag, x, 66, 13, 50);
+  box(g, DOJO.bagLight, x + 9, 66, 2, 50);
+  box(g, DOJO.red, x, 106, 13, 5);
+  box(g, DOJO.bag, x - 3, 116, 19, 7);
+}
+
+// Training dummy in a red chest protector beside the flag.
+function dummyAndFlag(g, x) {
+  box(g, DOJO.stripe, x - 28, 36, 20, 54);
+  box(g, DOJO.wallShade, x - 28, 36, 2, 54);
+  box(g, DOJO.red, x - 22, 46, 8, 8);
+  box(g, DOJO.skin, x + 2, 50, 8, 9);
+  box(g, DOJO.red, x - 2, 59, 16, 24);
+  box(g, DOJO.stripe, x + 2, 59, 8, 3);
+  box(g, DOJO.bag, x + 3, 83, 6, 28);
+  box(g, DOJO.bag, x - 3, 111, 18, 12);
+}
+
+// Weapon rack with staffs, dark wooden panelling, belt rank board and framed papers.
+function displayWall(g, x) {
+  for (let i = 0; i < 5; i++) framedPaper(g, x + i * 22, 16, 18, 13);
+  box(g, DOJO.wood, x - 6, 33, 132, 3);
+  box(g, DOJO.wood, x, 40, 4, 64);
+  box(g, DOJO.wood, x + 34, 40, 4, 64);
+  for (let y = 46; y < 100; y += 9) box(g, DOJO.staff, x - 4, y, 48, 2);
+  box(g, DOJO.wood, x + 52, 40, 72, 50);
+  box(g, DOJO.woodLight, x + 54, 42, 68, 46);
+  framedPaper(g, x + 57, 46, 16, 20);
+  framedPaper(g, x + 57, 70, 16, 14);
+  box(g, DOJO.frame, x + 78, 44, 16, 40);
+  ['#f4f1e6', '#e6c94a', '#e07b2c', '#3f8f4a', '#2f5fc4', '#7a4c30', '#1a1a1e'].forEach((c, i) => box(g, c, x + 80, 46 + i * 5, 12, 4));
+  framedPaper(g, x + 100, 46, 18, 16);
+  framedPaper(g, x + 100, 66, 18, 16);
+  box(g, DOJO.wallShade, x - 6, 104, 132, 2);
+}
+
+function paintDojo(g, from, to) {
+  box(g, DOJO.wall, from, 0, to - from, FLOOR_TOP);
+  box(g, DOJO.wallShade, from, FLOOR_TOP - 4, to - from, 4);
+
+  // Low white ceiling with ventilation ducts and fluorescent tubes.
+  box(g, DOJO.ceiling, from, 0, to - from, 11);
+  box(g, DOJO.ceilingShade, from, 10, to - from, 2);
+  box(g, DOJO.duct, from, 2, to - from, 4);
+  box(g, DOJO.ductLight, from, 2, to - from, 1);
+  for (let x = from + 14; x < to; x += 54) box(g, DOJO.ceilingShade, x, 1, 2, 6);
+  for (let x = from + 60; x < to; x += 150) {
+    box(g, DOJO.tubeGlow, x - 3, 11, 50, 3);
+    box(g, DOJO.tube, x, 8, 44, 3);
+  }
+
+  // The door from the street, seen from the inside.
+  box(g, STREET.woodDark, from + 3, 84, 24, FLOOR_TOP - 84);
+  box(g, STREET.wood, from + 5, 86, 20, FLOOR_TOP - 86);
+  box(g, STREET.woodDark, from + 15, 86, 1, FLOOR_TOP - 86);
+
+  displayWall(g, from + 34);
+  dummyAndFlag(g, from + 214);
+  clubBanner(g, from + 270);
+  for (let i = 0; i < 3; i++) framedPaper(g, from + 330 + i * 26, 14, 16, 8);
+  mirror(g, from + 470, 110, 60);
+  heavyBag(g, from + 610);
+  mirror(g, from + 650, 96, 20);
+  heavyBag(g, from + 766);
+  displayWall(g, to - 130);
+
+  // Mats: red base with blocks of sage-green tatami.
+  box(g, DOJO.matRed, from, FLOOR_TOP, to - from, VIEW_H - FLOOR_TOP);
+  for (let y = FLOOR_TOP + 1; y < VIEW_H; y += 2) {
+    for (let x = from + (y % 4 === 1 ? 0 : 2); x < to; x += 4) box(g, DOJO.matRedDark, x, y, 1, 1);
+  }
+  const rows = [[FLOOR_TOP + 5, 19, 0], [FLOOR_TOP + 30, 26, 74]];
+  for (const [y, h, offset] of rows) {
+    for (let x = from - 60 + offset; x < to; x += 212) {
+      box(g, DOJO.matGreen, x, y, 148, h);
+      box(g, DOJO.matGreenDark, x + 74, y, 1, h);
+      box(g, DOJO.matGreenDark, x, y + h - 1, 148, 1);
     }
-    g.fillRect(x + 4, 70, 8, 1);
-    g.fillRect(x + 6, 73, 4, 1);
-    g.fillRect(x - 1, 80, 18, 2);
   }
 
-  // Dojo name boards.
-  for (const cx of SIGN_CENTERS) {
-    const x = cx - SIGN_W / 2;
-    g.fillStyle = BG.signFrame; g.fillRect(x - 2, SIGN_Y - 2, SIGN_W + 4, SIGN_H + 4);
-    g.fillStyle = BG.signWood; g.fillRect(x, SIGN_Y, SIGN_W, SIGN_H);
-    g.fillStyle = BG.signWoodLight;
-    for (let i = 0; i < SIGN_W; i += 7) g.fillRect(x + i, SIGN_Y, 1, SIGN_H); // wood grain
-    g.fillStyle = BG.signFrame;
-    g.fillRect(cx - 40, 28, 2, SIGN_Y - 30); g.fillRect(cx + 38, 28, 2, SIGN_Y - 30); // hanging cords
-    drawText(g, SIGN_TEXT, cx, SIGN_Y + 8, { color: BG.signText, scale: 2, align: 'center', shadow: BG.signTextShadow });
-  }
+  // Pillars stand out on the floor, so they go on top of the wall and the mats.
+  pillar(g, from + 150, false);
+  pillar(g, from + 440, true);
+  pillar(g, from + 730, false);
+}
 
-  // Wall rail and base board.
-  g.fillStyle = BG.rail; g.fillRect(0, 124, HALL_WIDTH, 4);
-  g.fillStyle = BG.railLight; g.fillRect(0, 124, HALL_WIDTH, 1);
-  g.fillStyle = BG.wallShade; g.fillRect(0, 128, HALL_WIDTH, 14);
-  g.fillStyle = BG.baseboard; g.fillRect(0, 142, HALL_WIDTH, 8);
+const PAINTERS = { street: paintStreet, dojo: paintDojo };
 
-  // Pillars.
-  for (let x = 0; x <= HALL_WIDTH; x += 192) {
-    g.fillStyle = BG.pillar; g.fillRect(x - 5, 18, 10, 132);
-    g.fillStyle = BG.pillarLight; g.fillRect(x - 5, 18, 2, 132);
-    g.fillStyle = BG.ceilingTrim; g.fillRect(x - 7, 18, 14, 4);
-  }
-
-  // Lanterns on alternate pillars.
-  for (let x = 96; x < HALL_WIDTH; x += 192) {
-    g.fillStyle = BG.lanternFrame; g.fillRect(x - 1, 22, 2, 6);
-    g.fillRect(x - 6, 28, 12, 1);
-    g.fillStyle = BG.lantern; g.fillRect(x - 5, 29, 10, 12);
-    g.fillStyle = BG.lanternGlow; g.fillRect(x - 3, 31, 6, 8);
-    g.fillStyle = BG.lanternFrame; g.fillRect(x - 6, 41, 12, 1);
-    g.fillRect(x - 5, 34, 10, 1); g.fillRect(x - 5, 37, 10, 1);
-  }
-
-  // Wooden floor planks.
-  for (let y = GROUND_Y; y < VIEW_H; y += 6) {
-    g.fillStyle = ((y - GROUND_Y) / 6) % 2 === 0 ? BG.floorA : BG.floorB;
-    g.fillRect(0, y, HALL_WIDTH, 6);
-    g.fillStyle = BG.floorSeam;
-    g.fillRect(0, y, HALL_WIDTH, 1);
-    const offset = ((y - GROUND_Y) / 6) % 2 === 0 ? 0 : 24;
-    for (let x = offset; x < HALL_WIDTH; x += 48) g.fillRect(x, y, 1, 6);
-  }
-  g.fillStyle = BG.baseboard; g.fillRect(0, GROUND_Y, HALL_WIDTH, 1);
-
-  // Training posts near both ends of the hall.
-  for (const x of [34, HALL_WIDTH - 34]) {
-    g.fillStyle = BG.pillar; g.fillRect(x - 2, 112, 4, 38);
-    g.fillStyle = '#b48c5a'; g.fillRect(x - 3, 108, 6, 12);
-    g.fillStyle = '#8f6b3f'; g.fillRect(x - 3, 112, 6, 1); g.fillRect(x - 3, 116, 6, 1);
-  }
+// Pre-render the whole level once; the camera just slides across it.
+function buildWorld(createCanvas, zones) {
+  const c = createCanvas(WORLD_WIDTH, VIEW_H);
+  const g = c.getContext('2d');
+  for (const zone of zones) inZone(g, zone, (from, to) => PAINTERS[zone.art](g, from, to, zone));
   return c;
 }
 
@@ -119,7 +326,7 @@ export class Renderer {
     this.createCanvas = createCanvas || ((w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; });
     this.buffer = this.createCanvas(VIEW_W, VIEW_H);
     this.bctx = this.buffer.getContext('2d');
-    this.hall = buildHall(this.createCanvas);
+    this.world = buildWorld(this.createCanvas, LEVEL_1.zones);
     this.reducedMotion = reducedMotion;
     this.scale = 1;
   }
@@ -139,22 +346,37 @@ export class Renderer {
     const camX = Math.round(game.camX);
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.imageSmoothingEnabled = false;
-    g.drawImage(this.hall, -camX, 0);
+    g.drawImage(this.world, -camX, 0);
 
     g.save();
     g.translate(-camX, 0);
 
-    const fighters = [...game.enemies, game.player];
+    // The door stands open while the player goes through it.
+    const zone = game.zone;
+    if (game.transition && game.transition.phase !== 'fadeIn' && zone?.exit) {
+      const { x, width } = zone.exit;
+      box(g, '#14100e', x - width / 2, DOOR_TOP, width, FLOOR_TOP - DOOR_TOP);
+    }
+
+    const fighters = [...game.enemies, game.player].filter((f) => !f.remove);
     // Shadows stay on the floor even when a fighter jumps.
     g.fillStyle = COLORS.shadow;
     for (const f of fighters) {
-      if (f.remove) continue;
       const w = f.dead && f.deadTimer > 0.25 ? 30 : 14;
-      g.fillRect(Math.round(f.x - w / 2), GROUND_Y - 1, w, 2);
+      g.fillRect(Math.round(f.x - w / 2), Math.round(screenY(GROUND_Y, f.z)) - 1, w, 2);
     }
 
-    for (const f of game.enemies) this.drawOne(g, f, time);
-    this.drawOne(g, game.player, time, game.ending === 'victory');
+    // Whoever stands nearer the viewer is drawn last, on top.
+    fighters.sort((a, b) => a.z - b.z);
+    for (const f of fighters) this.drawOne(g, f, time, f === game.player && game.ending === 'victory');
+
+    // Shuriken in flight, with a floor shadow that shows which depth lane they fly along.
+    const spin = this.reducedMotion ? 0 : Math.floor(time * 16) % 2;
+    for (const s of game.projectiles) {
+      g.fillStyle = COLORS.shadow;
+      g.fillRect(Math.round(s.x) - 3, Math.round(screenY(GROUND_Y, s.z)) - 1, 6, 2);
+      drawShuriken(g, s.x, screenY(s.y, s.z) - 33, spin);
+    }
 
     for (const p of game.particles) {
       g.fillStyle = p.color;
@@ -163,21 +385,30 @@ export class Renderer {
     for (const t of game.texts) {
       drawText(g, t.text, Math.round(t.x), Math.round(t.y), { color: t.color, scale: t.scale || 1, align: 'center', shadow: '#1a1210' });
     }
+    // An arrow over the door shows the way in once the street has been won.
+    const exit = game.openExit;
+    if (exit && !game.transition && !game.ending && (this.reducedMotion || Math.floor(time * 3) % 2 === 0)) this.drawDoorArrow(g, exit.x);
     g.restore();
+
+    if (game.fade > 0) {
+      g.fillStyle = `rgba(0,0,0,${game.fade})`;
+      g.fillRect(0, 0, VIEW_W, VIEW_H);
+    }
 
     if (game.banner) {
       const a = Math.min(1, game.banner.life * 2);
       g.globalAlpha = a;
       g.fillStyle = 'rgba(20,12,8,0.75)';
-      g.fillRect(0, 70, VIEW_W, 26);
-      drawText(g, game.banner.text, VIEW_W / 2, 76, { color: '#ffd166', scale: 2, align: 'center', shadow: '#5a1e12' });
+      g.fillRect(0, 44, VIEW_W, 26);
+      drawText(g, game.banner.text, VIEW_W / 2, 50, { color: '#ffd166', scale: 2, align: 'center', shadow: '#5a1e12' });
       g.globalAlpha = 1;
     }
     if (game.state === 'playing' && game.elapsed < 2.2) {
       g.globalAlpha = game.elapsed < 1.8 ? 1 : (2.2 - game.elapsed) / 0.4;
-      drawText(g, 'FIGHT!', VIEW_W / 2, 86, { color: '#ffffff', scale: 3, align: 'center', shadow: '#5a1e12' });
+      drawText(g, 'FIGHT!', VIEW_W / 2, 78, { color: '#ffffff', scale: 3, align: 'center', shadow: '#5a1e12' });
       g.globalAlpha = 1;
     }
+    if (game.showGo && (this.reducedMotion || Math.floor(time * 3) % 2 === 0)) this.drawGo(g);
 
     // Blit to the visible canvas (with optional screen shake).
     const ctx = this.ctx;
@@ -193,8 +424,25 @@ export class Renderer {
     ctx.drawImage(this.buffer, sx, sy, this.display.width, this.display.height);
   }
 
+  // A pixel arrow pointing down at the door.
+  drawDoorArrow(g, x) {
+    const top = 44, cx = Math.round(x);
+    box(g, '#5a1e12', cx - 3, top, 8, 12);
+    for (let i = 0; i < 8; i++) box(g, '#5a1e12', cx - 8 + i, top + 11 + i, 18 - i * 2, 2);
+    box(g, '#ffd166', cx - 2, top, 5, 12);
+    for (let i = 0; i < 7; i++) box(g, '#ffd166', cx - 7 + i, top + 11 + i, 15 - i * 2, 1);
+  }
+
+  // "GO" with a pixel arrow pointing the way forward.
+  drawGo(g) {
+    drawText(g, 'GO', GO_X, GO_Y, { color: '#ffd166', scale: 3, shadow: '#5a1e12' });
+    const ax = GO_X + 26, ay = GO_Y + 7;
+    g.fillStyle = '#5a1e12'; g.fillRect(ax + 1, ay - 1, 10, 4);
+    g.fillStyle = '#ffd166'; g.fillRect(ax, ay - 2, 10, 4);
+    for (let i = 0; i < 6; i++) g.fillRect(ax + 9 + i, ay - 7 + i, 1, 14 - i * 2);
+  }
+
   drawOne(g, f, time, victory = false) {
-    if (f.remove) return;
     let alpha = 1;
     // Beaten enemies fade out; the hero stays on the floor so the knockdown reads on the game-over screen.
     if (f.dead && f.deadTimer > 0.5 && f.kind !== 'player') alpha = Math.max(0, 1 - (f.deadTimer - 0.5) / 0.4);
@@ -206,10 +454,11 @@ export class Renderer {
     // Kiai aura: a warm outline that flickers (steady when reduced motion is preferred).
     let outline = null;
     if (f.kiaiActive) outline = this.reducedMotion || Math.floor(time * 12) % 3 !== 0 ? COLORS.kiai : '#ffe9b0';
+    const y = screenY(f.y, f.z);
     if (f.kind === 'player' && this.hero && this.hero.ready) {
-      this.hero.draw(g, heroFrameIndex(f, { victory }), f.x, f.y, f.facing, { alpha, flash: flash ? '#fff' : null, outline });
+      this.hero.draw(g, heroFrameIndex(f, { victory }), f.x, y, f.facing, { alpha, flash: flash ? '#fff' : null, outline });
       return;
     }
-    drawFighter(g, f, { flash, alpha, outline });
+    drawFighter(g, f, { flash, alpha, outline, y });
   }
 }

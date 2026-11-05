@@ -1,18 +1,20 @@
 // Fighters: the shared Fighter base, the Player (input-driven) and Enemy (AI-driven).
 // Movement, timers and state machines live here; drawing lives in sprites.js.
 import { ATTACKS, attackPhase, attackDuration } from './combat.js';
-import { GROUND_Y, HALL_WIDTH, PHYSICS, PLAYER, KIAI } from './constants.js';
+import { GROUND_Y, WORLD_WIDTH, DEPTH, START_Z, DEPTH_REACH, PHYSICS, PLAYER, KIAI } from './constants.js';
 
 let nextId = 1;
 
 export class Fighter {
-  constructor({ x, facing = 1, hp = 100, kind = 'fighter' }) {
+  constructor({ x, z = START_Z, facing = 1, hp = 100, kind = 'fighter' }) {
     this.id = nextId++;
     this.kind = kind;
     this.x = x;
-    this.y = GROUND_Y;      // feet position
+    this.y = GROUND_Y;      // feet height: GROUND_Y when standing, less while airborne
+    this.z = z;             // depth on the floor: 0 = back wall, DEPTH = nearest the viewer
     this.vx = 0;
     this.vy = 0;
+    this.vz = 0;
     this.facing = facing;   // 1 = right, -1 = left
     this.hp = hp;
     this.maxHp = hp;
@@ -46,7 +48,8 @@ export class Fighter {
     this.state = 'attack';
     this.stateTime = 0;
     this.blocking = false;
-    this.vx = 0;
+    // Airborne fighters keep their momentum so a jump kick carries forward.
+    if (this.grounded) { this.vx = 0; this.vz = 0; }
   }
 
   // Apply damage/knockback from a resolved hit. Returns true if damage was taken.
@@ -105,6 +108,7 @@ export class Fighter {
     if (Math.abs(this.knockVx) < 1) this.knockVx = 0;
 
     this.x += totalVx * dt;
+    this.z = Math.min(DEPTH, Math.max(0, this.z + this.vz * dt));
     this.vy += PHYSICS.gravity * dt;
     this.y += this.vy * dt;
     if (this.y >= GROUND_Y) {
@@ -128,6 +132,8 @@ export class Player extends Fighter {
     super({ x, facing: 1, hp: PLAYER.maxHp, kind: 'player' });
     this.kiaiTimer = 0;     // seconds of Kiai mode left
     this.kiaiCooldown = 0;  // seconds until Kiai can be used again
+    this.minX = 10;         // walkable range; the game narrows it to what the camera shows
+    this.maxX = WORLD_WIDTH - 10;
   }
 
   get kiaiActive() {
@@ -163,49 +169,56 @@ export class Player extends Fighter {
     if (this.kiaiCooldown > 0) this.kiaiCooldown = Math.max(0, this.kiaiCooldown - dt);
   }
 
-  // `input` is a snapshot: { left, right, down, jump, punch, kick, block } where
+  // `input` is a snapshot: { left, right, up, down, duck, jump, punch, kick, block } where
   // jump/punch/kick are "just pressed" edges and the rest are "held".
   update(dt, input) {
     this.tickKiai(dt);
     if (this.dead) {
       this.vx = 0;
-      this.integrate(dt, 10, HALL_WIDTH - 10);
+      this.vz = 0;
+      this.integrate(dt, this.minX, this.maxX);
       return;
     }
     if (input.kiai) this.activateKiai();
     if (this.state === 'hurt') {
       this.vx = 0;
-      this.integrate(dt, 10, HALL_WIDTH - 10);
+      this.vz = 0;
+      this.integrate(dt, this.minX, this.maxX);
       return;
     }
 
     if (this.attack) {
       // Committed to the attack; can still drift in the air.
-      if (this.grounded) this.vx = 0;
-      this.integrate(dt, 10, HALL_WIDTH - 10);
+      if (this.grounded) { this.vx = 0; this.vz = 0; }
+      this.integrate(dt, this.minX, this.maxX);
       return;
     }
 
     if (this.grounded) {
       this.blocking = Boolean(input.block);
-      this.crouching = !this.blocking && Boolean(input.down);
+      this.crouching = !this.blocking && Boolean(input.duck);
     }
 
     if (this.blocking) {
       this.vx = 0;
+      this.vz = 0;
       this.state = 'block';
     } else if (this.crouching) {
       this.vx = 0;
+      this.vz = 0;
       this.state = 'crouch';
       if (input.punch) this.startAttack('crouchPunch');
       else if (input.kick) this.startAttack('crouchKick');
     } else {
       const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+      const dirZ = (input.down ? 1 : 0) - (input.up ? 1 : 0);
       if (dir !== 0) this.facing = dir;
       this.vx = dir * PHYSICS.playerSpeed;
+      this.vz = dirZ * PHYSICS.playerDepthSpeed;
       if (this.grounded) {
-        this.state = dir !== 0 ? 'walk' : 'idle';
-        if (dir !== 0) this.walkCycle += dt * 9; else this.walkCycle = 0;
+        const moving = dir !== 0 || dirZ !== 0;
+        this.state = moving ? 'walk' : 'idle';
+        if (moving) this.walkCycle += dt * 9; else this.walkCycle = 0;
         if (input.jump) {
           this.vy = PHYSICS.playerJumpVelocity;
           this.grounded = false;
@@ -218,29 +231,42 @@ export class Player extends Fighter {
       if (input.punch) this.startAttack('punch');
       else if (input.kick) this.startAttack('kick');
     }
-    this.integrate(dt, 10, HALL_WIDTH - 10);
+    this.integrate(dt, this.minX, this.maxX);
   }
 }
 
 // Enemy archetypes. Each one has a distinct, readable behaviour:
 //  - striker: walks straight at you and throws a mid punch. Fragile.
 //  - kicker: keeps distance, throws a high kick (duck under it!), then steps back.
+//  - thrower: hangs back, lines up with you and throws shuriken. Weak if you catch it.
 //  - boss: faster, mixes punches and high kicks, and sometimes blocks your attacks.
 export const ENEMY_TYPES = {
-  striker: { hp: 10, speed: 48, range: 20, keepAway: 0, attacks: ['enemyPunch'], cooldown: [0.5, 1.0], retreatTime: 0, score: 100, canBlock: false, boss: false, label: 'Striker' },
+  striker: { hp: 30, speed: 48, range: 20, keepAway: 0, attacks: ['enemyPunch'], cooldown: [0.5, 1.0], retreatTime: 0, score: 100, canBlock: false, boss: false, label: 'Striker' },
   // Kicker mixes a high kick (duck it) with a low sweep (jump it); the wind-ups look different.
-  kicker:  { hp: 20, speed: 40, range: 27, keepAway: 12, attacks: ['enemyHighKick', 'enemyLowSweep'], attackWeights: [0.6, 0.4], cooldown: [0.7, 1.2], retreatTime: 0.5, score: 200, canBlock: false, boss: false, label: 'Kicker' },
+  kicker:  { hp: 50, speed: 40, range: 27, keepAway: 12, attacks: ['enemyHighKick', 'enemyLowSweep'], attackWeights: [0.6, 0.4], cooldown: [0.7, 1.2], retreatTime: 0.5, score: 200, canBlock: false, boss: false, label: 'Kicker' },
+  thrower: { hp: 30, speed: 44, range: 120, keepAway: 60, attacks: ['enemyThrow'], cooldown: [1.5, 2.3], retreatTime: 0, score: 250, canBlock: false, boss: false, ranged: true, label: 'Thrower' },
   // The Master blocks, counters right after a block, and speeds up below 40% health.
-  boss:    { hp: 120, speed: 62, range: 25, keepAway: 8, attacks: ['bossPunch', 'bossKick'], cooldown: [0.4, 0.75], retreatTime: 0.25, score: 1000, canBlock: true, blockChance: 0.65, counters: true, rageBelow: 0.4, boss: true, label: 'Master Kage' },
+  boss:    { hp: 180, speed: 62, range: 25, keepAway: 8, attacks: ['bossPunch', 'bossKick'], cooldown: [0.4, 0.75], retreatTime: 0.25, score: 1000, canBlock: true, blockChance: 0.65, counters: true, rageBelow: 0.4, boss: true, label: 'Master Kage' },
 };
 
+// Enemies line up a little inside the reach so a small player step does not break their attack.
+const LINE_UP_Z = DEPTH_REACH - 2;
+// Depth speed relative to walking speed, matching the player's narrower floor movement.
+const DEPTH_SPEED_FACTOR = 0.7;
+// Beyond this distance an enemy walks its own lane, so groups arrive spread out over the floor.
+const LANE_DISTANCE = 50;
+
 export class Enemy extends Fighter {
-  constructor(type, x, facing, rng = Math.random) {
+  constructor(type, x, facing, rng = Math.random, z = START_Z) {
     const cfg = ENEMY_TYPES[type];
-    super({ x, facing, hp: cfg.hp, kind: type });
+    super({ x, z, facing, hp: cfg.hp, kind: type });
     this.cfg = cfg;
     this.rng = rng;
     this.cooldown = 0.4 + rng() * 0.4; // brief pause after entering
+    this.lane = (rng() - 0.5) * 24;    // depth offset kept while still far from the player
+    this.enterDir = 0;                 // non-zero while walking in from outside the screen
+    this.minX = -40;                   // walkable range; the game narrows it to what the camera shows
+    this.maxX = WORLD_WIDTH + 40;
     this.retreatTimer = 0;
     this.blockTimer = 0;
     this.blockCooldown = 0;
@@ -264,33 +290,55 @@ export class Enemy extends Fighter {
   }
 
   update(dt, player) {
-    const minX = -40, maxX = HALL_WIDTH + 40;
+    const { minX, maxX } = this;
     if (this.dead || this.state === 'hurt') {
       this.vx = 0;
+      this.vz = 0;
       this.integrate(dt, minX, maxX);
       return;
     }
     if (this.attack) {
       this.vx = 0;
+      this.vz = 0;
+      // A ranged attack lets go once, the moment it turns active. Getting hit first cancels it.
+      if (ATTACKS[this.attack.name].ranged && this.attackPhase === 'active' && !this.attack.released) {
+        this.attack.released = true;
+        this.lastEvent = 'throw';
+      }
+      this.integrate(dt, minX, maxX);
+      return;
+    }
+
+    // Walk onto the screen first: nobody may fight from where the player cannot reach them.
+    if (this.enterDir) {
+      this.facing = this.enterDir;
+      this.vx = this.enterDir * this.cfg.speed;
+      this.vz = 0;
+      this.state = 'walk';
+      this.walkCycle += dt * 8;
       this.integrate(dt, minX, maxX);
       return;
     }
 
     const dx = player.x - this.x;
     const dist = Math.abs(dx);
+    const dz = player.z - this.z;
+    const absDz = Math.abs(dz);
     const cfg = this.cfg;
     this.facing = dx >= 0 ? 1 : -1;
     this.vx = 0;
+    this.vz = 0;
 
     const enraged = cfg.rageBelow ? this.hp / this.maxHp <= cfg.rageBelow : false;
     const speed = enraged ? cfg.speed + 12 : cfg.speed;
+    const depthSpeed = speed * DEPTH_SPEED_FACTOR;
 
     if (this.blockTimer > 0) {
       this.blockTimer -= dt;
       this.blocking = this.blockTimer > 0;
       this.state = this.blocking ? 'block' : 'idle';
       // Guard dropped: a counter-attacking boss strikes straight away if you are still close.
-      if (!this.blocking && cfg.counters && dist <= cfg.range + 4 && !player.dead) this.cooldown = 0;
+      if (!this.blocking && cfg.counters && dist <= cfg.range + 4 && absDz <= DEPTH_REACH && !player.dead) this.cooldown = 0;
       this.integrate(dt, minX, maxX);
       return;
     }
@@ -299,7 +347,7 @@ export class Enemy extends Fighter {
 
     // The boss reads the player's wind-up and sometimes raises a guard.
     if (cfg.canBlock && this.blockCooldown <= 0 && player.attack && player.attackPhase === 'startup'
-        && dist < 34 && !player.dead && this.rng() < (cfg.blockChance || 0.5)) {
+        && dist < 34 && absDz <= DEPTH_REACH && !player.dead && this.rng() < (cfg.blockChance || 0.5)) {
       this.blockTimer = 0.5;
       this.blockCooldown = 1.6;
       this.blocking = true;
@@ -319,17 +367,23 @@ export class Enemy extends Fighter {
         this.vx = -this.facing * speed * 0.6;
         this.state = 'walk';
         this.walkCycle += dt * 8;
-      } else {
-        this.state = 'idle';
-      }
-    } else if (dist > cfg.range || player.dead) {
-      if (player.dead) {
-        this.state = 'idle';
-      } else {
-        this.vx = this.facing * speed;
+      } else if (absDz > LINE_UP_Z && (cfg.ranged || dist < LANE_DISTANCE)) {
+        this.vz = Math.sign(dz) * depthSpeed;
         this.state = 'walk';
         this.walkCycle += dt * 8;
+      } else {
+        this.state = 'idle';
       }
+    } else if (player.dead) {
+      this.state = 'idle';
+    } else if (dist > cfg.range || absDz > LINE_UP_Z) {
+      if (dist > cfg.range) this.vx = this.facing * speed;
+      const keepLane = dist > LANE_DISTANCE && !cfg.ranged;
+      const targetZ = keepLane ? Math.min(DEPTH, Math.max(0, player.z + this.lane)) : player.z;
+      const toTarget = targetZ - this.z;
+      if (Math.abs(toTarget) > 1) this.vz = Math.sign(toTarget) * depthSpeed;
+      this.state = 'walk';
+      this.walkCycle += dt * 8;
     } else {
       const name = this.pickAttack();
       this.startAttack(name);
@@ -341,8 +395,10 @@ export class Enemy extends Fighter {
 }
 
 // Gently push fighters apart so they do not stand inside each other.
+// Fighters on different parts of the floor can pass each other freely.
 export function separate(a, b, minDist) {
   if (a.dead || b.dead || !a.grounded || !b.grounded) return;
+  if (Math.abs(a.z - b.z) > DEPTH_REACH) return;
   const dx = b.x - a.x;
   const overlap = minDist - Math.abs(dx);
   if (overlap <= 0) return;

@@ -1,20 +1,35 @@
-// Central tuning values for Karate Challenge.
+// Central tuning values for Master Tamás: Siege of Sanshin.
 // All distances are in "world pixels" at the game's native low resolution.
 
 export const VIEW_W = 320;       // native canvas width (scaled up on screen)
 export const VIEW_H = 180;       // native canvas height
-export const GROUND_Y = 150;     // y position of the floor line
-export const HALL_WIDTH = 1100;  // total length of the training hall
+export const WORLD_WIDTH = 1920; // total length of the level
 export const STEP = 1 / 60;      // fixed physics step in seconds
+
+// A fighter has three coordinates: x along the level, z into the floor (0 = back wall,
+// DEPTH = nearest the viewer) and y for height. y equals GROUND_Y when standing and shrinks
+// during a jump, so it is NOT a screen position: use screenY() to draw.
+export const GROUND_Y = 150;     // y of a fighter standing on the floor
+export const FLOOR_TOP = 122;    // screen y where the floor meets the back wall
+export const DEPTH = 48;         // depth of the walkable floor
+export const START_Z = DEPTH / 2;
+export const DEPTH_REACH = 7;    // attacks connect when fighters are this close in depth
+
+export function screenY(y, z) {
+  return y - GROUND_Y + FLOOR_TOP + z;
+}
 
 export const PHYSICS = {
   gravity: 560,
   playerSpeed: 72,
+  playerDepthSpeed: 50,
   playerJumpVelocity: -205,
   hurtTime: 0.35,
   invulnerableTime: 0.7,
   deathLingerTime: 0.9,
 };
+
+export const SHURIKEN_SPEED = 140;
 
 export const PLAYER = {
   maxHp: 100,
@@ -62,5 +77,5 @@ export const SCORE = {
   hit: 10,
   healthBonusPerPoint: 10,
   timeBonusPerSecond: 20,
-  timeBonusLimit: 90,
+  timeBonusLimit: 120,
 };

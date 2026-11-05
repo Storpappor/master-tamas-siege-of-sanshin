@@ -23,7 +23,7 @@
           <span class="kg-hud__small" data-hud="health-text">100 / 100</span>
         </div>
         <div class="kg-hud__stat"><span class="kg-hud__label">Score</span><strong data-hud="score">0</strong></div>
-        <div class="kg-hud__stat"><span class="kg-hud__label">Enemies</span><strong data-hud="enemies">27</strong></div>
+        <div class="kg-hud__stat"><span class="kg-hud__label">Enemies</span><strong data-hud="enemies">22</strong></div>
         <div class="kg-hud__stat" data-hud="combo-wrap" hidden><span class="kg-hud__label">Combo</span><strong data-hud="combo">x1</strong></div>
         <div class="kg-hud__kiai">
           <span class="kg-hud__label">Kiai</span>
@@ -58,13 +58,13 @@
         <section class="kg-overlay" data-overlay="start">
           <h1 class="kg-title">Master Tamás</h1>
           <p class="kg-title__sub">Siege of Sanshin</p>
-          <p class="kg-sub">Defend the dojo. Opponents enter from both sides.</p>
+          <p class="kg-sub">Fight your way across Södermalm and into the dojo.</p>
           <div class="kg-controls">
             <div>
               <h2>Keyboard</h2>
               <ul>
-                <li><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> move</li>
-                <li><kbd>↓</kbd> or <kbd>S</kbd> crouch</li>
+                <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> or <kbd>WASD</kbd> move</li>
+                <li><kbd>C</kbd> duck</li>
                 <li><kbd>Space</kbd> jump</li>
                 <li><kbd>J</kbd> punch &nbsp; <kbd>K</kbd> kick &nbsp; <kbd>L</kbd> block</li>
                 <li><kbd>I</kbd> Kiai: double damage for 4 s</li>
@@ -78,8 +78,9 @@
                 <li>Hold block to absorb a strike.</li>
                 <li>Kiai breaks guards but needs time to recharge.</li>
                 <li>Land hits without getting hit to build a combo.</li>
-                <li>Jump over opponents if you get surrounded.</li>
-                <li>Master Kage waits at the end.</li>
+                <li>Step up or down to line up a strike, or to slip out of one.</li>
+                <li>Clear each fight, then follow the GO arrow.</li>
+                <li>Block, duck or sidestep throwing stars.</li>
               </ul>
             </div>
           </div>
@@ -114,13 +115,15 @@
 
       <div class="kg-touch" data-touch hidden aria-label="Touch controls">
         <div class="kg-touch__pad">
-          <button type="button" class="kg-touch__btn" data-btn="left" aria-label="Move left">◀</button>
-          <button type="button" class="kg-touch__btn" data-btn="down" aria-label="Crouch">▼</button>
-          <button type="button" class="kg-touch__btn" data-btn="right" aria-label="Move right">▶</button>
+          <button type="button" class="kg-touch__btn kg-touch__btn--up" data-btn="up" aria-label="Move up">▲</button>
+          <button type="button" class="kg-touch__btn kg-touch__btn--left" data-btn="left" aria-label="Move left">◀</button>
+          <button type="button" class="kg-touch__btn kg-touch__btn--down" data-btn="down" aria-label="Move down">▼</button>
+          <button type="button" class="kg-touch__btn kg-touch__btn--right" data-btn="right" aria-label="Move right">▶</button>
         </div>
         <div class="kg-touch__actions">
           <button type="button" class="kg-touch__btn kg-touch__btn--kiai" data-btn="kiai" aria-label="Kiai">Kiai</button>
           <button type="button" class="kg-touch__btn kg-touch__btn--jump" data-btn="jump" aria-label="Jump">Jump</button>
+          <button type="button" class="kg-touch__btn kg-touch__btn--duck" data-btn="duck" aria-label="Duck">Duck</button>
           <button type="button" class="kg-touch__btn kg-touch__btn--block" data-btn="block" aria-label="Block">Block</button>
           <button type="button" class="kg-touch__btn kg-touch__btn--punch" data-btn="punch" aria-label="Punch">Punch</button>
           <button type="button" class="kg-touch__btn kg-touch__btn--kick" data-btn="kick" aria-label="Kick">Kick</button>

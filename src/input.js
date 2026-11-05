@@ -3,8 +3,10 @@
 const KEY_MAP = {
   ArrowLeft: 'left', KeyA: 'left',
   ArrowRight: 'right', KeyD: 'right',
+  ArrowUp: 'up', KeyW: 'up',
   ArrowDown: 'down', KeyS: 'down',
-  ArrowUp: 'jump', KeyW: 'jump', Space: 'jump',
+  KeyC: 'duck',
+  Space: 'jump',
   KeyJ: 'punch',
   KeyK: 'kick',
   KeyL: 'block',
@@ -13,7 +15,7 @@ const KEY_MAP = {
 // Fallback by key name for environments that do not report `code` (some virtual keyboards).
 const KEY_NAME_MAP = {
   ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowDown: 'down', s: 'down',
-  ArrowUp: 'jump', w: 'jump', ' ': 'jump', j: 'punch', k: 'kick', l: 'block', i: 'kiai',
+  ArrowUp: 'up', w: 'up', c: 'duck', ' ': 'jump', j: 'punch', k: 'kick', l: 'block', i: 'kiai',
 };
 const EDGE_ACTIONS = new Set(['jump', 'punch', 'kick', 'kiai']);
 
@@ -24,7 +26,7 @@ function actionFor(e) {
 
 export class Input {
   constructor() {
-    this.held = { left: false, right: false, down: false, block: false, jump: false, punch: false, kick: false, kiai: false };
+    this.held = { left: false, right: false, up: false, down: false, duck: false, block: false, jump: false, punch: false, kick: false, kiai: false };
     this.pressed = { jump: false, punch: false, kick: false, kiai: false };
     this.active = false;          // when false, game keys are not captured (page scrolls normally)
     this.onPause = null;
