@@ -7,6 +7,7 @@ import { Game } from './game.js';
 import { createUi } from './ui.js';
 import { HeroSprite, SpriteSheet } from './heroSprite.js';
 import { ART_SCALE } from './artScale.js';
+import { BACKGROUNDS, loadBackground } from './background.js';
 
 const SPRITE_URL = new URL('../assets/tamas-hero-spritesheet.png', import.meta.url).href;
 const HERO_SHEET_URL = new URL('../assets/sprites/tamas.json', import.meta.url).href;
@@ -39,6 +40,11 @@ export function boot(root) {
   const hero = new HeroSprite({ artScale: ART_SCALE });
   const heroSheet = new SpriteSheet();
   const renderer = new Renderer(canvas, { reducedMotion, hero, heroSheet });
+  // The hand-drawn dojo is optional: until it loads, and if it fails or is the wrong size, the
+  // renderer keeps the procedural room. Installing it only rebuilds the pre-rendered world once.
+  loadBackground(new URL(BACKGROUNDS.dojo, import.meta.url).href)
+    .then((img) => { if (renderer.setBackgrounds({ dojo: img })) root.karateBackgrounds = { dojo: img }; })
+    .catch((err) => console.warn(`${err.message}; keeping the procedural dojo.`));
   // The production sheet is optional: any state it lacks is drawn from the fallback sheet.
   heroSheet.load(HERO_SHEET_URL).catch((err) => console.warn('Production hero sheet not loaded; using fallback art.', err));
   const game = new Game({ input, audio, ui, reducedMotion });
