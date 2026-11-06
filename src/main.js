@@ -6,6 +6,7 @@ import { Renderer } from './renderer.js';
 import { Game } from './game.js';
 import { createUi } from './ui.js';
 import { HeroSprite } from './heroSprite.js';
+import { ART_SCALE } from './artScale.js';
 
 const SPRITE_URL = new URL('../assets/tamas-hero-spritesheet.png', import.meta.url).href;
 
@@ -34,7 +35,7 @@ export function boot(root) {
   const audio = new Sfx({ enabled: soundOn });
   const input = new Input();
   const ui = createUi(root);
-  const hero = new HeroSprite();
+  const hero = new HeroSprite({ artScale: ART_SCALE });
   const renderer = new Renderer(canvas, { reducedMotion, hero });
   const game = new Game({ input, audio, ui, reducedMotion });
 
@@ -130,6 +131,7 @@ export function boot(root) {
   playIntro(() => ui.showOverlay('start'));
 
   root.karateHero = hero; // exposed for debugging alongside root.karateGame
+  root.karateRenderer = renderer;
   return game;
 }
 

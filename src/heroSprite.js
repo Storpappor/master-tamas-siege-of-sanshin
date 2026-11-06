@@ -10,7 +10,7 @@ import { poseFor } from './sprites.js';
 export const HERO_COLUMNS = 4;
 export const HERO_ROWS = 2;
 export const HERO_FRAMES = ['idle', 'step', 'punch', 'kick', 'block', 'hit', 'knockdown', 'victory'];
-export const HERO_HEIGHT = 40; // world pixels for the idle frame; matches the hand-drawn fighters
+export const HERO_HEIGHT = 40; // game units for the idle frame; matches the hand-drawn fighters
 
 // Pure function so it can be unit tested without a browser.
 export function detectFrames(alpha, width, height, { columns = HERO_COLUMNS, rows = HERO_ROWS, threshold = 20, mergeGap = 12 } = {}) {
@@ -87,7 +87,10 @@ export function heroFrameIndex(fighter, { victory = false } = {}) {
 }
 
 export class HeroSprite {
-  constructor() {
+  // `artScale` = art pixels per game unit; frames are pre-scaled so the idle frame is
+  // HERO_HEIGHT * artScale pixels tall and drawn 1:1 into the art buffer.
+  constructor({ artScale = 1 } = {}) {
+    this.artScale = artScale;
     this.image = null;
     this.frames = null;
     this.scale = 1;
@@ -114,7 +117,7 @@ export class HeroSprite {
     this.frames = detectFrames(alpha, c.width, c.height);
     this.frames[6].anchorX = this.frames[6].w / 2; // the lying figure is centred, not stood on its feet
     this.image = img;
-    this.scale = HERO_HEIGHT / this.frames[0].h;
+    this.scale = (HERO_HEIGHT * this.artScale) / this.frames[0].h;
     this.ready = true;
     return this;
   }
@@ -142,7 +145,7 @@ export class HeroSprite {
     return c;
   }
 
-  // Draw a frame with the feet at (x, y). facing -1 mirrors it for left-facing.
+  // Draw a frame with the feet at (x, y), both in art pixels. facing -1 mirrors it for left-facing.
   draw(ctx, index, x, y, facing, { alpha = 1, flash = null, outline = null } = {}) {
     if (!this.ready) return;
     const f = this.frames[index];
