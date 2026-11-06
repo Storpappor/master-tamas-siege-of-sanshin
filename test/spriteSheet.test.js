@@ -15,7 +15,10 @@ test('the shipped tamas.json map is valid and follows the spec cell and anchor',
   assert.deepEqual(sheet.anchor, { x: 48, y: 95 });
   assert.equal(sheet.has('idle'), true);
   assert.equal(sheet.frameFor('idle', { progress: 0 }), 0);
-  assert.equal(sheet.frameFor('walk', { loop: 3 }), null, 'states not in the map fall back');
+  // The brief's layout: idle in row 1, four walk frames in row 2, three punch frames in row 3.
+  assert.deepEqual(sheet.states.walk, [4, 5, 6, 7]);
+  assert.deepEqual(sheet.states.punch, [8, 9, 10]);
+  assert.equal(sheet.frameFor('kick', { phase: 'active' }), null, 'states not in the map fall back');
   assert.deepEqual(sheet.cellRect(0), { x: 0, y: 0, w: 96, h: 96 });
 });
 
