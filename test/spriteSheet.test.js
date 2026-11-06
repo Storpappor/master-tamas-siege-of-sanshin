@@ -21,11 +21,19 @@ test('the shipped tamas.json map is valid and follows the spec cell and anchor',
   assert.deepEqual(sheet.states.kick, [12, 13, 14]);
   assert.deepEqual(sheet.states.block, [16]);
   assert.deepEqual(sheet.states.hurt, [20, 21]);
+  assert.deepEqual(sheet.states.crouch, [24]);
+  assert.deepEqual(sheet.states.crouchPunch, [28, 29]);
+  assert.deepEqual(sheet.states.crouchKick, [32, 33]);
   assert.equal(sheet.frameFor('kick', { phase: 'active' }), 13, 'a 3-cell state shows its middle cell while active');
   assert.equal(sheet.frameFor('block', { progress: 0 }), 16, 'block is a single held cell');
   assert.equal(sheet.frameFor('hurt', { progress: 0.2 }), 20, 'hurt impact for the first half');
   assert.equal(sheet.frameFor('hurt', { progress: 0.7 }), 21, 'hurt stagger for the second half');
-  for (const absent of ['knockdown', 'jump', 'crouch', 'crouchPunch', 'crouchKick', 'victory']) {
+  assert.equal(sheet.frameFor('crouch', { progress: 0 }), 24, 'crouch is a single held cell (also the low-attack wind-up)');
+  assert.equal(sheet.frameFor('crouchPunch', { phase: 'active' }), 28, 'a 2-cell attack shows its first cell while active');
+  assert.equal(sheet.frameFor('crouchPunch', { phase: 'recovery' }), 29, 'and its second during recovery');
+  assert.equal(sheet.frameFor('crouchKick', { phase: 'active' }), 32);
+  assert.equal(sheet.frameFor('crouchKick', { phase: 'recovery' }), 33);
+  for (const absent of ['knockdown', 'jump', 'victory']) {
     assert.equal(sheet.frameFor(absent, { phase: 'active', progress: 0.5, loop: 1 }), null, `${absent} falls back`);
   }
   assert.deepEqual(sheet.cellRect(0), { x: 0, y: 0, w: 96, h: 96 });
