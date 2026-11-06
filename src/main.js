@@ -5,10 +5,11 @@ import { Sfx } from './audio.js';
 import { Renderer } from './renderer.js';
 import { Game } from './game.js';
 import { createUi } from './ui.js';
-import { HeroSprite } from './heroSprite.js';
+import { HeroSprite, SpriteSheet } from './heroSprite.js';
 import { ART_SCALE } from './artScale.js';
 
 const SPRITE_URL = new URL('../assets/tamas-hero-spritesheet.png', import.meta.url).href;
+const HERO_SHEET_URL = new URL('../assets/sprites/tamas.json', import.meta.url).href;
 
 // Opening story, one card per entry. Lines are drawn exactly as written.
 export const INTRO_SCREENS = [
@@ -36,7 +37,10 @@ export function boot(root) {
   const input = new Input();
   const ui = createUi(root);
   const hero = new HeroSprite({ artScale: ART_SCALE });
-  const renderer = new Renderer(canvas, { reducedMotion, hero });
+  const heroSheet = new SpriteSheet();
+  const renderer = new Renderer(canvas, { reducedMotion, hero, heroSheet });
+  // The production sheet is optional: any state it lacks is drawn from the fallback sheet.
+  heroSheet.load(HERO_SHEET_URL).catch((err) => console.warn('Production hero sheet not loaded; using fallback art.', err));
   const game = new Game({ input, audio, ui, reducedMotion });
 
   // The hero artwork must be present: the game cannot start without it.
@@ -132,6 +136,7 @@ export function boot(root) {
 
   root.karateHero = hero; // exposed for debugging alongside root.karateGame
   root.karateRenderer = renderer;
+  root.karateHeroSheet = heroSheet;
   return game;
 }
 

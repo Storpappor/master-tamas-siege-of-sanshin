@@ -3,7 +3,7 @@
 import { VIEW_W, VIEW_H, GROUND_Y, FLOOR_TOP, WORLD_WIDTH, COLORS, screenY } from './constants.js';
 import { LEVEL_1 } from './level.js';
 import { drawFighter, drawShuriken, drawText } from './sprites.js';
-import { heroFrameIndex } from './heroSprite.js';
+import { heroFrameIndex, heroState } from './heroSprite.js';
 import { ART_SCALE } from './artScale.js';
 
 // Size of the draw buffer in art pixels.
@@ -326,8 +326,9 @@ function buildWorld(createCanvas, zones) {
 }
 
 export class Renderer {
-  constructor(displayCanvas, { reducedMotion = false, createCanvas, hero = null } = {}) {
-    this.hero = hero; // HeroSprite for the player; enemies stay procedurally drawn
+  constructor(displayCanvas, { reducedMotion = false, createCanvas, hero = null, heroSheet = null } = {}) {
+    this.hero = hero;           // legacy hero sheet: fallback for states the new sheet lacks
+    this.heroSheet = heroSheet; // JSON-mapped production sheet (may cover only some states)
     this.display = displayCanvas;
     this.ctx = displayCanvas.getContext('2d');
     this.createCanvas = createCanvas || ((w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; });
@@ -481,6 +482,17 @@ export class Renderer {
     let outline = null;
     if (f.kiaiActive) outline = this.reducedMotion || Math.floor(time * 12) % 3 !== 0 ? COLORS.kiai : '#ffe9b0';
     const y = screenY(f.y, f.z);
+    if (f.kind === 'player' && this.heroSheet && this.heroSheet.ready) {
+      const hs = heroState(f, { victory });
+      const index = this.heroSheet.frameFor(hs.state, hs);
+      if (index !== null) {
+        g.save();
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        this.heroSheet.draw(g, index, (f.x - this.camX) * ART_SCALE, y * ART_SCALE, f.facing, { alpha, flash: flash ? '#fff' : null, outline });
+        g.restore();
+        return;
+      }
+    }
     if (f.kind === 'player' && this.hero && this.hero.ready) {
       // The hero sheet is pre-scaled to art pixels, so it is drawn outside the game-unit transform
       // to keep its full detail; its feet still land on the same game-unit position.

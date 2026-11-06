@@ -6,6 +6,7 @@
 // pixels instead of being cut blindly on the grid. Every frame is anchored at the feet so the
 // character never shifts between poses, and the gameplay hitbox is unaffected by the artwork.
 import { poseFor } from './sprites.js';
+import { PHYSICS } from './constants.js';
 
 export const HERO_COLUMNS = 4;
 export const HERO_ROWS = 2;
@@ -83,6 +84,133 @@ export function heroFrameIndex(fighter, { victory = false } = {}) {
     case 'fallen': return 6;
     case 'jump': return 7;
     default: return 0;
+  }
+}
+
+// Resolve a fighter's drawing state for a JSON-mapped sheet: the state key from the asset
+// spec plus how far through it the fighter is. Attacks report their phase so a 3-frame state
+// shows wind-up / hit / recover in step with the attack table; walks report a loop counter.
+export function heroState(f, { victory = false } = {}) {
+  if (f.dead) {
+    return f.deadTimer < 0.25 ? { state: 'hurt', progress: 0 } : { state: 'knockdown', progress: Math.min(1, (f.deadTimer - 0.25) / 0.3) };
+  }
+  if (victory) return { state: 'victory', progress: 0 };
+  if (f.state === 'hurt') return { state: 'hurt', progress: Math.max(0, Math.min(1, 1 - f.hurtTimer / PHYSICS.hurtTime)) };
+  if (f.attack) {
+    const name = f.attack.name;
+    const isKick = /kick/i.test(name);
+    const low = name.startsWith('crouch');
+    const phase = f.attackPhase;
+    if (low && phase === 'startup') return { state: 'crouch', progress: 0 };
+    const state = low ? (isKick ? 'crouchKick' : 'crouchPunch') : (isKick ? 'kick' : 'punch');
+    return { state, phase, progress: 0 };
+  }
+  if (f.state === 'block') return { state: 'block', progress: 0 };
+  if (!f.grounded) return { state: 'jump', progress: f.vy < 0 ? 0 : 1 };
+  if (f.crouching) return { state: 'crouch', progress: 0 };
+  if (f.state === 'walk') return { state: 'walk', loop: f.walkCycle };
+  return { state: 'idle', progress: 0 };
+}
+
+// A sprite sheet described by a JSON frame map (see the asset spec): fixed cells, one anchor,
+// and a list of cell indices per state. Sheets are authored at art resolution and drawn 1:1.
+// A state missing from the map returns null so the caller can fall back to other artwork.
+export class SpriteSheet {
+  constructor({ map = null } = {}) {
+    this.image = null;
+    this.ready = false;
+    this.cache = new Map();
+    this.map = null;
+    if (map) this.applyMap(map);
+  }
+
+  applyMap(map) {
+    if (!map.cell || !map.anchor || !map.states) throw new Error('Sprite map needs cell, anchor and states');
+    this.map = map;
+    this.cell = map.cell;
+    this.anchor = map.anchor;
+    this.columns = map.columns || 1;
+    this.states = map.states;
+  }
+
+  // Loads `<name>.json` and the PNG next to it (or the map's `image` path).
+  async load(jsonUrl) {
+    const res = await fetch(jsonUrl);
+    if (!res.ok) throw new Error(`Could not load sprite map: ${jsonUrl}`);
+    this.applyMap(await res.json());
+    const pngUrl = this.map.image ? new URL(this.map.image, jsonUrl).href : jsonUrl.replace(/\.json$/, '.png');
+    this.image = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error(`Could not load sprite sheet: ${pngUrl}`));
+      i.src = pngUrl;
+    });
+    this.ready = true;
+    return this;
+  }
+
+  has(state) {
+    return Boolean(this.states && this.states[state] && this.states[state].length);
+  }
+
+  // Cell index for a state, or null when the sheet has no art for it.
+  // `phase` (startup/active/recovery) spreads attack frames over the attack's own timing;
+  // `loop` cycles frames (walks); otherwise `progress` 0..1 picks a frame evenly.
+  frameFor(state, { phase = null, progress = 0, loop = null } = {}) {
+    const frames = this.states && this.states[state];
+    if (!frames || !frames.length) return null;
+    if (loop !== null && loop !== undefined) return frames[((Math.floor(loop) % frames.length) + frames.length) % frames.length];
+    if (phase) {
+      if (frames.length >= 3) return phase === 'startup' ? frames[0] : phase === 'active' ? frames[1] : frames[frames.length - 1];
+      if (frames.length === 2) return phase === 'recovery' ? frames[1] : frames[0];
+      return frames[0];
+    }
+    return frames[Math.max(0, Math.min(frames.length - 1, Math.floor(progress * frames.length)))];
+  }
+
+  cellRect(index) {
+    const col = index % this.columns, row = Math.floor(index / this.columns);
+    return { x: col * this.cell.w, y: row * this.cell.h, w: this.cell.w, h: this.cell.h };
+  }
+
+  // Cell copied 1:1 (no resampling); `color` gives a flat silhouette for flash/outline effects.
+  frameCanvas(index, color = null) {
+    const key = `${index}:${color || ''}`;
+    let c = this.cache.get(key);
+    if (c) return c;
+    const r = this.cellRect(index);
+    c = document.createElement('canvas');
+    c.width = r.w;
+    c.height = r.h;
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.drawImage(this.image, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+    if (color) {
+      g.globalCompositeOperation = 'source-in';
+      g.fillStyle = color;
+      g.fillRect(0, 0, r.w, r.h);
+    }
+    this.cache.set(key, c);
+    return c;
+  }
+
+  // Draw a cell with its anchor pixel on the feet position (x, y) in art pixels; facing -1 mirrors.
+  // The anchor row lands on the row just above y, matching how the fallback hero sits on the floor.
+  draw(ctx, index, x, y, facing, { alpha = 1, flash = null, outline = null } = {}) {
+    if (!this.ready) return;
+    const c = this.frameCanvas(index, flash);
+    const ox = -this.anchor.x, oy = -this.anchor.y - 1;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.imageSmoothingEnabled = false;
+    ctx.translate(Math.round(x), Math.round(y));
+    if (facing < 0) ctx.scale(-1, 1);
+    if (outline && !flash) {
+      const s = this.frameCanvas(index, outline);
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.drawImage(s, ox + dx, oy + dy);
+    }
+    ctx.drawImage(c, ox, oy);
+    ctx.restore();
   }
 }
 
