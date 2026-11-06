@@ -11,6 +11,7 @@
     "hurt": [20, 21],
     "crouch": [24],
     "crouchPunch": [28, 29],
-    "crouchKick": [32, 33]
+    "crouchKick": [32, 33],
+    "jump": [36, 37]
   }
 }
