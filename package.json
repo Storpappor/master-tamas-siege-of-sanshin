@@ -12,6 +12,7 @@
     "lint": "node scripts/lint.mjs",
     "test": "node --test test/",
     "build": "node scripts/build.mjs",
-    "check": "npm run lint && npm test && npm run build"
+    "check": "npm run lint && npm test && npm run guard && npm run build",
+    "guard": "node scripts/guard.mjs"
   }
 }

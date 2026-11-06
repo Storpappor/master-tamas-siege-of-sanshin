@@ -3,7 +3,12 @@
 import { VIEW_W, VIEW_H, GROUND_Y, FLOOR_TOP, WORLD_WIDTH, COLORS, screenY } from './constants.js';
 import { LEVEL_1 } from './level.js';
 import { drawFighter, drawShuriken, drawText } from './sprites.js';
-import { heroFrameIndex } from './heroSprite.js';
+import { heroFrameIndex, heroState } from './heroSprite.js';
+import { ART_SCALE } from './artScale.js';
+
+// Size of the draw buffer in art pixels.
+const BUF_W = VIEW_W * ART_SCALE;
+const BUF_H = VIEW_H * ART_SCALE;
 
 // The street outside the real Sanshin Kan dojo on Södermalm, Stockholm.
 const STREET = {
@@ -311,44 +316,63 @@ function paintDojo(g, from, to) {
 const PAINTERS = { street: paintStreet, dojo: paintDojo };
 
 // Pre-render the whole level once; the camera just slides across it.
+// The painters work in game units; the scale transform turns them into art pixels.
 function buildWorld(createCanvas, zones) {
-  const c = createCanvas(WORLD_WIDTH, VIEW_H);
+  const c = createCanvas(WORLD_WIDTH * ART_SCALE, VIEW_H * ART_SCALE);
   const g = c.getContext('2d');
+  g.scale(ART_SCALE, ART_SCALE);
   for (const zone of zones) inZone(g, zone, (from, to) => PAINTERS[zone.art](g, from, to, zone));
   return c;
 }
 
 export class Renderer {
-  constructor(displayCanvas, { reducedMotion = false, createCanvas, hero = null } = {}) {
-    this.hero = hero; // HeroSprite for the player; enemies stay procedurally drawn
+  constructor(displayCanvas, { reducedMotion = false, createCanvas, hero = null, heroSheet = null } = {}) {
+    this.hero = hero;           // legacy hero sheet: fallback for states the new sheet lacks
+    this.heroSheet = heroSheet; // JSON-mapped production sheet (may cover only some states)
     this.display = displayCanvas;
     this.ctx = displayCanvas.getContext('2d');
     this.createCanvas = createCanvas || ((w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; });
-    this.buffer = this.createCanvas(VIEW_W, VIEW_H);
+    this.buffer = this.createCanvas(BUF_W, BUF_H);
     this.bctx = this.buffer.getContext('2d');
     this.world = buildWorld(this.createCanvas, LEVEL_1.zones);
     this.reducedMotion = reducedMotion;
-    this.scale = 1;
+    this.zoom = ART_SCALE;  // display pixels per game unit
+    this.camX = 0;
   }
 
-  // Pick the largest integer zoom that fits the container for pixel-perfect scaling.
+  // Choose how many display pixels one game unit gets (`zoom`), in this order of preference:
+  //  1. a whole number of display pixels per ART pixel (perfectly square art pixels),
+  //  2. else a whole number per GAME unit (the world grid stays exact; fine art detail alternates
+  //     between two sizes), which is exactly what the game did before the art scale,
+  //  3. else fill the container (used only on very narrow screens).
+  // A fit is accepted when it covers at least 80% of the container width.
   resize(containerCssWidth, dpr = 1) {
-    const scale = Math.max(1, Math.floor((containerCssWidth * dpr) / VIEW_W));
-    this.scale = scale;
-    this.display.width = VIEW_W * scale;
-    this.display.height = VIEW_H * scale;
-    this.display.style.width = `${(VIEW_W * scale) / dpr}px`;
-    this.display.style.height = `${(VIEW_H * scale) / dpr}px`;
+    const device = containerCssWidth * dpr;
+    const fits = (px) => px >= device * 0.8;
+    const k = Math.floor(device / BUF_W);
+    const n = Math.floor(device / VIEW_W);
+    let zoom;
+    if (k >= 1 && fits(BUF_W * k)) zoom = k * ART_SCALE;
+    else if (n >= ART_SCALE && fits(VIEW_W * n)) zoom = n;
+    else zoom = device / VIEW_W;
+    this.zoom = zoom;
+    this.display.width = Math.round(VIEW_W * zoom);
+    this.display.height = Math.round(VIEW_H * zoom);
+    this.display.style.width = `${this.display.width / dpr}px`;
+    this.display.style.height = `${this.display.height / dpr}px`;
   }
 
   render(game, time) {
     const g = this.bctx;
     const camX = Math.round(game.camX);
+    this.camX = camX;
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.imageSmoothingEnabled = false;
-    g.drawImage(this.world, -camX, 0);
+    g.drawImage(this.world, -camX * ART_SCALE, 0);
 
+    // Everything below is drawn in game units; the scale transform makes them art pixels.
     g.save();
+    g.scale(ART_SCALE, ART_SCALE);
     g.translate(-camX, 0);
 
     // The door stands open while the player goes through it.
@@ -392,9 +416,11 @@ export class Renderer {
 
     if (game.fade > 0) {
       g.fillStyle = `rgba(0,0,0,${game.fade})`;
-      g.fillRect(0, 0, VIEW_W, VIEW_H);
+      g.fillRect(0, 0, BUF_W, BUF_H);
     }
 
+    g.save();
+    g.scale(ART_SCALE, ART_SCALE);
     if (game.banner) {
       const a = Math.min(1, game.banner.life * 2);
       g.globalAlpha = a;
@@ -409,8 +435,9 @@ export class Renderer {
       g.globalAlpha = 1;
     }
     if (game.showGo && (this.reducedMotion || Math.floor(time * 3) % 2 === 0)) this.drawGo(g);
+    g.restore();
 
-    // Blit to the visible canvas (with optional screen shake).
+    // Blit to the visible canvas (with optional screen shake, measured in game units).
     const ctx = this.ctx;
     ctx.imageSmoothingEnabled = false;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -418,8 +445,8 @@ export class Renderer {
     ctx.fillRect(0, 0, this.display.width, this.display.height);
     let sx = 0, sy = 0;
     if (game.shake > 0 && !this.reducedMotion) {
-      sx = Math.round((Math.random() - 0.5) * 4) * this.scale;
-      sy = Math.round((Math.random() - 0.5) * 3) * this.scale;
+      sx = Math.round((Math.random() - 0.5) * 4) * this.zoom;
+      sy = Math.round((Math.random() - 0.5) * 3) * this.zoom;
     }
     ctx.drawImage(this.buffer, sx, sy, this.display.width, this.display.height);
   }
@@ -455,8 +482,24 @@ export class Renderer {
     let outline = null;
     if (f.kiaiActive) outline = this.reducedMotion || Math.floor(time * 12) % 3 !== 0 ? COLORS.kiai : '#ffe9b0';
     const y = screenY(f.y, f.z);
+    if (f.kind === 'player' && this.heroSheet && this.heroSheet.ready) {
+      const hs = heroState(f, { victory });
+      const index = this.heroSheet.frameFor(hs.state, hs);
+      if (index !== null) {
+        g.save();
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        this.heroSheet.draw(g, index, (f.x - this.camX) * ART_SCALE, y * ART_SCALE, f.facing, { alpha, flash: flash ? '#fff' : null, outline });
+        g.restore();
+        return;
+      }
+    }
     if (f.kind === 'player' && this.hero && this.hero.ready) {
-      this.hero.draw(g, heroFrameIndex(f, { victory }), f.x, y, f.facing, { alpha, flash: flash ? '#fff' : null, outline });
+      // The hero sheet is pre-scaled to art pixels, so it is drawn outside the game-unit transform
+      // to keep its full detail; its feet still land on the same game-unit position.
+      g.save();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      this.hero.draw(g, heroFrameIndex(f, { victory }), (f.x - this.camX) * ART_SCALE, y * ART_SCALE, f.facing, { alpha, flash: flash ? '#fff' : null, outline });
+      g.restore();
       return;
     }
     drawFighter(g, f, { flash, alpha, outline, y });

@@ -1,0 +1,480 @@
+{
+  "constants": {
+    "COMBO": {
+      "tiers": [
+        [
+          12,
+          3
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          4,
+          1.5
+        ]
+      ]
+    },
+    "DEPTH": 48,
+    "DEPTH_REACH": 7,
+    "FLOOR_TOP": 122,
+    "GROUND_Y": 150,
+    "KIAI": {
+      "duration": 4,
+      "cooldown": 14,
+      "damageMultiplier": 2,
+      "knockbackMultiplier": 1.4
+    },
+    "PHYSICS": {
+      "gravity": 560,
+      "playerSpeed": 72,
+      "playerDepthSpeed": 50,
+      "playerJumpVelocity": -205,
+      "hurtTime": 0.35,
+      "invulnerableTime": 0.7,
+      "deathLingerTime": 0.9
+    },
+    "PLAYER": {
+      "maxHp": 100
+    },
+    "SCORE": {
+      "hit": 10,
+      "healthBonusPerPoint": 10,
+      "timeBonusPerSecond": 20,
+      "timeBonusLimit": 120
+    },
+    "SHURIKEN_SPEED": 140,
+    "START_Z": 24,
+    "STEP": 0.016666666666666666,
+    "VIEW_H": 180,
+    "VIEW_W": 320,
+    "WORLD_WIDTH": 1920
+  },
+  "attacks": {
+    "punch": {
+      "startup": 0.07,
+      "active": 0.1,
+      "recovery": 0.16,
+      "damage": 10,
+      "knockback": 35,
+      "box": {
+        "x": 6,
+        "y": -34,
+        "w": 15,
+        "h": 9
+      }
+    },
+    "kick": {
+      "startup": 0.14,
+      "active": 0.12,
+      "recovery": 0.26,
+      "damage": 16,
+      "knockback": 70,
+      "box": {
+        "x": 6,
+        "y": -28,
+        "w": 20,
+        "h": 11
+      }
+    },
+    "crouchPunch": {
+      "startup": 0.07,
+      "active": 0.1,
+      "recovery": 0.16,
+      "damage": 8,
+      "knockback": 30,
+      "box": {
+        "x": 6,
+        "y": -24,
+        "w": 14,
+        "h": 8
+      }
+    },
+    "crouchKick": {
+      "startup": 0.12,
+      "active": 0.12,
+      "recovery": 0.24,
+      "damage": 12,
+      "knockback": 60,
+      "box": {
+        "x": 6,
+        "y": -16,
+        "w": 20,
+        "h": 8
+      }
+    },
+    "enemyPunch": {
+      "startup": 0.4,
+      "active": 0.12,
+      "recovery": 0.45,
+      "damage": 10,
+      "knockback": 40,
+      "box": {
+        "x": 6,
+        "y": -34,
+        "w": 15,
+        "h": 9
+      }
+    },
+    "enemyHighKick": {
+      "startup": 0.52,
+      "active": 0.14,
+      "recovery": 0.55,
+      "damage": 14,
+      "knockback": 65,
+      "box": {
+        "x": 6,
+        "y": -42,
+        "w": 21,
+        "h": 12
+      }
+    },
+    "enemyLowSweep": {
+      "startup": 0.46,
+      "active": 0.14,
+      "recovery": 0.5,
+      "damage": 10,
+      "knockback": 55,
+      "box": {
+        "x": 4,
+        "y": -12,
+        "w": 22,
+        "h": 10
+      }
+    },
+    "bossPunch": {
+      "startup": 0.3,
+      "active": 0.12,
+      "recovery": 0.34,
+      "damage": 12,
+      "knockback": 45,
+      "box": {
+        "x": 6,
+        "y": -34,
+        "w": 16,
+        "h": 9
+      }
+    },
+    "bossKick": {
+      "startup": 0.44,
+      "active": 0.14,
+      "recovery": 0.48,
+      "damage": 18,
+      "knockback": 75,
+      "box": {
+        "x": 6,
+        "y": -42,
+        "w": 23,
+        "h": 12
+      }
+    },
+    "enemyThrow": {
+      "startup": 0.5,
+      "active": 0.08,
+      "recovery": 0.4,
+      "damage": 0,
+      "knockback": 0,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "ranged": true
+    },
+    "shuriken": {
+      "startup": 0,
+      "active": 0,
+      "recovery": 0,
+      "damage": 8,
+      "knockback": 30,
+      "box": {
+        "x": -3,
+        "y": -36,
+        "w": 6,
+        "h": 6
+      }
+    }
+  },
+  "highAttacks": [
+    "bossKick",
+    "enemyHighKick"
+  ],
+  "lowAttacks": [
+    "enemyLowSweep"
+  ],
+  "hurtbox": {
+    "standing": {
+      "x": -6,
+      "y": -40,
+      "w": 12,
+      "h": 40
+    },
+    "crouching": {
+      "x": -7,
+      "y": -28,
+      "w": 14,
+      "h": 28
+    }
+  },
+  "enemies": {
+    "striker": {
+      "hp": 30,
+      "speed": 48,
+      "range": 20,
+      "keepAway": 0,
+      "attacks": [
+        "enemyPunch"
+      ],
+      "cooldown": [
+        0.5,
+        1
+      ],
+      "retreatTime": 0,
+      "score": 100,
+      "canBlock": false,
+      "boss": false,
+      "label": "Striker"
+    },
+    "kicker": {
+      "hp": 50,
+      "speed": 40,
+      "range": 27,
+      "keepAway": 12,
+      "attacks": [
+        "enemyHighKick",
+        "enemyLowSweep"
+      ],
+      "attackWeights": [
+        0.6,
+        0.4
+      ],
+      "cooldown": [
+        0.7,
+        1.2
+      ],
+      "retreatTime": 0.5,
+      "score": 200,
+      "canBlock": false,
+      "boss": false,
+      "label": "Kicker"
+    },
+    "thrower": {
+      "hp": 30,
+      "speed": 44,
+      "range": 120,
+      "keepAway": 60,
+      "attacks": [
+        "enemyThrow"
+      ],
+      "cooldown": [
+        1.5,
+        2.3
+      ],
+      "retreatTime": 0,
+      "score": 250,
+      "canBlock": false,
+      "boss": false,
+      "ranged": true,
+      "label": "Thrower"
+    },
+    "boss": {
+      "hp": 180,
+      "speed": 62,
+      "range": 25,
+      "keepAway": 8,
+      "attacks": [
+        "bossPunch",
+        "bossKick"
+      ],
+      "cooldown": [
+        0.4,
+        0.75
+      ],
+      "retreatTime": 0.25,
+      "score": 1000,
+      "canBlock": true,
+      "blockChance": 0.65,
+      "counters": true,
+      "rageBelow": 0.4,
+      "boss": true,
+      "label": "Master Kage"
+    }
+  },
+  "level": {
+    "name": "Road to the Dojo",
+    "maxAlive": 5,
+    "zones": [
+      {
+        "name": "SÖDERMALM",
+        "art": "street",
+        "from": 0,
+        "to": 1000,
+        "exit": {
+          "x": 930,
+          "width": 44
+        }
+      },
+      {
+        "name": "SANSHIN KAN",
+        "art": "dojo",
+        "from": 1000,
+        "to": 1920
+      }
+    ],
+    "waves": [
+      {
+        "x": 170,
+        "spawns": [
+          {
+            "delay": 0.3,
+            "side": "right",
+            "type": "striker"
+          },
+          {
+            "delay": 1.8,
+            "side": "left",
+            "type": "striker"
+          }
+        ]
+      },
+      {
+        "x": 440,
+        "spawns": [
+          {
+            "delay": 0.3,
+            "side": "right",
+            "type": "striker"
+          },
+          {
+            "delay": 1.2,
+            "side": "right",
+            "type": "kicker"
+          },
+          {
+            "delay": 3,
+            "side": "left",
+            "type": "striker"
+          }
+        ]
+      },
+      {
+        "x": 720,
+        "spawns": [
+          {
+            "delay": 0.3,
+            "side": "right",
+            "type": "kicker"
+          },
+          {
+            "delay": 1,
+            "side": "left",
+            "type": "striker"
+          },
+          {
+            "delay": 2.5,
+            "side": "right",
+            "type": "thrower"
+          }
+        ]
+      },
+      {
+        "x": 1160,
+        "spawns": [
+          {
+            "delay": 0.3,
+            "side": "left",
+            "type": "kicker"
+          },
+          {
+            "delay": 0.8,
+            "side": "right",
+            "type": "kicker"
+          },
+          {
+            "delay": 2.6,
+            "side": "right",
+            "type": "striker"
+          },
+          {
+            "delay": 3,
+            "side": "left",
+            "type": "thrower"
+          }
+        ]
+      },
+      {
+        "x": 1380,
+        "spawns": [
+          {
+            "delay": 0.3,
+            "side": "right",
+            "type": "striker"
+          },
+          {
+            "delay": 0.7,
+            "side": "right",
+            "type": "striker"
+          },
+          {
+            "delay": 2,
+            "side": "left",
+            "type": "kicker"
+          },
+          {
+            "delay": 3.2,
+            "side": "left",
+            "type": "thrower"
+          }
+        ]
+      },
+      {
+        "x": 1590,
+        "spawns": [
+          {
+            "delay": 0.3,
+            "side": "left",
+            "type": "kicker"
+          },
+          {
+            "delay": 0.6,
+            "side": "right",
+            "type": "kicker"
+          },
+          {
+            "delay": 2.2,
+            "side": "right",
+            "type": "striker"
+          },
+          {
+            "delay": 2.6,
+            "side": "left",
+            "type": "striker"
+          },
+          {
+            "delay": 3,
+            "side": "right",
+            "type": "thrower"
+          }
+        ]
+      },
+      {
+        "x": 1720,
+        "spawns": [
+          {
+            "delay": 1.6,
+            "side": "right",
+            "type": "boss"
+          }
+        ]
+      }
+    ]
+  },
+  "screenYSamples": [
+    122,
+    146,
+    170,
+    106
+  ]
+}
