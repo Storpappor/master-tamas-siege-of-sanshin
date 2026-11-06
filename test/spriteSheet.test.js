@@ -15,10 +15,14 @@ test('the shipped tamas.json map is valid and follows the spec cell and anchor',
   assert.deepEqual(sheet.anchor, { x: 48, y: 95 });
   assert.equal(sheet.has('idle'), true);
   assert.equal(sheet.frameFor('idle', { progress: 0 }), 0);
-  // The brief's layout: idle in row 1, four walk frames in row 2, three punch frames in row 3.
+  // The brief's layout: idle in row 1, walk in row 2, punch in row 3, standing kick in row 4.
   assert.deepEqual(sheet.states.walk, [4, 5, 6, 7]);
   assert.deepEqual(sheet.states.punch, [8, 9, 10]);
-  assert.equal(sheet.frameFor('kick', { phase: 'active' }), null, 'states not in the map fall back');
+  assert.deepEqual(sheet.states.kick, [12, 13, 14]);
+  assert.equal(sheet.frameFor('kick', { phase: 'active' }), 13, 'a 3-cell state shows its middle cell while active');
+  for (const absent of ['block', 'hurt', 'knockdown', 'jump', 'crouch', 'crouchKick', 'victory']) {
+    assert.equal(sheet.frameFor(absent, { phase: 'active', progress: 0.5, loop: 1 }), null, `${absent} falls back`);
+  }
   assert.deepEqual(sheet.cellRect(0), { x: 0, y: 0, w: 96, h: 96 });
 });
 
