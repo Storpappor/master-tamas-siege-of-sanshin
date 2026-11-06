@@ -15,12 +15,17 @@ test('the shipped tamas.json map is valid and follows the spec cell and anchor',
   assert.deepEqual(sheet.anchor, { x: 48, y: 95 });
   assert.equal(sheet.has('idle'), true);
   assert.equal(sheet.frameFor('idle', { progress: 0 }), 0);
-  // The brief's layout: idle in row 1, walk in row 2, punch in row 3, standing kick in row 4.
+  // The briefs' layout: idle row 1, walk row 2, punch row 3, standing kick row 4, block row 5, hurt row 6.
   assert.deepEqual(sheet.states.walk, [4, 5, 6, 7]);
   assert.deepEqual(sheet.states.punch, [8, 9, 10]);
   assert.deepEqual(sheet.states.kick, [12, 13, 14]);
+  assert.deepEqual(sheet.states.block, [16]);
+  assert.deepEqual(sheet.states.hurt, [20, 21]);
   assert.equal(sheet.frameFor('kick', { phase: 'active' }), 13, 'a 3-cell state shows its middle cell while active');
-  for (const absent of ['block', 'hurt', 'knockdown', 'jump', 'crouch', 'crouchKick', 'victory']) {
+  assert.equal(sheet.frameFor('block', { progress: 0 }), 16, 'block is a single held cell');
+  assert.equal(sheet.frameFor('hurt', { progress: 0.2 }), 20, 'hurt impact for the first half');
+  assert.equal(sheet.frameFor('hurt', { progress: 0.7 }), 21, 'hurt stagger for the second half');
+  for (const absent of ['knockdown', 'jump', 'crouch', 'crouchPunch', 'crouchKick', 'victory']) {
     assert.equal(sheet.frameFor(absent, { phase: 'active', progress: 0.5, loop: 1 }), null, `${absent} falls back`);
   }
   assert.deepEqual(sheet.cellRect(0), { x: 0, y: 0, w: 96, h: 96 });
