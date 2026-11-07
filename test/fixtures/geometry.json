@@ -1,5 +1,8 @@
 {
   "constants": {
+    "AUTO_BLOCK": {
+      "strikeRange": 40
+    },
     "COMBO": {
       "tiers": [
         [
@@ -19,6 +22,13 @@
     "DEPTH": 48,
     "DEPTH_REACH": 7,
     "FLOOR_TOP": 122,
+    "GRAB": {
+      "damage": 20,
+      "holdDistance": 10,
+      "launchVy": -150,
+      "throwSpeed": 150,
+      "downTime": 0.9
+    },
     "GROUND_Y": 150,
     "KIAI": {
       "duration": 4,
@@ -45,6 +55,10 @@
       "timeBonusLimit": 120
     },
     "SHURIKEN_SPEED": 140,
+    "SPRINT": {
+      "tapWindow": 0.25,
+      "speedMultiplier": 1.75
+    },
     "START_Z": 24,
     "STEP": 0.016666666666666666,
     "VIEW_H": 180,
@@ -103,6 +117,34 @@
         "w": 20,
         "h": 8
       }
+    },
+    "grab": {
+      "startup": 0.08,
+      "active": 0.08,
+      "recovery": 0.28,
+      "damage": 0,
+      "knockback": 0,
+      "box": {
+        "x": 2,
+        "y": -34,
+        "w": 16,
+        "h": 30
+      },
+      "grab": true
+    },
+    "throw": {
+      "startup": 0,
+      "active": 0.16,
+      "recovery": 0.3,
+      "damage": 0,
+      "knockback": 0,
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "ranged": true
     },
     "enemyPunch": {
       "startup": 0.4,

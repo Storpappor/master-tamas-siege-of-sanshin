@@ -31,6 +31,27 @@ export const PHYSICS = {
 
 export const SHURIKEN_SPEED = 140;
 
+// Double-tap a direction to sprint that way; the sprint lasts while that key stays held.
+export const SPRINT = {
+  tapWindow: 0.25,        // seconds between the two taps
+  speedMultiplier: 1.75,
+};
+
+// Punch and kick together grab the fighter in front and throw them forward.
+export const GRAB = {
+  damage: 20,
+  holdDistance: 10,       // where the grabbed fighter is pulled to before the throw
+  launchVy: -150,         // upward speed of the throw
+  throwSpeed: 150,        // forward speed while flying
+  downTime: 0.9,          // seconds spent on the floor after landing
+};
+
+// Holding the direction away from an incoming strike or star blocks it, without the block key.
+// A star counts from the moment it flies at the player; a strike counts inside this range.
+export const AUTO_BLOCK = {
+  strikeRange: 40,        // how near an attacking enemy must be, along the level
+};
+
 export const PLAYER = {
   maxHp: 100,
 };

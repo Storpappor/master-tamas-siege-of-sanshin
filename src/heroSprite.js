@@ -70,19 +70,20 @@ export function detectFrames(alpha, width, height, { columns = HERO_COLUMNS, row
 
 // Which sheet frame to show for the player's current state.
 //  idle 0 · walking alternates 0/1 · punch 2 · kick 3 · block 4 · hit 5 · knockdown 6 · victory 7
-//  Jumping borrows the victory pose (arm raised); crouching borrows the low hit-reaction pose.
+//  Jumping and throwing borrow the victory pose (arm raised); crouching borrows the low hit-reaction pose;
+//  the grab borrows the punch (arm out).
 export function heroFrameIndex(fighter, { victory = false } = {}) {
   if (victory && !fighter.dead) return 7;
   if (fighter.state === 'walk' && fighter.grounded && !fighter.attack) {
     return Math.floor(fighter.walkCycle * 0.75) % 2 ? 1 : 0;
   }
   switch (poseFor(fighter)) {
-    case 'punchWind': case 'punch': case 'crouchPunch': return 2;
+    case 'punchWind': case 'punch': case 'crouchPunch': case 'grab': return 2;
     case 'kickWind': case 'kick': case 'highKick': case 'crouchKick': return 3;
     case 'block': return 4;
     case 'hurt': case 'crouch': return 5;
     case 'fallen': return 6;
-    case 'jump': return 7;
+    case 'jump': case 'throw': return 7;
     default: return 0;
   }
 }
@@ -101,6 +102,7 @@ export function heroState(f, { victory = false } = {}) {
     const isKick = /kick/i.test(name);
     const low = name.startsWith('crouch');
     const phase = f.attackPhase;
+    if (name === 'grab' || name === 'throw') return { state: name, phase, progress: 0 };
     if (low && phase === 'startup') return { state: 'crouch', progress: 0 };
     const state = low ? (isKick ? 'crouchKick' : 'crouchPunch') : (isKick ? 'kick' : 'punch');
     return { state, phase, progress: 0 };

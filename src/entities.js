@@ -1,9 +1,10 @@
 // Fighters: the shared Fighter base, the Player (input-driven) and Enemy (AI-driven).
 // Movement, timers and state machines live here; drawing lives in sprites.js.
 import { ATTACKS, attackPhase, attackDuration } from './combat.js';
-import { GROUND_Y, WORLD_WIDTH, DEPTH, START_Z, DEPTH_REACH, PHYSICS, PLAYER, KIAI } from './constants.js';
+import { GROUND_Y, WORLD_WIDTH, DEPTH, START_Z, DEPTH_REACH, PHYSICS, PLAYER, KIAI, SPRINT, GRAB } from './constants.js';
 
 let nextId = 1;
+const MOVE_DIRS = ['left', 'right', 'up', 'down'];
 
 export class Fighter {
   constructor({ x, z = START_Z, facing = 1, hp = 100, kind = 'fighter' }) {
@@ -32,6 +33,9 @@ export class Fighter {
     this.remove = false;
     this.walkCycle = 0;
     this.flashTimer = 0;
+    this.thrown = false;    // flying through the air after a throw
+    this.down = false;      // lying on the floor after a throw, until hurtTimer runs out
+    this.downTime = 0;
     this.lastEvent = null;  // set by takeHit so the game can trigger sounds/particles
   }
 
@@ -66,6 +70,33 @@ export class Fighter {
     this.crouching = false;
     this.knockVx = direction * knockback;
     this.flashTimer = 0.08;
+    this.applyDamageState();
+    return true;
+  }
+
+  // Grabbed and thrown: fly forward in `direction`, land, and stay down for a moment.
+  takeThrow({ damage, direction, launchVy = GRAB.launchVy, throwSpeed = GRAB.throwSpeed, downTime = GRAB.downTime }) {
+    if (this.dead) return false;
+    this.hp = Math.max(0, this.hp - damage);
+    this.attack = null;
+    this.blocking = false;
+    this.crouching = false;
+    this.knockVx = 0;
+    this.vx = direction * throwSpeed;
+    this.vz = 0;
+    this.vy = launchVy;
+    this.y -= 1;
+    this.grounded = false;
+    this.facing = -direction;   // lands looking back at the thrower
+    this.thrown = true;
+    this.down = false;
+    this.downTime = downTime;
+    this.flashTimer = 0.08;
+    this.applyDamageState();
+    return true;
+  }
+
+  applyDamageState() {
     if (this.hp <= 0) {
       this.dead = true;
       this.state = 'dead';
@@ -78,7 +109,6 @@ export class Fighter {
       this.hurtTimer = PHYSICS.hurtTime;
       this.lastEvent = 'hurt';
     }
-    return true;
   }
 
   // Shared physics for every fighter: gravity, knockback decay, timers.
@@ -94,11 +124,12 @@ export class Fighter {
         if (!this.dead) this.state = this.grounded ? 'idle' : 'jump';
       }
     }
-    if (this.state === 'hurt') {
+    // A thrown fighter stays hurt until it has landed; the floor time starts then.
+    if (this.state === 'hurt' && !this.thrown) {
       this.hurtTimer -= dt;
-      if (this.hurtTimer <= 0) this.state = 'idle';
+      if (this.hurtTimer <= 0) { this.state = 'idle'; this.down = false; }
     }
-    if (this.dead) {
+    if (this.dead && !this.thrown) {
       this.deadTimer += dt;
     }
 
@@ -119,6 +150,11 @@ export class Fighter {
       if (wasAirborne) {
         this.lastEvent = this.lastEvent || 'land';
         if (this.state === 'jump') this.state = 'idle';
+        if (this.thrown) {
+          this.thrown = false;
+          this.vx = 0;
+          if (!this.dead) { this.down = true; this.hurtTimer = this.downTime; }
+        }
       }
     } else {
       this.grounded = false;
@@ -134,6 +170,10 @@ export class Player extends Fighter {
     this.kiaiCooldown = 0;  // seconds until Kiai can be used again
     this.minX = 10;         // walkable range; the game narrows it to what the camera shows
     this.maxX = WORLD_WIDTH - 10;
+    this.sprinting = false;
+    this.sprintDir = null;  // the double-tapped direction; releasing it ends the sprint
+    this.tapTimers = { left: 0, right: 0, up: 0, down: 0 };
+    this.heldMove = { left: false, right: false, up: false, down: false };
   }
 
   get kiaiActive() {
@@ -169,10 +209,34 @@ export class Player extends Fighter {
     if (this.kiaiCooldown > 0) this.kiaiCooldown = Math.max(0, this.kiaiCooldown - dt);
   }
 
+  // Double-tap detection: a direction pressed twice inside the tap window starts a sprint.
+  trackTaps(dt, input) {
+    for (const d of MOVE_DIRS) {
+      if (this.tapTimers[d] > 0) this.tapTimers[d] = Math.max(0, this.tapTimers[d] - dt);
+      const held = Boolean(input[d]);
+      if (held && !this.heldMove[d]) {
+        if (this.tapTimers[d] > 0 && !this.sprinting) {
+          this.sprinting = true;
+          this.sprintDir = d;
+          this.tapTimers[d] = 0;
+          if (!this.dead) this.lastEvent = 'sprint';
+        } else {
+          this.tapTimers[d] = SPRINT.tapWindow;
+        }
+      }
+      this.heldMove[d] = held;
+    }
+    if (this.sprinting && !input[this.sprintDir]) { this.sprinting = false; this.sprintDir = null; }
+  }
+
   // `input` is a snapshot: { left, right, up, down, duck, jump, punch, kick, block } where
   // jump/punch/kick are "just pressed" edges and the rest are "held".
-  update(dt, input) {
+  // The game adds what the player is up against: `nearDir` (1, -1 or 0) when an enemy is close in
+  // front, so holding away backs off without turning; `threatDir` when a strike or star is about to
+  // land from that side, so holding away blocks it.
+  update(dt, input, { threatDir = 0, nearDir = 0 } = {}) {
     this.tickKiai(dt);
+    this.trackTaps(dt, input);
     if (this.dead) {
       this.vx = 0;
       this.vz = 0;
@@ -188,6 +252,10 @@ export class Player extends Fighter {
     }
 
     if (this.attack) {
+      // Punch and kick pressed almost together: the first strike's wind-up turns into a grab.
+      const name = this.attack.name;
+      const other = name === 'punch' ? input.kick : name === 'kick' ? input.punch : false;
+      if (other && this.grounded && this.attackPhase === 'startup') this.startAttack('grab');
       // Committed to the attack; can still drift in the air.
       if (this.grounded) { this.vx = 0; this.vz = 0; }
       this.integrate(dt, this.minX, this.maxX);
@@ -195,7 +263,9 @@ export class Player extends Fighter {
     }
 
     if (this.grounded) {
-      this.blocking = Boolean(input.block);
+      // Holding away from a strike that is coming in from the front blocks it.
+      const backHeld = threatDir > 0 ? Boolean(input.left) : threatDir < 0 ? Boolean(input.right) : false;
+      this.blocking = Boolean(input.block) || backHeld;
       this.crouching = !this.blocking && Boolean(input.duck);
     }
 
@@ -212,13 +282,15 @@ export class Player extends Fighter {
     } else {
       const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
       const dirZ = (input.down ? 1 : 0) - (input.up ? 1 : 0);
-      if (dir !== 0) this.facing = dir;
-      this.vx = dir * PHYSICS.playerSpeed;
-      this.vz = dirZ * PHYSICS.playerDepthSpeed;
+      // Squared up with an enemy, stepping away keeps the eyes on them.
+      if (dir !== 0 && dir !== -nearDir) this.facing = dir;
+      const pace = this.sprinting ? SPRINT.speedMultiplier : 1;
+      this.vx = dir * PHYSICS.playerSpeed * pace;
+      this.vz = dirZ * PHYSICS.playerDepthSpeed * pace;
       if (this.grounded) {
         const moving = dir !== 0 || dirZ !== 0;
         this.state = moving ? 'walk' : 'idle';
-        if (moving) this.walkCycle += dt * 9; else this.walkCycle = 0;
+        if (moving) this.walkCycle += dt * 9 * pace; else this.walkCycle = 0;
         if (input.jump) {
           this.vy = PHYSICS.playerJumpVelocity;
           this.grounded = false;
@@ -228,7 +300,8 @@ export class Player extends Fighter {
       } else {
         this.state = 'jump';
       }
-      if (input.punch) this.startAttack('punch');
+      if (input.punch && input.kick && this.grounded) this.startAttack('grab');
+      else if (input.punch) this.startAttack('punch');
       else if (input.kick) this.startAttack('kick');
     }
     this.integrate(dt, this.minX, this.maxX);
@@ -292,8 +365,8 @@ export class Enemy extends Fighter {
   update(dt, player) {
     const { minX, maxX } = this;
     if (this.dead || this.state === 'hurt') {
-      this.vx = 0;
-      this.vz = 0;
+      // A thrown fighter keeps flying until it lands.
+      if (!this.thrown) { this.vx = 0; this.vz = 0; }
       this.integrate(dt, minX, maxX);
       return;
     }

@@ -1,18 +1,18 @@
 [
   {
     "seed": 7,
-    "steps": 4834,
-    "hash": "545a8695",
+    "steps": 4771,
+    "hash": "48976e7c",
     "finalState": "victory",
-    "score": 16050,
-    "elapsed": 80.567
+    "score": 17010,
+    "elapsed": 79.517
   },
   {
     "seed": 3,
-    "steps": 4796,
-    "hash": "061c609e",
+    "steps": 4834,
+    "hash": "cc802904",
     "finalState": "victory",
-    "score": 17010,
-    "elapsed": 79.933
+    "score": 16990,
+    "elapsed": 80.567
   }
 ]
