@@ -160,7 +160,7 @@ export function createUi(root) {
           hud.kiai.classList.toggle('is-ready', mode === 'ready');
           hud.kiai.classList.toggle('is-active', mode === 'active');
           if (hud.kiaiText) {
-            hud.kiaiText.textContent = mode === 'active' ? 'KIAI!' : mode === 'ready' ? 'Ready' : 'Charging';
+            hud.kiaiText.textContent = mode === 'active' ? 'AJSICH!' : mode === 'ready' ? 'Ready' : 'Charging';
             hud.kiaiText.classList.toggle('is-ready', mode === 'ready');
             hud.kiaiText.classList.toggle('is-active', mode === 'active');
           }

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Master Tamás: Siege of Sanshin. An original arcade-style side-scrolling karate game.">
-  <title>Master Tamás: Siege of Sanshin</title>
+  <meta name="description" content="Master Tamas: Siege of Sanshin. An original arcade-style side-scrolling karate game.">
+  <title>Master Tamas: Siege of Sanshin</title>
   <link rel="stylesheet" href="karate-game.css">
 </head>
 <body class="kg-page">
@@ -16,7 +16,7 @@
     <div id="karate-game" class="kg-root">
       <header class="kg-hud" aria-label="Game status">
         <div class="kg-hud__health">
-          <span class="kg-hud__label kg-hud__name">Tamás</span>
+          <span class="kg-hud__label kg-hud__name">Tamas</span>
           <div class="kg-bar" role="img" aria-label="Player health">
             <div class="kg-bar__fill" data-hud="health"></div>
           </div>
@@ -26,8 +26,8 @@
         <div class="kg-hud__stat"><span class="kg-hud__label">Enemies</span><strong data-hud="enemies">22</strong></div>
         <div class="kg-hud__stat" data-hud="combo-wrap" hidden><span class="kg-hud__label">Combo</span><strong data-hud="combo">x1</strong></div>
         <div class="kg-hud__kiai">
-          <span class="kg-hud__label">Kiai</span>
-          <div class="kg-bar kg-bar--kiai" role="img" aria-label="Kiai meter">
+          <span class="kg-hud__label">Ajsich</span>
+          <div class="kg-bar kg-bar--kiai" role="img" aria-label="Ajsich meter">
             <div class="kg-bar__fill" data-hud="kiai"></div>
           </div>
           <span class="kg-hud__small" data-hud="kiai-text">Ready</span>
@@ -45,7 +45,7 @@
       </header>
 
       <div class="kg-stage" data-stage>
-        <canvas width="320" height="180" aria-label="Master Tamás: Siege of Sanshin game"></canvas>
+        <canvas width="320" height="180" aria-label="Master Tamas: Siege of Sanshin game"></canvas>
 
         <section class="kg-overlay kg-overlay--story" data-overlay="story" hidden aria-live="polite">
           <div class="kg-story__rule"></div>
@@ -56,9 +56,10 @@
         </section>
 
         <section class="kg-overlay" data-overlay="start">
-          <h1 class="kg-title">Master Tamás</h1>
+          <h1 class="kg-title">Master Tamas</h1>
           <p class="kg-title__sub">Siege of Sanshin</p>
           <p class="kg-sub">Fight your way across Södermalm and into the dojo.</p>
+          <p class="kg-quote">“I Algeriet räknade vi inte poäng. Dra tillbaka benet. Gå.”</p>
           <div class="kg-controls">
             <div>
               <h2>Keyboard</h2>
@@ -67,7 +68,7 @@
                 <li><kbd>C</kbd> duck</li>
                 <li><kbd>Space</kbd> jump</li>
                 <li><kbd>J</kbd> punch &nbsp; <kbd>K</kbd> kick &nbsp; <kbd>L</kbd> block</li>
-                <li><kbd>I</kbd> Kiai: double damage for 4 s</li>
+                <li><kbd>I</kbd> Ajsich (kiai): double damage for 4 s</li>
                 <li><kbd>P</kbd> or <kbd>Esc</kbd> pause</li>
               </ul>
             </div>
@@ -76,7 +77,7 @@
               <ul>
                 <li>Duck under high kicks, jump over low sweeps.</li>
                 <li>Hold block to absorb a strike.</li>
-                <li>Kiai breaks guards but needs time to recharge.</li>
+                <li>Ajsich breaks guards but needs time to recharge. Caught mid-kick? Dra tillbaka benet.</li>
                 <li>Land hits without getting hit to build a combo.</li>
                 <li>Step up or down to line up a strike, or to slip out of one.</li>
                 <li>Clear each fight, then follow the GO arrow.</li>
@@ -88,7 +89,7 @@
           <p class="kg-hint" data-load-note>Loading hero artwork…</p>
           <button type="button" class="kg-btn kg-btn--ghost" data-action="intro">Replay intro</button>
           <p class="kg-hint kg-hint--keys">On phones, on-screen buttons appear below the game.</p>
-          <p class="kg-hint kg-hint--touch">Use the buttons below. Duck under high kicks, jump over sweeps, and use Kiai for double damage.</p>
+          <p class="kg-hint kg-hint--touch">Use the buttons below. Duck under high kicks, jump over sweeps, and use Ajsich for double damage.</p>
         </section>
 
         <section class="kg-overlay" data-overlay="paused" hidden>
@@ -98,15 +99,16 @@
         </section>
 
         <section class="kg-overlay" data-overlay="gameover" hidden>
-          <h2 class="kg-title kg-title--small">Knocked Out</h2>
+          <h2 class="kg-title kg-title--small">Det är jävla shit.</h2>
+          <p class="kg-title__sub">Tamas ties the belt again.</p>
           <p class="kg-sub">Score <strong data-result="score">0</strong> · Time <strong data-result="time">0:00</strong></p>
           <button type="button" class="kg-btn kg-btn--primary" data-action="start">Try Again</button>
         </section>
 
         <section class="kg-overlay" data-overlay="victory" hidden>
-          <canvas class="kg-hero-pose" data-hero-canvas width="81" height="126" aria-label="Tamás in his victory pose"></canvas>
-          <h2 class="kg-title kg-title--small">The Dojo Stands.</h2>
-          <p class="kg-title__sub">Discipline never falls.</p>
+          <canvas class="kg-hero-pose" data-hero-canvas width="81" height="126" aria-label="Tamas in his victory pose"></canvas>
+          <h2 class="kg-title kg-title--small">Knuten håller.</h2>
+          <p class="kg-title__sub">Bältet är gammalt. Vem knyter det sen?</p>
           <p class="kg-sub">Score <strong data-result="score">0</strong> · Time <strong data-result="time">0:00</strong></p>
           <p class="kg-hint" data-result="bonus"></p>
           <button type="button" class="kg-btn kg-btn--primary" data-action="start">Play Again</button>
@@ -121,7 +123,7 @@
           <button type="button" class="kg-touch__btn kg-touch__btn--right" data-btn="right" aria-label="Move right">▶</button>
         </div>
         <div class="kg-touch__actions">
-          <button type="button" class="kg-touch__btn kg-touch__btn--kiai" data-btn="kiai" aria-label="Kiai">Kiai</button>
+          <button type="button" class="kg-touch__btn kg-touch__btn--kiai" data-btn="kiai" aria-label="Ajsich">Ajsich</button>
           <button type="button" class="kg-touch__btn kg-touch__btn--jump" data-btn="jump" aria-label="Jump">Jump</button>
           <button type="button" class="kg-touch__btn kg-touch__btn--duck" data-btn="duck" aria-label="Duck">Duck</button>
           <button type="button" class="kg-touch__btn kg-touch__btn--block" data-btn="block" aria-label="Block">Block</button>

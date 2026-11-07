@@ -1,4 +1,4 @@
-// Tamás Weber's sprite sheet: loading, frame detection, pre-scaling and drawing.
+// Tamas Weber's sprite sheet: loading, frame detection, pre-scaling and drawing.
 //
 // The sheet is 4 columns x 2 rows (idle, step, punch, kick / block, hit, knockdown, victory).
 // Cells are nominally imageWidth/4 by imageHeight/2, but a drawn sheet can spill a fist or a

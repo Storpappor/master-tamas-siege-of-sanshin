@@ -1,4 +1,4 @@
-# Master Tamás: Siege of Sanshin
+# Master Tamas: Siege of Sanshin
 
 Original NES-inspired karate side-scroller: plain HTML5 Canvas and ES modules. See
 `README.md` for controls, the file layout and design notes.
@@ -41,7 +41,7 @@ Run a single suite with `node --test test/combat.test.js`.
 | Enemy stats and behaviour | `ENEMY_TYPES` and `Enemy.update` in `src/entities.js` |
 | Zones and waves | `LEVEL_1` in `src/level.js` (zone art in `src/renderer.js`) |
 | Floor depth and hit reach in depth | `DEPTH`, `DEPTH_REACH` in `src/constants.js` |
-| Story and dialogue text | `INTRO_SCREENS` in `src/main.js`, `KAGE_DIALOGUE` in `src/game.js` |
+| Story and dialogue text | `INTRO_SCREENS` in `src/main.js`, `KAGE_DIALOGUE` and `ZONE_CARDS` in `src/game.js`, end cards in `index.html` |
 
 Keep these in sync when they change:
 
@@ -56,8 +56,8 @@ Keep these in sync when they change:
 - `src/main.js` runs `boot` on import and needs a browser, so tests cannot import it.
 - `index.html` must be served over http; ES modules fail from `file://`.
 - The start buttons stay disabled until the hero sprite sheet has loaded.
-- The canvas bitmap font (`GLYPHS` in `src/sprites.js`) has A-Z, `Ö`, 0-9 and `+-!:.` only;
-  other characters such as `Á` draw as blanks. Story cards and the HUD are HTML, so they
+- The canvas bitmap font (`GLYPHS` in `src/sprites.js`) has A-Z, `ÅÄÖ`, 0-9 and `+-!:.` only;
+  other characters such as `É` draw as blanks. Story cards and the HUD are HTML, so they
   are not affected.
 - The street and dojo backgrounds are modelled on the real Sanshin Kan on Södermalm, so
   check art changes against the club's look (red and sage mats, red padded pillars).
