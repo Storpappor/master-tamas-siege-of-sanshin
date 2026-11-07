@@ -1,4 +1,4 @@
-/* Master Tamás: all rules are scoped under .kg-* so they cannot leak into the host site. */
+/* Master Tamas: all rules are scoped under .kg-* so they cannot leak into the host site. */
 .kg-page {
   margin: 0;
   background: #14100d;
@@ -116,6 +116,7 @@
 .kg-title--small { font-size: clamp(20px, 4vw, 30px); }
 .kg-sub { margin: 0; color: var(--kg-text); font-size: clamp(12px, 2vw, 15px); }
 .kg-hint { margin: 0; color: var(--kg-muted); font-size: 12px; }
+.kg-quote { margin: 0; color: var(--kg-muted); font-size: 12px; font-style: italic; max-width: 32ch; }
 .kg-controls {
   display: flex;
   flex-wrap: wrap;

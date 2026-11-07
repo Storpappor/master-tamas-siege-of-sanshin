@@ -5,6 +5,7 @@ import { LEVEL_1 } from './level.js';
 import { drawFighter, drawShuriken, drawText } from './sprites.js';
 import { heroFrameIndex, heroState } from './heroSprite.js';
 import { ART_SCALE } from './artScale.js';
+import { validateBackground } from './background.js';
 
 // Size of the draw buffer in art pixels.
 const BUF_W = VIEW_W * ART_SCALE;
@@ -316,12 +317,22 @@ function paintDojo(g, from, to) {
 const PAINTERS = { street: paintStreet, dojo: paintDojo };
 
 // Pre-render the whole level once; the camera just slides across it.
-// The painters work in game units; the scale transform turns them into art pixels.
-function buildWorld(createCanvas, zones) {
+// A zone with a valid hand-drawn background is blitted 1:1 at its art column; every other zone is
+// painted procedurally in game units, with the scale transform turning them into art pixels.
+export function buildWorld(createCanvas, zones, images = null) {
   const c = createCanvas(WORLD_WIDTH * ART_SCALE, VIEW_H * ART_SCALE);
   const g = c.getContext('2d');
-  g.scale(ART_SCALE, ART_SCALE);
-  for (const zone of zones) inZone(g, zone, (from, to) => PAINTERS[zone.art](g, from, to, zone));
+  g.imageSmoothingEnabled = false;
+  for (const zone of zones) {
+    const img = images && images[zone.art];
+    if (img && validateBackground(img, zone) === null) {
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(img, zone.from * ART_SCALE, 0);
+    } else {
+      g.setTransform(ART_SCALE, 0, 0, ART_SCALE, 0, 0);
+      inZone(g, zone, (from, to) => PAINTERS[zone.art](g, from, to, zone));
+    }
+  }
   return c;
 }
 
@@ -335,9 +346,30 @@ export class Renderer {
     this.buffer = this.createCanvas(BUF_W, BUF_H);
     this.bctx = this.buffer.getContext('2d');
     this.world = buildWorld(this.createCanvas, LEVEL_1.zones);
+    this.backgrounds = {};
     this.reducedMotion = reducedMotion;
     this.zoom = ART_SCALE;  // display pixels per game unit
     this.camX = 0;
+  }
+
+  // Install hand-drawn zone backgrounds once they have loaded. An image of the wrong size is refused
+  // with a warning and that zone keeps its painter; the live world is replaced only after the new one
+  // has been built completely, so a failure leaves the current picture untouched.
+  setBackgrounds(images) {
+    const accepted = {};
+    for (const zone of LEVEL_1.zones) {
+      const img = images && images[zone.art];
+      if (!img) continue;
+      const problem = validateBackground(img, zone);
+      if (problem) { console.warn(`Background ignored: ${problem}`); continue; }
+      accepted[zone.art] = img;
+    }
+    let world;
+    try { world = buildWorld(this.createCanvas, LEVEL_1.zones, accepted); }
+    catch (err) { console.warn(`Background world not rebuilt: ${err.message}`); return false; }
+    this.backgrounds = accepted;
+    this.world = world;
+    return Object.keys(accepted).length > 0;
   }
 
   // Choose how many display pixels one game unit gets (`zoom`), in this order of preference:

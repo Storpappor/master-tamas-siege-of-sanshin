@@ -11,9 +11,15 @@ const NULL_UI = { showOverlay() {}, setHud() {}, showDialogue(lines, done) { don
 
 // Exchange shown immediately before the final battle.
 export const KAGE_DIALOGUE = [
+  ['TAMAS: DU DITT SVIN SOM ÄTER', 'MAKRILL I KLUBBEN.'],
+  ['TAMAS: DU ÄR INTE VÄLKOMMEN', 'I LOKALEN.'],
   ['MASTER KAGE: POWER CREATES RESPECT.'],
-  ['TAMÁS: RESPECT CREATES POWER.'],
+  ['TAMAS: DET ÄR JÄVLA SHIT.', 'RESPEKT SKAPAR KRAFT.'],
 ];
+// What Tamas says on arriving in a zone, keyed by the zone's art; shown once the door transition ends.
+export const ZONE_CARDS = {
+  dojo: [['TAMAS: DET HÄR ÄR MIN LOKAL.', 'DRA TILLBAKA BENET. GÅ.']],
+};
 const NULL_AUDIO = { play() {} };
 
 // How far inside the screen edge enemies must stay once they have walked in.
@@ -232,7 +238,12 @@ export class Game {
       // Step into the room while the picture comes back.
       p.update(dt, { ...NO_INPUT, right: true });
       this.fade = Math.max(0, 1 - tr.t / DOOR_FADE_TIME);
-      if (tr.t >= DOOR_FADE_TIME) { this.fade = 0; this.transition = null; }
+      if (tr.t >= DOOR_FADE_TIME) {
+        this.fade = 0;
+        this.transition = null;
+        const card = ZONE_CARDS[this.zone.art];
+        if (card) this.startDialogue(card);
+      }
     }
   }
 
@@ -388,7 +399,8 @@ export class Game {
     this.combo += 1;
     const prevMult = this.comboMultiplierFor(this.combo - 1);
     const mult = this.comboMultiplier;
-    if (mult > prevMult) this.addText(`X${mult} COMBO`, p.x, feet(p) - 52, '#ffd166');
+    // Tamas names the combo the way he does on the mat.
+    if (mult > prevMult) this.addText(prevMult > 1 ? 'DUBBEL TWIST! IGEN!' : 'DUBBEL TWIST!', p.x, feet(p) - 52, '#ffd166');
     if (enemy.dead) {
       this.defeated += 1;
       const points = Math.round(enemy.cfg.score * mult);
@@ -412,10 +424,13 @@ export class Game {
       this.burst(p.x + r.direction * -4, feet(p) - 28, '#bfe3ff', 4);
       return;
     }
+    const kicking = /kick/i.test(p.attack?.name || '');
     const took = p.takeHit({ damage: r.damage, blocked: false, direction: r.direction, knockback: atk.knockback });
     p.lastEvent = null;
     if (!took) return;
     this.combo = 0;
+    // Caught mid-kick: the correction every Sanshin Kan student has heard.
+    if (kicking) this.addText('DRA TILLBAKA BENET!', p.x, feet(p) - 56, '#ff8a7a');
     p.invulnerable = PHYSICS.invulnerableTime;
     this.shake = 0.2;
     this.audio.play('hurt');
@@ -435,13 +450,13 @@ export class Game {
     }
     if (ev === 'kiai') {
       this.audio.play('kiaiStart');
-      this.addText('KIAI!', f.x, feet(f) - 54, '#ffb347', 2);
+      this.addText('AJSICH!', f.x, feet(f) - 54, '#ffb347', 2);
       this.burst(f.x, feet(f) - 20, '#ffb347', 12);
     }
     if (ev === 'attack' && f === this.player) {
       if (f.kiaiActive) {
         this.audio.play('kiai');
-        this.addText('KIAI!', f.x + f.facing * 6, feet(f) - 50, '#ffb347');
+        this.addText('AJSICH!', f.x + f.facing * 6, feet(f) - 50, '#ffb347');
       } else {
         this.audio.play(/kick/i.test(f.attack?.name || '') ? 'kick' : 'punch');
       }

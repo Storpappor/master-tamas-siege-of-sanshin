@@ -60,6 +60,7 @@ test('a scripted player can clear the level in the target time', () => {
   assert.equal(game.remainingEnemies, 0);
   assert.ok(game.elapsed >= 55 && game.elapsed <= 100, `level took ${game.elapsed.toFixed(1)}s`);
   assert.ok(game.score > 0);
+  assert.equal(events.filter((e) => e === 'dialogue').length, 2, 'dojo card and Kage exchange');
   assert.ok(events.includes('victory'));
   assert.ok(events.includes('dialogue'), 'the exchange with Master Kage was shown');
 });
@@ -75,7 +76,8 @@ test('no seed leaves a fight that cannot be finished', () => {
 
 test('the fight freezes during the Master Kage exchange and resumes afterwards', () => {
   let finish = null;
-  const ui = { showOverlay() {}, setHud() {}, showDialogue: (lines, done) => { finish = done; } };
+  // The dojo card plays through; only the Kage exchange is held open.
+  const ui = { showOverlay() {}, setHud() {}, showDialogue: (lines, done) => { if (game.boss) finish = done; else done(); } };
   const game = new Game({ input: null, ui, rng: seededRng(5) });
   game.start();
   playUntil(game, 240, botInput);

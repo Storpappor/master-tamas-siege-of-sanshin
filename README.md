@@ -1,4 +1,4 @@
-# Master Tamás: Siege of Sanshin
+# Master Tamas: Siege of Sanshin
 
 An original, NES-inspired side-scrolling karate game. Fight your way along the street on
 Södermalm, drive the Shadow League out of the Sanshin Kan dojo and face Master Kage at the end.
@@ -16,7 +16,7 @@ Södermalm, drive the Shadow League out of the Sanshin Kan dojo and face Master 
 | Grab and throw (goes through a guard) | J + K together | Punch + Kick together |
 | Sprint | Double-tap a direction | Double-tap a direction |
 | Block without the block key | Hold the direction away from an incoming strike or star | Same, with the arrows |
-| Kiai (double damage, breaks guards) | I | Kiai |
+| Ajsich, his kiai (double damage, breaks guards) | I | Ajsich |
 | Pause | P or Esc | Pause button |
 
 Tips: duck under high kicks, jump over low sweeps, hold block (or hold away from the strike) to absorb it,

@@ -1,4 +1,4 @@
-// Central tuning values for Master Tamás: Siege of Sanshin.
+// Central tuning values for Master Tamas: Siege of Sanshin.
 // All distances are in "world pixels" at the game's native low resolution.
 
 export const VIEW_W = 320;       // native canvas width (scaled up on screen)
