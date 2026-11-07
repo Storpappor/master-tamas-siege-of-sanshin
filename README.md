@@ -13,10 +13,14 @@ Södermalm, drive the Shadow League out of the Sanshin Kan dojo and face Master 
 | Duck | C | Duck |
 | Jump | Space | Jump |
 | Punch / Kick / Block | J / K / L | Punch / Kick / Block |
+| Grab and throw (goes through a guard) | J + K together | Punch + Kick together |
+| Sprint | Double-tap a direction | Double-tap a direction |
+| Block without the block key | Hold the direction away from an incoming strike or star | Same, with the arrows |
 | Kiai (double damage, breaks guards) | I | Kiai |
 | Pause | P or Esc | Pause button |
 
-Tips: duck under high kicks, jump over low sweeps, hold block to absorb a strike,
+Tips: duck under high kicks, jump over low sweeps, hold block (or hold away from the strike) to absorb it,
+throw an enemy who keeps blocking,
 block, duck or sidestep throwing stars, step up or down to line up a strike or slip out of one, and land hits without getting
 hit to build a combo multiplier. Each fight holds the screen until it is won; then follow
 the GO arrow. At the end of the street, walk up to the door to enter the dojo.

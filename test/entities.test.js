@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Player, Enemy, ENEMY_TYPES, separate } from '../src/entities.js';
 import { ATTACKS, attackDuration } from '../src/combat.js';
-import { GROUND_Y, STEP, DEPTH, DEPTH_REACH } from '../src/constants.js';
+import { GROUND_Y, STEP, DEPTH, DEPTH_REACH, PHYSICS, SPRINT, GRAB } from '../src/constants.js';
 
 const idle = { left: false, right: false, down: false, block: false, jump: false, punch: false, kick: false };
 const run = (f, seconds, fn) => { for (let t = 0; t < seconds; t += STEP) fn(); };
@@ -31,6 +31,93 @@ test('player walks in depth, stays on the floor and keeps facing the same way', 
   run(p, 3, () => p.update(STEP, { ...idle, up: true }));
   assert.equal(p.z, 0, 'clamped at the back wall');
   assert.equal(p.x, 100, 'depth movement does not change x');
+});
+
+test('double-tapping a direction sprints that way until the key is released', () => {
+  const p = new Player(100);
+  p.update(STEP, { ...idle, right: true });
+  p.update(STEP, idle);
+  p.update(STEP, { ...idle, right: true });
+  assert.equal(p.sprinting, true, 'second tap inside the window starts the sprint');
+  assert.equal(p.lastEvent, 'sprint');
+  assert.ok(Math.abs(p.vx - PHYSICS.playerSpeed * SPRINT.speedMultiplier) < 1e-9, 'sprint speed');
+  run(p, 0.5, () => p.update(STEP, { ...idle, right: true }));
+  assert.equal(p.sprinting, true, 'still sprinting while held');
+  p.update(STEP, idle);
+  assert.equal(p.sprinting, false, 'letting go ends the sprint');
+
+  const slow = new Player(100);
+  slow.update(STEP, { ...idle, up: true });
+  run(slow, SPRINT.tapWindow + 0.05, () => slow.update(STEP, idle));
+  slow.update(STEP, { ...idle, up: true });
+  assert.equal(slow.sprinting, false, 'a second tap after the window is just a walk');
+  assert.equal(slow.vz, -PHYSICS.playerDepthSpeed);
+});
+
+test('punch and kick together become a grab', () => {
+  const p = new Player(100);
+  p.update(STEP, { ...idle, punch: true, kick: true });
+  assert.equal(p.attack.name, 'grab', 'both on the same frame');
+  const q = new Player(100);
+  q.update(STEP, { ...idle, punch: true });
+  q.update(STEP, { ...idle, kick: true });
+  assert.equal(q.attack.name, 'grab', 'kick during the punch wind-up');
+  const r = new Player(100);
+  r.update(STEP, { ...idle, kick: true });
+  r.update(STEP, { ...idle, punch: true });
+  assert.equal(r.attack.name, 'grab', 'punch during the kick wind-up');
+  const air = new Player(100);
+  air.update(STEP, { ...idle, jump: true });
+  air.update(STEP, { ...idle, punch: true, kick: true });
+  assert.notEqual(air.attack?.name, 'grab', 'no grabs in the air');
+});
+
+test('holding away from an incoming strike blocks instead of walking', () => {
+  const p = new Player(100);
+  p.update(STEP, { ...idle, left: true }, { threatDir: 1 });
+  assert.equal(p.blocking, true);
+  assert.equal(p.state, 'block');
+  assert.equal(p.facing, 1, 'keeps facing the attacker');
+  assert.equal(p.x, 100, 'does not move');
+  const free = new Player(100);
+  free.update(STEP, { ...idle, left: true }, { threatDir: 0 });
+  assert.equal(free.blocking, false);
+  assert.equal(free.facing, -1, 'with nothing coming, back is just a turn');
+  const wrongWay = new Player(100);
+  wrongWay.update(STEP, { ...idle, right: true }, { threatDir: 1 });
+  assert.equal(wrongWay.blocking, false, 'walking into the strike is not a block');
+  const near = new Player(100);
+  run(near, 0.2, () => near.update(STEP, { ...idle, left: true }, { nearDir: 1 }));
+  assert.equal(near.facing, 1, 'backs away from a close enemy without turning');
+  assert.ok(near.x < 100, 'still moves');
+  assert.equal(near.blocking, false);
+});
+
+test('a thrown fighter flies, lands, stays down for a moment and then gets up', () => {
+  const e = new Enemy('striker', 120, -1, () => 0.5);
+  const p = new Player(100);
+  assert.equal(e.takeThrow({ damage: GRAB.damage, direction: 1 }), true);
+  assert.equal(e.hp, ENEMY_TYPES.striker.hp - GRAB.damage);
+  assert.equal(e.thrown, true);
+  assert.equal(e.grounded, false);
+  assert.equal(e.facing, -1);
+  let landedAt = null, peak = GROUND_Y;
+  run(e, 2, () => {
+    e.update(STEP, p);
+    peak = Math.min(peak, e.y);
+    if (landedAt === null && e.grounded) landedAt = e.x;
+  });
+  assert.ok(GROUND_Y - peak > 8, `flew up (${GROUND_Y - peak})`);
+  assert.ok(landedAt > 160, `flew forward (${landedAt})`);
+  assert.equal(e.thrown, false);
+  assert.equal(e.down, false, 'back on its feet after the floor time');
+  assert.equal(e.state, 'idle');
+  const d = new Enemy('striker', 120, -1, () => 0.5);
+  d.takeThrow({ damage: GRAB.damage, direction: 1 });
+  run(d, 0.6, () => d.update(STEP, p));
+  assert.equal(d.grounded, true);
+  assert.equal(d.down, true, 'lying on the floor right after landing');
+  assert.equal(d.state, 'hurt');
 });
 
 test('a jump kick keeps its momentum', () => {
@@ -73,8 +160,9 @@ test('punch has a fixed duration and blocks other actions meanwhile', () => {
   const p = new Player(100);
   p.update(STEP, { ...idle, punch: true });
   assert.equal(p.attack.name, 'punch');
+  run(p, ATTACKS.punch.startup, () => p.update(STEP, idle));
   p.update(STEP, { ...idle, kick: true });
-  assert.equal(p.attack.name, 'punch', 'cannot cancel into a kick');
+  assert.equal(p.attack.name, 'punch', 'cannot cancel into a kick once the punch is on its way');
   run(p, attackDuration(ATTACKS.punch) + 0.05, () => p.update(STEP, idle));
   assert.equal(p.attack, null);
   assert.equal(p.state, 'idle');
