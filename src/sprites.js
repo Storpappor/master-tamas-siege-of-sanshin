@@ -82,6 +82,9 @@ const POSES = {
   crouchPunch: { head: [1, -26], sh: [1, -21], hip: [0, -12], lead: { arm: [[8, -21], [15, -20]], leg: [[6, -7], [6, 0]] }, rear: { arm: [[-4, -18], [-2, -14]], leg: [[-6, -7], [-6, 0]] } },
   crouchKick: { head: [-1, -26], sh: [-1, -21], hip: [0, -12], lead: { arm: [[4, -16], [8, -22]], leg: [[9, -11], [20, -12]] }, rear: { arm: [[-3, -15], [2, -19]], leg: [[-5, -7], [-6, 0]] } },
   block:  { head: [0, -35], sh: [0, -29], hip: [0, -17], lead: { arm: [[5, -23], [5, -33]], leg: [[4, -9], [6, 0]] }, rear: { arm: [[3, -21], [7, -28]], leg: [[-4, -9], [-6, 0]] } },
+  // Grab: both hands reach forward at chest height; throw: the body turns and both arms swing past the hip.
+  grab:   { head: [1, -36], sh: [2, -30], hip: [0, -18], lead: { arm: [[8, -29], [14, -27]], leg: [[5, -10], [8, 0]] }, rear: { arm: [[6, -27], [13, -25]], leg: [[-4, -9], [-7, 0]] } },
+  throw:  { head: [3, -34], sh: [3, -28], hip: [0, -18], lead: { arm: [[9, -22], [15, -16]], leg: [[6, -10], [10, 0]] }, rear: { arm: [[7, -21], [13, -15]], leg: [[-4, -9], [-8, 0]] } },
   hurt:   { head: [-3, -36], sh: [-2, -30], hip: [0, -18], lead: { arm: [[4, -27], [7, -23]], leg: [[4, -10], [6, 0]] }, rear: { arm: [[-5, -28], [-9, -25]], leg: [[-3, -9], [-6, 0]] } },
   fallen: { lying: true, head: [-14, -4], sh: [-8, -5], hip: [2, -5], lead: { arm: [[-6, -9], [-10, -11]], leg: [[7, -7], [13, -5]] }, rear: { arm: [[-4, -3], [-8, -2]], leg: [[6, -3], [12, -2]] } },
 };
@@ -91,9 +94,10 @@ const WALK_FRAMES = ['walk1', 'walk2', 'walk3', 'walk4'];
 // Map a fighter's current state to a pose name.
 export function poseFor(f) {
   if (f.dead) return f.deadTimer < 0.25 ? 'hurt' : 'fallen';
-  if (f.state === 'hurt') return 'hurt';
+  if (f.state === 'hurt') return f.down ? 'fallen' : 'hurt';
   if (f.attack) {
     const name = f.attack.name;
+    if (name === 'grab' || name === 'throw') return name;
     const isKick = /kick/i.test(name);
     const isCrouch = name.startsWith('crouch') || LOW_ATTACKS.has(name);
     if (f.attackPhase === 'startup') {

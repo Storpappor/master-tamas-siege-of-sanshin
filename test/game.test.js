@@ -6,7 +6,7 @@ import { Game } from '../src/game.js';
 import { LEVEL_1 } from '../src/level.js';
 import { Enemy, Player } from '../src/entities.js';
 import { ATTACKS } from '../src/combat.js';
-import { STEP, VIEW_W, DEPTH_REACH } from '../src/constants.js';
+import { STEP, VIEW_W, DEPTH_REACH, GRAB } from '../src/constants.js';
 
 function seededRng(seed) {
   let s = seed >>> 0;
@@ -263,6 +263,102 @@ test('stars leave the game when they fly off screen', () => {
   game.projectiles.push({ x: game.player.x + 20, y: game.player.y, z: game.player.z + DEPTH_REACH + 1, facing: 1 });
   for (let i = 0; i < 240; i++) game.step(STEP, idle);
   assert.equal(game.projectiles.length, 0);
+});
+
+// A game with one enemy standing right in front of the player, lined up in depth.
+function duel(type, gap = 12) {
+  const game = new Game({ input: null, rng: () => 0.5 });
+  game.start();
+  const p = game.player;
+  const e = new Enemy(type, p.x + gap, -1, () => 0.5, p.z);
+  e.cooldown = 99;
+  game.enemies.push(e);
+  return { game, enemy: e };
+}
+
+test('punch and kick together grab the enemy in front and throw them forward', () => {
+  const { game, enemy } = duel('striker');
+  const hp = enemy.hp;
+  const startX = enemy.x;
+  game.step(STEP, { ...idle, punch: true, kick: true });
+  assert.equal(game.player.attack.name, 'grab');
+  for (let i = 0; i < 20 && !enemy.thrown; i++) game.step(STEP, idle);
+  assert.equal(enemy.thrown, true, 'the grab connected');
+  assert.equal(game.player.attack.name, 'throw');
+  assert.equal(enemy.hp, hp - GRAB.damage);
+  assert.equal(game.combo, 1);
+  assert.ok(game.texts.some((t) => t.text === 'THROW!'));
+  for (let i = 0; i < 120 && !enemy.grounded; i++) game.step(STEP, idle);
+  assert.ok(enemy.x > startX + 40, `landed well ahead (${enemy.x - startX})`);
+  assert.equal(enemy.down, true);
+  // Strikes pass over a fighter on the floor.
+  game.player.x = enemy.x - 12;
+  game.player.facing = 1;
+  game.step(STEP, { ...idle, punch: true });
+  for (let i = 0; i < 12; i++) game.step(STEP, idle);
+  assert.equal(enemy.hp, hp - GRAB.damage, 'no damage while down');
+});
+
+test('a grab goes through a guard, so it beats Master Kage blocking', () => {
+  const { game, enemy } = duel('boss');
+  enemy.blockTimer = 2;
+  enemy.blocking = true;
+  const hp = enemy.hp;
+  game.step(STEP, { ...idle, punch: true, kick: true });
+  for (let i = 0; i < 20 && !enemy.thrown; i++) game.step(STEP, idle);
+  assert.equal(enemy.thrown, true);
+  assert.equal(enemy.hp, hp - GRAB.damage);
+  assert.ok(!game.texts.some((t) => t.text === 'BLOCK'));
+});
+
+test('a grab with nobody in reach just whiffs', () => {
+  const { game, enemy } = duel('striker', 60);
+  game.step(STEP, { ...idle, punch: true, kick: true });
+  for (let i = 0; i < 30; i++) game.step(STEP, idle);
+  assert.equal(enemy.thrown, false);
+  assert.equal(enemy.hp, enemy.maxHp);
+  assert.equal(game.player.attack, null, 'the grab finished on its own');
+});
+
+test('holding back while an enemy strikes blocks the strike', () => {
+  const { game, enemy } = duel('striker', 16);
+  enemy.cooldown = 0;
+  const p = game.player;
+  let blockedFrames = 0, facedWhileBlocking = true, sawBlockText = false;
+  for (let i = 0; i < 90; i++) {
+    game.step(STEP, { ...idle, left: true });
+    if (p.blocking) { blockedFrames++; if (p.facing !== 1) facedWhileBlocking = false; }
+    if (game.texts.some((t) => t.text === 'BLOCK')) sawBlockText = true;
+  }
+  assert.ok(enemy.attack || enemy.cooldown > 0, 'the striker attacked');
+  assert.ok(blockedFrames > 0, 'the player raised a guard by holding back');
+  assert.equal(p.hp, 100, 'the punch was blocked');
+  assert.ok(facedWhileBlocking, 'kept facing the striker while the guard was up');
+  assert.ok(sawBlockText, 'the BLOCK text appeared');
+
+  // With nothing coming in, holding back simply walks away from the enemy.
+  const calm = duel('striker', 16);
+  calm.enemy.cooldown = 99;
+  const x = calm.game.player.x;
+  for (let i = 0; i < 30; i++) calm.game.step(STEP, { ...idle, left: true });
+  assert.ok(calm.game.player.x < x - 20, 'walked away');
+  assert.equal(calm.game.player.facing, -1);
+});
+
+test('holding back once a throwing star is in flight blocks it', () => {
+  const { game } = throwerGame();
+  // Stand still until the star is on its way, then hold away from it.
+  let thrown = false, blocked = 0;
+  for (let i = 0; i < 180; i++) {
+    game.step(STEP, game.projectiles.length ? { ...idle, left: true } : idle);
+    if (game.projectiles.length) thrown = true;
+    if (game.player.blocking) blocked++;
+    if (thrown && !game.projectiles.length) break;
+  }
+  assert.ok(thrown, 'a star was thrown');
+  assert.ok(blocked > 0, 'the guard went up as the star came close');
+  assert.equal(game.player.hp, 100, 'blocked by holding back');
+  assert.equal(game.player.facing, 1);
 });
 
 test('pause stops the simulation and restart resets everything', () => {

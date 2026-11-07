@@ -10,6 +10,10 @@ export const ATTACKS = {
   kick:        { startup: 0.14, active: 0.12, recovery: 0.26, damage: 16, knockback: 70, box: { x: 6, y: -28, w: 20, h: 11 } },
   crouchPunch: { startup: 0.07, active: 0.10, recovery: 0.16, damage: 8,  knockback: 30, box: { x: 6, y: -24, w: 14, h: 8 } },
   crouchKick:  { startup: 0.12, active: 0.12, recovery: 0.24, damage: 12, knockback: 60, box: { x: 6, y: -16, w: 20, h: 8 } },
+  // Grab: reaches for the fighter in front; a guard does not stop it. On contact it becomes a throw.
+  grab:        { startup: 0.08, active: 0.08, recovery: 0.28, damage: 0, knockback: 0, box: { x: 2, y: -34, w: 16, h: 30 }, grab: true },
+  // The throw itself is only an animation: the grabbed fighter was launched when the grab connected.
+  throw:       { startup: 0, active: 0.16, recovery: 0.30, damage: 0, knockback: 0, box: { x: 0, y: 0, w: 0, h: 0 }, ranged: true },
   // Enemy attacks (slower and clearly telegraphed)
   enemyPunch:    { startup: 0.40, active: 0.12, recovery: 0.45, damage: 10, knockback: 40, box: { x: 6, y: -34, w: 15, h: 9 } },
   enemyHighKick: { startup: 0.52, active: 0.14, recovery: 0.55, damage: 14, knockback: 65, box: { x: 6, y: -42, w: 21, h: 12 } },
@@ -73,7 +77,7 @@ export function resolveHit(attacker, defender, attackName) {
     return { hit: false, blocked: false, damage: 0, direction: attacker.facing };
   }
   const attackerInFront = Math.sign(attacker.x - defender.x) === defender.facing;
-  const blocked = Boolean(defender.blocking) && attackerInFront;
+  const blocked = Boolean(defender.blocking) && attackerInFront && !attack.grab;
   return {
     hit: true,
     blocked,

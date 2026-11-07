@@ -1,7 +1,7 @@
 // Game orchestration: state machine (start → playing → paused/gameover/victory),
 // wave spawning, hit resolution between fighters, camera, particles and scoring.
 // This file has no DOM access so the whole simulation can run in tests.
-import { VIEW_W, WORLD_WIDTH, GROUND_Y, DEPTH, SHURIKEN_SPEED, screenY, PHYSICS, SCORE, KIAI, COMBO } from './constants.js';
+import { VIEW_W, WORLD_WIDTH, GROUND_Y, DEPTH, DEPTH_REACH, SHURIKEN_SPEED, screenY, PHYSICS, SCORE, KIAI, COMBO, GRAB, AUTO_BLOCK } from './constants.js';
 import { Player, Enemy, separate } from './entities.js';
 import { Spawner, LEVEL_1, totalEnemies } from './level.js';
 import { ATTACKS, resolveHit } from './combat.js';
@@ -148,7 +148,7 @@ export class Game {
     // The player can never leave the visible part of the level or walk out of the zone.
     p.minX = this.camX + 10;
     p.maxX = Math.min(this.camX + VIEW_W, this.zone?.to ?? WORLD_WIDTH) - 10;
-    p.update(dt, snap);
+    p.update(dt, snap, this.guardContext());
     this.consumeEvent(p);
 
     const alive = this.enemies.filter((e) => !e.dead).length;
@@ -182,6 +182,26 @@ export class Game {
     this.updateEffects(dt);
     this.checkEnd(dt);
     this.syncHud();
+  }
+
+  // What the player is squared up against, for blocking by holding back:
+  //  nearDir   (1, -1 or 0): an enemy is close in front, so holding away walks backward without turning;
+  //  threatDir (1, -1 or 0): a strike or star is about to land from the front, so holding away blocks it.
+  guardContext() {
+    const p = this.player;
+    const inFront = (x) => Math.sign(x - p.x) === p.facing;
+    let nearDir = 0, threatDir = 0;
+    for (const e of this.enemies) {
+      if (e.dead || e.thrown || e.down || !inFront(e.x) || Math.abs(e.z - p.z) > DEPTH_REACH) continue;
+      if (Math.abs(e.x - p.x) >= AUTO_BLOCK.strikeRange) continue;
+      nearDir = p.facing;
+      if (e.attack && e.attackPhase !== 'recovery' && !ATTACKS[e.attack.name].ranged) threatDir = p.facing;
+    }
+    for (const s of this.projectiles) {
+      const towards = Math.sign(p.x - s.x) === s.facing;
+      if (towards && inFront(s.x) && Math.abs(s.z - p.z) <= DEPTH_REACH) { nearDir = p.facing; threatDir = p.facing; }
+    }
+    return { nearDir, threatDir };
   }
 
   // Walking up to an open door starts the way through it.
@@ -302,10 +322,19 @@ export class Game {
 
   resolveCombat() {
     const p = this.player;
-    if (p.attack && p.attackPhase === 'active') {
+    if (p.attack && p.attackPhase === 'active' && ATTACKS[p.attack.name].grab) {
+      // A grab takes the first fighter it reaches; a fighter already in the air or on the floor cannot be grabbed.
+      for (const e of this.enemies) {
+        if (e.dead || !e.grounded || e.down) continue;
+        if (!resolveHit(p, e, p.attack.name).hit) continue;
+        this.onPlayerThrows(e);
+        break;
+      }
+    } else if (p.attack && p.attackPhase === 'active' && !ATTACKS[p.attack.name].ranged) {
       const atk = ATTACKS[p.attack.name];
       for (const e of this.enemies) {
-        if (e.dead || p.attack.hits.has(e.id)) continue;
+        // Fighters flying from a throw or lying on the floor are out of reach of strikes.
+        if (e.dead || e.thrown || e.down || p.attack.hits.has(e.id)) continue;
         const r = resolveHit(p, e, p.attack.name);
         if (!r.hit) continue;
         p.attack.hits.add(e.id);
@@ -338,22 +367,47 @@ export class Game {
     enemy.lastEvent = null;
     if (r.blocked) this.addText('BREAK!', enemy.x, feet(enemy) - 52, '#ffb347');
 
+    const mult = this.creditHit(enemy);
+    this.score += Math.round(SCORE.hit * mult);
+    this.shake = kiai ? 0.18 : 0.12;
+    this.audio.play(enemy.dead ? 'enemyDown' : (kiai ? 'hitHeavy' : 'hit'));
+    this.burst(enemy.x + r.direction * 4, feet(enemy) - 28, kiai ? '#ffb347' : '#fff3c4', kiai ? 10 : 6);
+  }
+
+  // The grab reached an enemy: pull them in and throw them the way the player faces.
+  onPlayerThrows(enemy) {
+    const p = this.player;
+    const kiai = p.kiaiActive;
+    p.startAttack('throw');
+    p.lastEvent = null;
+    enemy.x = p.x + p.facing * GRAB.holdDistance;
+    enemy.z = p.z;
+    const damage = Math.round(GRAB.damage * (kiai ? KIAI.damageMultiplier : 1));
+    enemy.takeThrow({ damage, direction: p.facing, throwSpeed: GRAB.throwSpeed * (kiai ? KIAI.knockbackMultiplier : 1) });
+    enemy.lastEvent = null;
+    this.addText('THROW!', p.x + p.facing * 6, feet(p) - 50, '#ffb347');
+    const mult = this.creditHit(enemy);
+    this.score += Math.round(SCORE.hit * 2 * mult);
+    this.shake = 0.2;
+    this.audio.play(enemy.dead ? 'enemyDown' : 'hitHeavy');
+    this.burst(enemy.x, feet(enemy) - 20, kiai ? '#ffb347' : '#fff3c4', 8);
+  }
+
+  // Combo, multiplier text and the points for a beaten enemy; returns the multiplier in force.
+  creditHit(enemy) {
+    const p = this.player;
     this.combo += 1;
     const prevMult = this.comboMultiplierFor(this.combo - 1);
     const mult = this.comboMultiplier;
     // Tamas names the combo the way he does on the mat.
     if (mult > prevMult) this.addText(prevMult > 1 ? 'DUBBEL TWIST! IGEN!' : 'DUBBEL TWIST!', p.x, feet(p) - 52, '#ffd166');
-
-    this.score += Math.round(SCORE.hit * mult);
-    this.shake = kiai ? 0.18 : 0.12;
-    this.audio.play(enemy.dead ? 'enemyDown' : (kiai ? 'hitHeavy' : 'hit'));
-    this.burst(enemy.x + r.direction * 4, feet(enemy) - 28, kiai ? '#ffb347' : '#fff3c4', kiai ? 10 : 6);
     if (enemy.dead) {
       this.defeated += 1;
       const points = Math.round(enemy.cfg.score * mult);
       this.score += points;
       this.addText(`+${points}`, enemy.x, feet(enemy) - 46, '#ffd166');
     }
+    return mult;
   }
 
   comboMultiplierFor(hits) {
@@ -389,6 +443,7 @@ export class Game {
     f.lastEvent = null;
     if (!ev) return;
     if (ev === 'jump' && f === this.player) this.audio.play('jump');
+    if (ev === 'sprint') this.burst(f.x, screenY(GROUND_Y, f.z) - 1, '#d9b27c', 5, 0.6);
     if (ev === 'throw') {
       this.projectiles.push({ x: f.x + f.facing * 10, y: f.y, z: f.z, facing: f.facing });
       this.audio.play('shuriken');
