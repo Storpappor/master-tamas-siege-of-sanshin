@@ -43,3 +43,56 @@ the source) at the source tempo and at 92 % of it, pitch preserved. The 92 % tem
 
 To go back to the source tempo: point `MUSIC.src` at `triumph-in-the-ring.mp3` and set
 `loopStart: 1.17877, loopEnd: 115.742` (those points were found on the source file the same way).
+
+## Tracks and the mixer (phase two)
+
+`MUSIC.tracks` names three tracks: `stage` (above), `menu` and `boss`. The `MusicMixer` keeps one
+of them current; handing over fades the old track on its own gain and remembers its position,
+so the menu theme continues between the intro cards, the title and the result screens, and the
+stage track comes back where it was if play goes on after the boss. A track with `src: null` is
+pending: it is never requested (no failed network request) and asking for it leaves the current
+track alone, so the game keeps the stage track through the boss until the boss theme arrives.
+
+| Track | Asset | Status |
+|---|---|---|
+| `stage` | `assets/audio/triumph-in-the-ring-92.mp3` | shipped; loop 1.28667 s to 125.84646 s |
+| `menu` | `assets/audio/<menu theme>.mp3` | **pending** delivery; set `src`, loop points and check the seam |
+| `boss` | `assets/audio/<boss theme>.mp3` | **pending** delivery; same |
+
+## Sound cues and the audio director
+
+`src/sound.js` is the `audio` object the game receives. The game's event names (`start`, `hit`,
+`hitHeavy`, `pause`, ...) stand for more than one moment each, and `game.js` is guarded, so the
+sound layer only queues them. `src/audioDirector.js` runs once per frame after the simulation
+steps and resolves each raw event with the game's state into one cue:
+
+| Raw event | Resolved by | Cue |
+|---|---|---|
+| `start` | a run just began / a door just opened / otherwise | `gameStart` / `doorEnter` / `waveClear` |
+| `pause` | suppressed for automatic pauses (blur, hidden tab) | `pauseCue` or silence |
+| `punch` | the player's attack is a grab | `grabReach` / `whooshLight` |
+| `kick`, `kiai` | | `whooshHeavy`, `kiaiStrike` |
+| `hit` | the last strike was a kick | `kickHit` / `punchHit` |
+| `hitHeavy` | a thrown fighter just landed | `throwLand` / `kiaiHit` |
+| `enemyDown` | a thrown fighter just landed | `throwLand` / `enemyKo` |
+| `bossAppear` | | `bossEnter`, then the boss track if available |
+| `hurt`, `block`, `jump`, `land`, `shuriken`, `kiaiStart`, `victory`, `gameOver` | | one cue each |
+
+### Missing hooks
+
+The game raises no event for these moments; the director reads them from state changes:
+
+- the grip taking hold (`player.attack.name` becomes `throw`) → `grabHold`
+- the throw's release (`player.attack.released`) → `throwToss`
+- the victim landing (an enemy's `thrown` flag dropping) → decides `throwLand`
+- an enemy starting a strike (`enemy.attack` appearing; shuriken excluded) → `enemyWhoosh`
+- resume after a pause (state `paused` → `playing`) → `resumeCue`
+
+Two game events cannot be told apart from state and are left as they are: `block` does not say
+whether Tamas or the enemy blocked, and a knockout by a normal strike and by a kiai strike both
+arrive as `enemyDown`. Adding explicit events would mean editing the guarded `game.js`.
+
+Each cue has a minimum repeat gap and the impact and whoosh groups are limited to three and two
+simultaneous voices; repeated cues vary pitch by up to 4.5 % and level by up to 12 %. Heavy cues
+(throw landing, kiai hit, knockout, player damage, boss entrance, game start) duck the music to
+half for 0.35 s.

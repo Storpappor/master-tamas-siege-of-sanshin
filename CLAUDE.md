@@ -25,8 +25,10 @@ Run a single suite with `node --test test/combat.test.js`.
   straight from the repo. `dist/` is generated and ignored.
 - **Game logic stays DOM-free.** `game.js`, `entities.js`, `combat.js` and `level.js` must
   run in Node, because the tests depend on it. Browser code belongs in `main.js`, `ui.js`,
-  `input.js`, `renderer.js`, `audio.js` and `HeroSprite`. Reach the page from the game only
-  through the injected `ui`, `audio` and `input` objects.
+  `input.js`, `renderer.js`, `sound.js`, `music.js` and `HeroSprite`. Reach the page from the game only
+  through the injected `ui`, `audio` and `input` objects. The injected `audio` is `sound.js`,
+  which only queues the game's event names; `audioDirector.js` (DOM-free, tested) resolves them
+  against the game state into cues and music changes. New sounds go there, not in `game.js`.
 - **Randomness goes through the injected `rng`**, not `Math.random`, so that tests stay
   deterministic. Cosmetic browser code (screen shake, audio noise) is the exception.
 - **CSS classes keep the `kg-` prefix** so the game can be embedded in another page.
@@ -41,6 +43,9 @@ Run a single suite with `node --test test/combat.test.js`.
 | Enemy stats and behaviour | `ENEMY_TYPES` and `Enemy.update` in `src/entities.js` |
 | Zones and waves | `LEVEL_1` in `src/level.js` (zone art in `src/renderer.js`) |
 | Floor depth and hit reach in depth | `DEPTH`, `DEPTH_REACH` in `src/constants.js` |
+| Sound cues, their variation and voice limits | `CUE` in `src/sound.js` |
+| Which game moment plays which cue or track | `src/audioDirector.js` |
+| Music tracks, loop points, music volume | `MUSIC` in `src/music.js` |
 | Story and dialogue text | `INTRO_SCREENS` in `src/main.js`, `KAGE_DIALOGUE` and `ZONE_CARDS` in `src/game.js`, end cards in `index.html` |
 
 Keep these in sync when they change:

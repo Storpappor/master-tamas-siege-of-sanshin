@@ -46,7 +46,7 @@ the `main` branch as-is, so pushing to `main` publishes the game.
 ```
 index.html         page shell: HUD, overlays, touch buttons (all logic in src/)
 karate-game.css    styles, prefixed "kg-" so the game can be embedded in any page
-assets/            tamas-hero-spritesheet.png (4x2 frames, transparent)
+assets/            tamas-hero-spritesheet.png (4x2 frames, transparent), audio/ (music tracks)
 src/
   main.js          boot: DOM wiring, input, audio, sprite loading, game loop
   game.js          state machine, spawning, hit resolution, scoring, dialogue
@@ -57,7 +57,10 @@ src/
   enemySprite.js   optional enemy sprite sheets: file per type, state resolver
   sprites.js       procedurally drawn enemies + 3x5 bitmap font
   renderer.js      zone backgrounds, depth sorting, GO prompt, pixel-perfect scaling
-  audio.js         synthesized sound effects (Web Audio)
+  audio.js         original synthesized effects (superseded by sound.js; kept for the gameplay guard)
+  sound.js         synthesized sound cues (Web Audio); the game's raw events are queued here
+  music.js         looping music tracks (stage, menu, boss) and the mixer that hands over between them
+  audioDirector.js turns game state and raw events into music changes and cues (DOM-free)
   input.js         keyboard + multi-touch buttons
   ui.js            HUD, overlays and the NES-style story cards
   constants.js     tuning numbers and colour palette

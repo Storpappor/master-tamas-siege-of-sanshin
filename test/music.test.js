@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Music } from '../src/music.js';
+import { Music, MusicMixer } from '../src/music.js';
 
 // A minimal stand-in for the Web Audio objects the music module touches.
 class FakeParam {
@@ -197,4 +197,107 @@ test('unlock resumes a suspended context', async () => {
   ctx.state = 'suspended';
   music.unlock();
   assert.equal(ctx.resumed, 1);
+});
+
+// ---- mixer ---------------------------------------------------------------------------------
+
+async function mixer(tracks) {
+  const ctx = new FakeContext();
+  const m = new MusicMixer({ tracks, createContext: () => ctx, fetchBytes: async () => new ArrayBuffer(8) });
+  await m.load();
+  m.unlock();
+  await tick();
+  return { ctx, m };
+}
+
+test('a pending track (no src) is never fetched and asking for it changes nothing', async () => {
+  let fetches = 0;
+  const ctx = new FakeContext();
+  const m = new MusicMixer({ tracks: { stage: { src: 's.mp3' }, menu: { src: null } }, createContext: () => ctx, fetchBytes: async () => { fetches++; return new ArrayBuffer(8); } });
+  await m.load();
+  m.unlock();
+  await tick();
+  assert.equal(fetches, 1);
+  assert.deepEqual(m.pending(), ['menu']);
+  assert.equal(m.play('menu'), false);
+  assert.equal(m.current, null);
+  m.play('stage');
+  assert.equal(m.play('menu'), false);
+  assert.equal(m.current, 'stage');
+  assert.equal(ctx.sources.filter((s) => s.live).length, 1);
+});
+
+test('handing over fades the old track, keeps its place, and the new one starts from the top', async () => {
+  const { ctx, m } = await mixer({ stage: { src: 's.mp3' }, boss: { src: 'b.mp3' } });
+  m.play('stage', { fromStart: true });
+  ctx.currentTime = 20;
+  m.play('boss', { fromStart: true });
+  const [stageSrc, bossSrc] = ctx.sources;
+  assert.equal(stageSrc.stopped, 20.5, 'stage fades over half a second');
+  assert.deepEqual(bossSrc.started, { when: 20, offset: 0 });
+  assert.equal(m.tracks.stage.intent, 'paused');
+  assert.equal(m.tracks.stage.position, 20);
+  ctx.currentTime = 30;
+  m.play('stage');
+  assert.deepEqual(ctx.sources[2].started, { when: 30, offset: 20 }, 'the stage continues where it left off');
+  assert.equal(ctx.sources[1].stopped, 30.5, 'the boss track fades out in turn');
+});
+
+test('the menu theme continues between menu views instead of restarting', async () => {
+  const { ctx, m } = await mixer({ stage: { src: 's.mp3' }, menu: { src: 'm.mp3' } });
+  m.play('menu');
+  ctx.currentTime = 5;
+  m.play('menu');
+  assert.equal(ctx.sources.length, 1, 'already playing: nothing changes');
+  m.play('stage', { fromStart: true });
+  ctx.currentTime = 40;
+  m.fadeOut();
+  ctx.currentTime = 42;
+  m.play('menu');
+  assert.deepEqual(ctx.sources.at(-1).started, { when: 42, offset: 5 });
+});
+
+test('pause, resume, fade out, mute and the hidden page act on the mixer as a whole', async () => {
+  const { ctx, m } = await mixer({ stage: { src: 's.mp3' } });
+  m.play('stage', { fromStart: true });
+  ctx.currentTime = 3;
+  m.pause();
+  assert.equal(m.playing, false);
+  m.resume();
+  assert.deepEqual(ctx.sources[1].started, { when: 3, offset: 3 });
+  m.setEnabled(false);
+  assert.equal(m.playing, false);
+  m.setEnabled(true);
+  assert.equal(m.playing, true);
+  m.setPageActive(false);
+  assert.equal(m.playing, false);
+  m.setPageActive(true);
+  assert.equal(m.playing, true);
+  m.fadeOut();
+  assert.equal(m.current, null);
+  assert.equal(m.playing, false);
+});
+
+test('ducking dips the music gain and ramps it back, never during a fade', async () => {
+  const { ctx, m } = await mixer({ stage: { src: 's.mp3' } });
+  m.play('stage', { fromStart: true });
+  ctx.currentTime = 2;
+  m.duck();
+  const ev = ctx.gainNode.gain.events;
+  assert.deepEqual(ev.slice(-2), [['set', 0.075, 2], ['ramp', 0.15, 2.35]]);
+  m.fadeOut();
+  const n = ev.length;
+  m.duck();
+  assert.equal(ev.length, n, 'no ducking while fading');
+});
+
+test('resuming a track that is still fading cuts the fade instead of letting it jump back up', async () => {
+  const { ctx, m } = await mixer({ stage: { src: 's.mp3' }, boss: { src: 'b.mp3' } });
+  m.play('stage', { fromStart: true });
+  ctx.currentTime = 10;
+  m.play('boss', { fromStart: true });
+  ctx.currentTime = 10.2;
+  m.play('stage');
+  assert.equal(ctx.sources[0].stopped, 10.2, 'the fading stage source is cut now');
+  assert.deepEqual(ctx.sources[2].started, { when: 10.2, offset: 10 });
 });
