@@ -2,6 +2,7 @@
 import { STEP } from './constants.js';
 import { Input } from './input.js';
 import { Sfx } from './audio.js';
+import { Music, MUSIC } from './music.js';
 import { Renderer } from './renderer.js';
 import { Game } from './game.js';
 import { createUi } from './ui.js';
@@ -11,6 +12,7 @@ import { BACKGROUNDS, loadBackground } from './background.js';
 
 const SPRITE_URL = new URL('../assets/tamas-hero-spritesheet.png', import.meta.url).href;
 const HERO_SHEET_URL = new URL('../assets/sprites/tamas.json', import.meta.url).href;
+const MUSIC_URL = new URL(MUSIC.src, import.meta.url).href;
 
 // Opening story, one card per entry. Lines are drawn exactly as written.
 export const INTRO_SCREENS = [
@@ -35,6 +37,9 @@ export function boot(root) {
   try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch { /* storage may be blocked */ }
 
   const audio = new Sfx({ enabled: soundOn });
+  // The music is optional: if it fails to load or play, the game runs without it.
+  const music = new Music({ url: MUSIC_URL, enabled: soundOn, onError: (err) => console.warn('Music unavailable; playing without it.', err) });
+  music.load();
   const input = new Input();
   const ui = createUi(root);
   const hero = new HeroSprite({ artScale: ART_SCALE });
@@ -86,15 +91,18 @@ export function boot(root) {
     kiai: root.querySelector('[data-btn="kiai"]'),
   });
 
-  const startGame = () => { if (!hero.ready) return; audio.unlock(); game.start(); };
+  const unlockAudio = () => { audio.unlock(); music.unlock(); };
+  const startGame = () => { if (!hero.ready) return; unlockAudio(); game.start(); };
   for (const b of root.querySelectorAll('[data-action="intro"]')) b.addEventListener('click', () => playIntro(() => ui.showOverlay('start')));
   for (const b of root.querySelectorAll('[data-action="start"]')) b.addEventListener('click', startGame);
-  for (const b of root.querySelectorAll('[data-action="resume"]')) b.addEventListener('click', () => { audio.unlock(); game.resume(); });
+  for (const b of root.querySelectorAll('[data-action="resume"]')) b.addEventListener('click', () => { unlockAudio(); game.resume(); });
   for (const b of root.querySelectorAll('[data-action="pause"]')) b.addEventListener('click', () => game.togglePause());
   for (const b of root.querySelectorAll('[data-action="sound"]')) {
     b.addEventListener('click', () => {
       soundOn = !soundOn;
+      if (soundOn) unlockAudio();
       audio.setEnabled(soundOn);
+      music.setEnabled(soundOn);
       ui.setSound(soundOn);
       try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch { /* ignore */ }
       if (soundOn) audio.play('start');
@@ -118,7 +126,7 @@ export function boot(root) {
   }
 
   // Pause when the tab is hidden or the window loses focus.
-  document.addEventListener('visibilitychange', () => { if (document.hidden) game.pause(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) game.pause(); music.setPageActive(!document.hidden); });
   window.addEventListener('blur', () => game.pause());
 
   // Responsive, pixel-perfect scaling.
@@ -127,10 +135,30 @@ export function boot(root) {
   window.addEventListener('resize', resize);
   resize();
 
+  // The music follows the game's state from here, so game logic stays free of media concerns:
+  // a run starts it from the top, pause holds it, dialogue and the boss leave it alone, and
+  // the end of a run fades it out under the result jingle.
+  const inRun = (s) => s === 'playing' || s === 'dialogue';
+  let seenState = game.state;
+  let seenEnding = game.ending;
+  const followGame = () => {
+    const { state, ending } = game;
+    if (ending && !seenEnding) music.fadeOut();
+    else if (state !== seenState) {
+      if (inRun(state) && !inRun(seenState)) {
+        if (seenState === 'paused') music.resume(); else music.start();
+      } else if (state === 'paused') music.pause();
+      else if (!inRun(state)) music.stop();
+    }
+    seenState = state;
+    seenEnding = ending;
+  };
+
   // Fixed-step game loop; rendering runs every animation frame.
   let last = null;
   let acc = 0;
   const frame = (now) => {
+    followGame();
     if (last !== null && game.state === 'playing') {
       acc += Math.min(0.1, (now - last) / 1000);
       let steps = 0;
@@ -149,6 +177,7 @@ export function boot(root) {
 
   root.karateHero = hero; // exposed for debugging alongside root.karateGame
   root.karateRenderer = renderer;
+  root.karateMusic = music;
   root.karateHeroSheet = heroSheet;
   return game;
 }
