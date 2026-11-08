@@ -6,7 +6,7 @@
 <div id="out"></div>
 <script type="module">
 // Dynamic import with a timestamp so an edited relight.mjs is never served from the browser cache.
-const { relightStreet, relightDojo, findPipes, STREET_DEFAULTS, DOJO_DEFAULTS } = await import(`./relight.mjs?t=${Date.now()}`);
+const { relightStreet, relightDojo, findPipes, findPillars, STREET_DEFAULTS, DOJO_DEFAULTS } = await import(`./relight.mjs?t=${Date.now()}`);
 const load = (u) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('load ' + u)); i.src = u + '?t=' + Date.now(); });
 const toImg = (img) => { const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height); return { w: c.width, h: c.height, data: d.data }; };
 const toCanvas = (img) => { const c = document.createElement('canvas'); c.width = img.w; c.height = img.h; c.getContext('2d').putImageData(new ImageData(img.data, img.w, img.h), 0, 0); return c; };
@@ -29,8 +29,13 @@ const STREET_GEOMETRY = {
 };
 // Ceiling tube fixtures measured on dojo.png (bright runs in rows 4-18); the first-screen tube is the
 // neutral one and the tube over the TEAM SANSHIN emblem is warm, as in the reference. The rest alternate.
+// Measured on the approved dojo: ceiling fixtures, the TEAM SANSHIN lettering and the painted peach
+// halo behind it (which becomes plain wall and gets a real amber pool instead), the cloth banner,
+// and the red mat grid. Pillars are detected from their red columns.
 const DOJO_GEOMETRY = {
-  floorRow: 244, emblemBox: [300, 36, 545, 170],
+  floorRow: 244, lettersBox: [280, 40, 560, 180], haloBox: [262, 29, 580, 200], bannerBox: [576, 46, 735, 134],
+  matBorderRows: [[244, 255], [293, 308], [355, 359]],
+  matBorderCols: [[6, 34], [279, 298], [549, 579], [814, 842], [1084, 1112], [1354, 1382], [1624, 1652]],
   tubes: [
     { x0: 153, x1: 216, y0: 4, y1: 18, warm: false }, { x0: 419, x1: 489, y0: 4, y1: 18, warm: true },
     { x0: 740, x1: 798, y0: 4, y1: 18, warm: false }, { x0: 998, x1: 1068, y0: 4, y1: 18, warm: true },
@@ -38,7 +43,7 @@ const DOJO_GEOMETRY = {
   ],
 };
 window.RL = {
-  street, dojo, STREET_DEFAULTS, DOJO_DEFAULTS, STREET_GEOMETRY, DOJO_GEOMETRY, findPipes, toCanvas,
+  street, dojo, STREET_DEFAULTS, DOJO_DEFAULTS, STREET_GEOMETRY, DOJO_GEOMETRY, findPipes, findPillars, toCanvas,
   runStreet(params = {}, geometry = {}) { return relightStreet(street, { ...STREET_GEOMETRY, ...geometry }, params); },
   runDojo(params = {}, geometry = {}) { return relightDojo(dojo, { ...DOJO_GEOMETRY, ...geometry }, params); },
   show(img, label) { const out = document.getElementById('out'); const p = document.createElement('p'); p.textContent = label; out.append(p, toCanvas(img)); },

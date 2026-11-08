@@ -330,65 +330,142 @@ export function relightStreet(img, geometry, params = {}) {
 }
 
 export const DOJO_DEFAULTS = {
-  base: 0.02, gain: 0.9, gamma: 1.2,
-  shadow: [0.62, 0.52, 1.0], keepHue: 0.8,   // navy/purple shadows with the original hue mostly kept
-  greenDesat: 0.2, greenDarken: 0.95,         // mat centres toward sage/grey
-  redDesat: 0.15, redDarken: 0.72,            // pillar and mat borders: natural muted reds
-  emblemGlow: [1.0, 0.62, 0.3], emblemGain: 0.3, emblemRadius: 56,
-  tubeNeutral: [0.9, 0.95, 1.0], tubeWarm: [1.0, 0.72, 0.4], tubeGain: 0.55, tubeRadius: 30,
-  floorPool: 0.3,
+  // Albedo per material (what the surface would look like under white light), 0..1.
+  wall: [0.56, 0.5, 0.6], wallShadeRef: 0.42,
+  letters: 0.85,                                  // the painted emblem lettering keeps its own dark navy
+  pillar: [0.86, 0.26, 0.36], border: [0.64, 0.2, 0.26], ivory: [0.82, 0.76, 0.64],
+  mat: [0.46, 0.5, 0.38], matShadeRef: 0.55, floorAmbient: 1.35, floorTint: [1.2, 1.3, 0.8],
+  wood: [0.66, 0.42, 0.22], woodShadeRef: 0.5,
+  banner: [0.82, 0.74, 0.58], other: 0.9,
+  // Ambient (indigo, multiplied in) and its falloff toward the wall/floor junction and the ceiling.
+  ambient: [0.2, 0.17, 0.36], junctionDrop: 0.22, ceilingDrop: 0.35,
+  // Fixture light on the wall: gaussian in x (sx) and down from the fixture (sy); floor pool below.
+  neutral: [0.9, 0.93, 1.0], warm: [1.0, 0.62, 0.2],
+  wallGain: 0.7, wallSx: 110, wallSy: 140, warmWallGain: 1.5, warmWallSx: 190,
+  poolGain: 0.5, poolRx: 180, poolRy: 80, poolDrop: 36, warmPoolGain: 0.65,
+  // Material texture and contact shadows.
+  wallNoise: 0.05, matWeave: 0.04, contact: 0.5, contactRows: 9,
+  seed: 3,
 };
 
-// `geometry`: { floorRow, emblemBox: [x0,y0,x1,y1], tubes: [{ x0, x1, warm }] }
+export function findPillars(img, { y0 = 40, y1 = 240, minRun = 80 } = {}) {
+  const { w } = img;
+  const counts = new Array(w).fill(0);
+  for (let x = 0; x < w; x++) for (let y = y0; y < y1; y++) {
+    const i = (y * w + x) * 4; const r = img.data[i] / 255, g = img.data[i + 1] / 255, b = img.data[i + 2] / 255;
+    const [h, s, v] = hsv(r, g, b);
+    if ((h <= 20 || h >= 345) && s > 0.5 && v > 0.4) counts[x]++;
+  }
+  const runs = []; let start = -1;
+  for (let x = 0; x <= w; x++) {
+    const on = x < w && counts[x] >= minRun;
+    if (on && start < 0) start = x;
+    if (!on && start >= 0) { if (x - start >= 8) runs.push([start, x - 1]); start = -1; }
+  }
+  return runs;
+}
+
+// `geometry`: { floorRow, tubes: [{x0,x1,y0,y1,warm}], lettersBox, haloBox, bannerBox, pillars?,
+//               matBorderRows: [[y0,y1],...], matBorderCols: [[x0,x1],...] }
 export function relightDojo(img, geometry, params = {}) {
   const P = { ...DOJO_DEFAULTS, ...params };
   const { w, h } = img;
   const src = planes(img);
   const n = src.n;
-  const out = { r: new Float32Array(n), g: new Float32Array(n), b: new Float32Array(n) };
-  const shadowL = lum(...P.shadow); const shadow = P.shadow.map((c) => c / shadowL);
-  const lightMask = new Float32Array(n), lightR = new Float32Array(n), lightG = new Float32Array(n), lightB = new Float32Array(n);
+  const floorRow = geometry.floorRow;
+  const inBox = (x, y, b) => b && x >= b[0] && x < b[2] && y >= b[1] && y < b[3];
+  const pillars = geometry.pillars || findPillars(img);
+  const inPillar = (x) => pillars.some(([a, b]) => x >= a - 1 && x <= b + 1);
+  const inBorderRow = (y) => (geometry.matBorderRows || []).some(([a, b]) => y >= a && y <= b);
+  const inBorderCol = (x) => (geometry.matBorderCols || []).some(([a, b]) => x >= a && x <= b);
+  const hashf = (x, y, s) => { let v = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(s, 982451653)) | 0; v = Math.imul(v ^ (v >>> 13), 1274126177) | 0; return ((v ^ (v >>> 16)) >>> 0) / 4294967296; };
+
+  // 1. Albedo and emissive classification.
+  const aR = new Float32Array(n), aG = new Float32Array(n), aB = new Float32Array(n), emis = new Uint8Array(n);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
-    let r = src.r[i], g = src.g[i], b = src.b[i];
+    const r = src.r[i], g = src.g[i], b = src.b[i];
     const [hue, sat, val] = hsv(r, g, b);
-    const isLight = val > 0.86 && sat < 0.3;                                 // tube faces, exit sign face
-    const isExit = hue >= 90 && hue <= 170 && sat > 0.45 && val > 0.6;       // the green exit sign
-    if (isLight || isExit) { out.r[i] = r; out.g[i] = g; out.b[i] = b; lightMask[i] = 1; lightR[i] = r; lightG[i] = g; lightB[i] = b; continue; }
-    const m = (r + g + b) / 3;
-    if (hue >= 60 && hue <= 160 && sat > 0.12) {                              // mats: sage / grey-green
-      r = (m + (r - m) * (1 - P.greenDesat)) * P.greenDarken; g = (m + (g - m) * (1 - P.greenDesat)) * P.greenDarken; b = (m + (b - m) * (1 - P.greenDesat)) * P.greenDarken;
-    } else if ((hue >= 340 || hue <= 18) && sat > 0.35) {                      // reds: pillar, mat borders
-      r = (m + (r - m) * (1 - P.redDesat)) * P.redDarken; g = (m + (g - m) * (1 - P.redDesat)) * P.redDarken; b = (m + (b - m) * (1 - P.redDesat)) * P.redDarken;
-    }
     const L = lum(r, g, b);
-    const Lp = P.base + P.gain * Math.pow(L, P.gamma);
-    const mx = Math.max(r, g, b) || 1;
-    const hr = r / mx, hg = g / mx, hb = b / mx; const hl = lum(hr, hg, hb) || 1;
-    const k = P.keepHue;
-    out.r[i] = Lp * ((1 - k) * shadow[0] + k * hr / hl);
-    out.g[i] = Lp * ((1 - k) * shadow[1] + k * hg / hl);
-    out.b[i] = Lp * ((1 - k) * shadow[2] + k * hb / hl);
+    const set = (c, shade = 1) => { aR[i] = c[0] * shade; aG[i] = c[1] * shade; aB[i] = c[2] * shade; };
+    const shadeOf = (ref) => Math.min(1.35, Math.max(0.55, L / ref));
+    const isTube = y < 24 && val > 0.86 && sat < 0.3;
+    const isExit = hue >= 90 && hue <= 170 && sat > 0.45 && val > 0.6;
+    if (isTube || isExit) { set([r, g, b]); emis[i] = 1; continue; }
+    const onFloor = y >= floorRow;
+    const red = (hue <= 20 || hue >= 345) && sat > 0.5 && val > 0.35;
+    if (onFloor) {
+      if (red || inBorderRow(y) || inBorderCol(x)) { set(P.border, shadeOf(0.42)); continue; }
+      set(P.mat, shadeOf(P.matShadeRef)); continue;
+    }
+    if (inPillar(x) && y >= 30) {
+      if (sat < 0.3 && val > 0.65) { set(P.ivory, shadeOf(0.72)); continue; }
+      if (red) { set(P.pillar, shadeOf(0.5)); continue; }
+    }
+    if (inBox(x, y, geometry.lettersBox) && hue >= 195 && hue <= 265 && val < 0.5) { set([r * P.letters, g * P.letters, b * P.letters]); continue; }
+    const peach = hue >= 12 && hue <= 48 && sat > 0.22 && val > 0.7;
+    if (inBox(x, y, geometry.bannerBox) && (peach || (sat < 0.3 && val > 0.6))) { set(P.banner, shadeOf(0.72)); continue; }
+    // The painted halo behind the emblem becomes plain, flat wall: a real amber pool replaces it.
+    if (inBox(x, y, geometry.haloBox) && !red) { set(P.wall, 1.0); continue; }
+    const wood = hue >= 18 && hue <= 45 && sat > 0.45 && val > 0.3 && val < 0.85;
+    if (wood) { set(P.wood, shadeOf(P.woodShadeRef)); continue; }
+    if (red) { set(P.pillar, shadeOf(0.5)); continue; }                              // red objects on the wall
+    const wallLike = (hue >= 220 && hue <= 340 && sat < 0.45) || sat < 0.12;
+    if (wallLike && y >= 24) { set(P.wall, shadeOf(P.wallShadeRef)); continue; }
+    set([r * P.other, g * P.other, b * P.other]);
   }
-  // Warm glow around the emblem, soft glow under each tube, a pool on the floor beneath each.
-  const glow = new Float32Array(n), gR = new Float32Array(n), gG = new Float32Array(n), gB = new Float32Array(n);
-  const [ex0, ey0, ex1, ey1] = geometry.emblemBox;
-  for (let y = ey0; y < ey1; y++) for (let x = ex0; x < ex1; x++) { const i = y * w + x; glow[i] = P.emblemGain; gR[i] = P.emblemGlow[0]; gG[i] = P.emblemGlow[1]; gB[i] = P.emblemGlow[2]; }
-  const eg = { r: blur(gR.map((v, i) => v * glow[i]), w, h, P.emblemRadius), g: blur(gG.map((v, i) => v * glow[i]), w, h, P.emblemRadius), b: blur(gB.map((v, i) => v * glow[i]), w, h, P.emblemRadius) };
-  const tg = { r: new Float32Array(n), g: new Float32Array(n), b: new Float32Array(n) };
+
+  // 2. Lighting: indigo ambient with falloff, plus each fixture's wall cone and floor pool.
+  const lR = new Float32Array(n), lG = new Float32Array(n), lB = new Float32Array(n);
+  for (let y = 0; y < h; y++) {
+    let amb = 1;
+    if (y < floorRow) { const d = (floorRow - y) / floorRow; amb *= 1 - P.junctionDrop * Math.max(0, 1 - d * 3); amb *= 1 - P.ceilingDrop * Math.max(0, 1 - y / 40); }
+    const tint = y >= floorRow ? P.floorTint : [1, 1, 1];
+    if (y >= floorRow) amb *= P.floorAmbient;
+    for (let x = 0; x < w; x++) { const i = y * w + x; lR[i] = P.ambient[0] * amb * tint[0]; lG[i] = P.ambient[1] * amb * tint[1]; lB[i] = P.ambient[2] * amb * tint[2]; }
+  }
   for (const t of geometry.tubes) {
-    const c = t.warm ? P.tubeWarm : P.tubeNeutral;
-    const m = new Float32Array(n);
-    for (let y = t.y0; y < t.y1; y++) for (let x = t.x0; x < t.x1; x++) m[y * w + x] = P.tubeGain;
-    const bm = blur(m, w, h, P.tubeRadius);
-    for (let i = 0; i < n; i++) { tg.r[i] += bm[i] * c[0]; tg.g[i] += bm[i] * c[1]; tg.b[i] += bm[i] * c[2]; }
-    // Floor pool: an ellipse under the tube on the mats.
-    const cx = (t.x0 + t.x1) / 2, cy = geometry.floorRow + 48, rx = (t.x1 - t.x0) * 1.6 + 60, ry = 46;
-    for (let y = geometry.floorRow; y < h; y++) for (let x = Math.max(0, cx - rx); x < Math.min(w, cx + rx); x++) {
-      const d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2; if (d > 1) continue;
-      const i = y * w + x; const k = (1 - d) * P.floorPool; out.r[i] += k * c[0] * 0.5; out.g[i] += k * c[1] * 0.5; out.b[i] += k * c[2] * 0.5;
+    const c = t.warm ? P.warm : P.neutral;
+    const cx = (t.x0 + t.x1) / 2, sx = t.warm ? P.warmWallSx : P.wallSx, gain = t.warm ? P.warmWallGain : P.wallGain;
+    for (let y = t.y1; y < floorRow; y++) {
+      const fy = Math.exp(-(((y - t.y1) / P.wallSy) ** 2));
+      for (let x = 0; x < w; x++) {
+        const fx = Math.exp(-(((x - cx) / sx) ** 2)); const I = gain * fx * fy; if (I < 0.004) continue;
+        const i = y * w + x; lR[i] += I * c[0]; lG[i] += I * c[1]; lB[i] += I * c[2];
+      }
+    }
+    const pg = t.warm ? P.warmPoolGain : P.poolGain, cy = floorRow + P.poolDrop;
+    for (let y = floorRow; y < h; y++) for (let x = 0; x < w; x++) {
+      const d = ((x - cx) / P.poolRx) ** 2 + ((y - cy) / P.poolRy) ** 2; const I = pg * Math.exp(-d * 1.6); if (I < 0.004) continue;
+      const i = y * w + x; lR[i] += I * c[0]; lG[i] += I * c[1]; lB[i] += I * c[2];
     }
   }
-  for (let i = 0; i < n; i++) { out.r[i] += eg.r[i] * 2.2 + tg.r[i] * 2.0; out.g[i] += eg.g[i] * 2.2 + tg.g[i] * 2.0; out.b[i] += eg.b[i] * 2.2 + tg.b[i] * 2.0; }
+
+  // 3. Contact shadows: pillar bases on the floor and the wall just beside each pillar foot; under the banner.
+  const shade = new Float32Array(n).fill(1);
+  for (const [a, b] of pillars) {
+    for (let y = floorRow; y < floorRow + P.contactRows; y++) for (let x = a - 10; x <= b + 10; x++) {
+      if (x < 0 || x >= w) continue; const dx = x < a ? a - x : x > b ? x - b : 0;
+      const k = Math.exp(-(y - floorRow) / 3.5) * Math.exp(-dx / 5) * P.contact; shade[y * w + x] *= 1 - k;
+    }
+    for (let y = floorRow - 30; y < floorRow; y++) for (let x = a - 8; x <= b + 8; x++) {
+      if (x < 0 || x >= w || (x >= a && x <= b)) continue; const dx = x < a ? a - x : x - b;
+      const k = Math.exp(-dx / 4) * (1 - (floorRow - y) / 30) * P.contact * 0.5; shade[y * w + x] *= 1 - k;
+    }
+  }
+  if (geometry.bannerBox) { const [bx0, , bx1, by1] = geometry.bannerBox; for (let y = by1; y < by1 + 7; y++) for (let x = bx0; x < bx1; x++) shade[y * w + x] *= 1 - P.contact * 0.6 * Math.exp(-(y - by1) / 2.5); }
+  for (const b of geometry.wallObjects || []) { const [bx0, , bx1, by1] = b; for (let y = by1; y < by1 + 6; y++) for (let x = bx0; x < bx1; x++) if (y < h) shade[y * w + x] *= 1 - P.contact * 0.5 * Math.exp(-(y - by1) / 2.5); }
+
+  // 4. Compose with material texture: plaster noise on the wall, a faint weave on the mats.
+  const out = { r: new Float32Array(n), g: new Float32Array(n), b: new Float32Array(n) };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (emis[i]) { out.r[i] = aR[i]; out.g[i] = aG[i]; out.b[i] = aB[i]; continue; }
+    let tex = 1;
+    if (y >= floorRow) { if (!inBorderRow(y) && !inBorderCol(x)) tex = 1 + P.matWeave * ((y & 1 ? 1 : -1) * 0.5 + (hashf(x >> 1, y, P.seed) - 0.5)); }
+    else if (y >= 24) tex = 1 + P.wallNoise * (hashf(x, y, P.seed + 1) - 0.5) * 2;
+    const s = shade[i] * tex;
+    out.r[i] = aR[i] * lR[i] * s; out.g[i] = aG[i] * lG[i] * s; out.b[i] = aB[i] * lB[i] * s;
+  }
   return pack(w, h, out.r, out.g, out.b);
 }

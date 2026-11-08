@@ -9,7 +9,7 @@ background loader is integrated (coordination with the other developer first).
 | File | `assets/backgrounds/dojo.png` |
 | Dimensions | 1840 x 360 px, RGBA, every pixel opaque |
 | Colours | 41 (the environment palette; none of the Tamas sheet's 30 colours) |
-| SHA-256 | 64da3efe258eebb19f62a205ed2a8f36bea343e7aa44c1ee4db496e8ff66e655 (lighting pass of 8 November 2026, muted warm treatment; the approved full dojo it was made from is 8db7254d…, see `docs/art/lighting/README.md`) |
+| SHA-256 | a8a55e9162fe420483ae83d3c3fc0c774f9a70a27c6f8540f9f2ebaba894e034 (lighting pass revision 2 of 8 November 2026, material-based muted warm treatment; the approved full dojo it was made from is 8db7254d…, kept in `docs/art/lighting/source/`, see `docs/art/lighting/README.md`) |
 | Placement | world art column 2000 (world x 1000), row 0, drawn 1:1, never scaled |
 | Wall/floor boundary | art row 244 in every column; walkable band rows 244-341; front strip 342-359 |
 | Approved D1 checkpoint | columns 100-739, pixel-identical to `dojo-checkpoint.png` (SHA-256 dcbb8274...) |

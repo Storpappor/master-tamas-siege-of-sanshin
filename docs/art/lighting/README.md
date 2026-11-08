@@ -41,6 +41,24 @@ facade, pavement and road:
   rows thick with varying width, offset and intensity, so there are substantial dark gaps
   and no ladder.
 
+## How the dojo light is built (revision 2)
+
+The dojo is lit as materials under light rather than graded: every pixel is classified into a
+material with its own albedo (indigo-leaning plaster for the walls, deep burgundy for the
+padded pillars and mat borders, muted ivory for the pillar bands, warm wood, sage-grey-green
+mats, cream banner cloth), shaded by the original painting, and then multiplied by the light:
+a dark indigo ambient that falls off toward the wall/floor junction and the ceiling, plus each
+ceiling fixture's cone down the wall and its soft pool on the floor. The fixture above TEAM
+SANSHIN is amber and stronger; the others are near neutral. The painted peach halo behind
+the emblem is replaced by plain wall so the pool is real light, and the lettering keeps its
+own dark navy. Floor pools cross mat borders instead of stopping at them. Contact shadows sit
+at the pillar bases, on the wall beside each pillar foot and under the banner; the plaster
+gets a faint noise and the mats a faint weave. Tube faces and the exit sign stay emissive.
+No neon and no wet reflections indoors.
+
+The in-game frame was verified pixel-identical to the loaded `dojo.png` outside the fighters,
+so the previous washed-out look was entirely in the asset, not a runtime tint.
+
 ## Reproducing
 
 `relight.mjs` is pure pixel code (no DOM). `relight.html` loads the preserved pre-relight
