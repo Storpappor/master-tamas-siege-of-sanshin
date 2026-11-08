@@ -1,5 +1,5 @@
 // The hand-drawn background path through the real world builder: a valid image is blitted 1:1 at its
-// zone's art column, anything else keeps the procedural painter, and the street is never touched.
+// zone's art column, anything else keeps the procedural painter, and each zone is decided on its own.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildWorld } from '../src/renderer.js';
@@ -13,8 +13,22 @@ function recordingCanvas(calls) {
     set: () => true,
   }) });
 }
+const street = LEVEL_1.zones.find((z) => z.art === 'street');
 const dojo = LEVEL_1.zones.find((z) => z.art === 'dojo');
 const valid = { naturalWidth: 1840, naturalHeight: 360 };
+const validStreet = { naturalWidth: 2000, naturalHeight: 360 };
+
+test('a valid street image is blitted 1:1 at art column 0 and both zones can be hand-drawn at once', () => {
+  const calls = [];
+  buildWorld(recordingCanvas(calls), LEVEL_1.zones, { street: validStreet, dojo: valid });
+  const blits = calls.filter(([name]) => name === 'drawImage');
+  assert.equal(blits.length, 2, 'one blit per zone');
+  assert.deepEqual(blits[0][1], [validStreet, 0, 0], 'street at art column 0, row 0, no scaling');
+  assert.deepEqual(blits[1][1], [valid, dojo.from * 2, 0], 'dojo at art column 2000');
+  assert.equal(calls.filter(([name]) => name === 'fillRect').length, 0, 'nothing painted procedurally');
+  assert.equal(validateBackground(validStreet, street), null);
+  assert.match(validateBackground(valid, street), /expected 2000x360/);
+});
 
 test('a valid dojo image is blitted 1:1 at the zone art column and the street keeps its painter', () => {
   const calls = [];

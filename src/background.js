@@ -4,7 +4,10 @@
 import { VIEW_H } from './constants.js';
 import { ART_SCALE } from './artScale.js';
 
-export const BACKGROUNDS = { dojo: '../assets/backgrounds/dojo.png' };
+export const BACKGROUNDS = {
+  street: '../assets/backgrounds/street.png',
+  dojo: '../assets/backgrounds/dojo.png',
+};
 
 export function loadBackground(url) {
   return new Promise((resolve, reject) => {
@@ -16,7 +19,8 @@ export function loadBackground(url) {
 }
 
 // A background fits a zone only at the zone's exact art size: (to - from) x VIEW_H game units at
-// ART_SCALE. For the dojo (1000..1920) that is 1840 x 360. Anything else is refused with a reason.
+// ART_SCALE. For the street (0..1000) that is 2000 x 360 and for the dojo (1000..1920) 1840 x 360.
+// Anything else is refused with a reason.
 export function validateBackground(img, zone) {
   const w = img ? (img.naturalWidth ?? img.width) : undefined;
   const h = img ? (img.naturalHeight ?? img.height) : undefined;

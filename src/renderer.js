@@ -31,7 +31,12 @@ const DOJO = {
   bag: '#1a1a1e', bagLight: '#34343a', skin: '#d6b08c', matRed: '#d8402c', matRedDark: '#bf3423', matGreen: '#9aa184', matGreenDark: '#858c70',
 };
 
-const DOOR_TOP = 88;
+// Top of the street door in game units. The hand-drawn street (assets/backgrounds/street.png) paints
+// its door leaves at art rows 140-243, so the opening is y 70-122 (52 units); the near-black fill
+// drawn while Tamas walks in must cover exactly those leaves. The same height is used by the
+// procedural street painter's doors, which only show when the image is missing. The dojo has no exit
+// and does not use this value.
+const DOOR_TOP = 70;
 
 // Pixel size of the HUD-independent GO prompt, in native pixels.
 const GO_X = VIEW_W - 58;
@@ -484,9 +489,11 @@ export class Renderer {
     ctx.drawImage(this.buffer, sx, sy, this.display.width, this.display.height);
   }
 
-  // A pixel arrow pointing down at the door.
+  // A pixel arrow pointing down at the door. It sits at y 24-43 (art rows 48-86), above the sign the
+  // street artwork paints at rows 100-135, and below nothing: the zone banner (y 44-70) is long gone
+  // by the time the door opens.
   drawDoorArrow(g, x) {
-    const top = 44, cx = Math.round(x);
+    const top = 24, cx = Math.round(x);
     box(g, '#5a1e12', cx - 3, top, 8, 12);
     for (let i = 0; i < 8; i++) box(g, '#5a1e12', cx - 8 + i, top + 11 + i, 18 - i * 2, 2);
     box(g, '#ffd166', cx - 2, top, 5, 12);
