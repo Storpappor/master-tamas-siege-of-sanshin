@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Background re-light workbench</title>
+<style>body{background:#111;color:#ddd;font:12px monospace;margin:8px} canvas{image-rendering:pixelated;display:block;margin:4px 0}</style>
+<p>Re-light workbench: loads the production backgrounds, runs relight.mjs, shows the results. Driven from the console via <code>window.RL</code>.</p>
+<div id="out"></div>
+<script type="module">
+// Dynamic import with a timestamp so an edited relight.mjs is never served from the browser cache.
+const { relightStreet, relightDojo, findPipes, STREET_DEFAULTS, DOJO_DEFAULTS } = await import(`./relight.mjs?t=${Date.now()}`);
+const load = (u) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('load ' + u)); i.src = u + '?t=' + Date.now(); });
+const toImg = (img) => { const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height); return { w: c.width, h: c.height, data: d.data }; };
+const toCanvas = (img) => { const c = document.createElement('canvas'); c.width = img.w; c.height = img.h; c.getContext('2d').putImageData(new ImageData(img.data, img.w, img.h), 0, 0); return c; };
+const street = toImg(await load('../../../assets/backgrounds/street.png'));
+const dojo = toImg(await load('../../../assets/backgrounds/dojo.png'));
+// Drainpipes at the building joints that carry neon tubes (measured on street.png), with the colour
+// each takes; the pipe right of the dojo is cyan and the one left of its bay magenta, as in the reference.
+const STREET_GEOMETRY = {
+  floorRow: 244, kerbRow: 300, groundFloorTop: 120, signBox: [1783, 100, 1937, 136], doorBox: [1816, 140, 1904, 244],
+  pipes: [[221, 226], [591, 598], [800, 801], [1097, 1103], [1235, 1236], [1434, 1440], [1579, 1580], [1776, 1776], [1939, 1946]],
+  pipeColours: ['cyan', 'magenta', 'cyan', 'magenta', 'cyan', 'magenta', 'cyan', 'magenta', 'cyan'],
+  coolZones: [[1942, 2000]], // the pale yellow building is not a light source
+};
+// Ceiling tube fixtures measured on dojo.png (bright runs in rows 4-18); the first-screen tube is the
+// neutral one and the tube over the TEAM SANSHIN emblem is warm, as in the reference. The rest alternate.
+const DOJO_GEOMETRY = {
+  floorRow: 244, emblemBox: [300, 36, 545, 170],
+  tubes: [
+    { x0: 153, x1: 216, y0: 4, y1: 18, warm: false }, { x0: 419, x1: 489, y0: 4, y1: 18, warm: true },
+    { x0: 740, x1: 798, y0: 4, y1: 18, warm: false }, { x0: 998, x1: 1068, y0: 4, y1: 18, warm: true },
+    { x0: 1218, x1: 1288, y0: 4, y1: 18, warm: false }, { x0: 1456, x1: 1528, y0: 4, y1: 18, warm: true },
+  ],
+};
+window.RL = {
+  street, dojo, STREET_DEFAULTS, DOJO_DEFAULTS, STREET_GEOMETRY, DOJO_GEOMETRY, findPipes, toCanvas,
+  runStreet(params = {}, geometry = {}) { return relightStreet(street, { ...STREET_GEOMETRY, ...geometry }, params); },
+  runDojo(params = {}, geometry = {}) { return relightDojo(dojo, { ...DOJO_GEOMETRY, ...geometry }, params); },
+  show(img, label) { const out = document.getElementById('out'); const p = document.createElement('p'); p.textContent = label; out.append(p, toCanvas(img)); },
+  async post(img, name) { const c = toCanvas(img); const blob = await new Promise((r) => c.toBlob(r, 'image/png')); return (await fetch('http://127.0.0.1:8111/save?name=' + name, { method: 'POST', body: blob })).text(); },
+};
+document.getElementById('out').textContent = 'ready: street ' + street.w + 'x' + street.h + ', dojo ' + dojo.w + 'x' + dojo.h;
+</script>
