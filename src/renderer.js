@@ -4,6 +4,7 @@ import { VIEW_W, VIEW_H, GROUND_Y, FLOOR_TOP, WORLD_WIDTH, COLORS, screenY } fro
 import { LEVEL_1 } from './level.js';
 import { drawFighter, drawShuriken, drawText } from './sprites.js';
 import { heroFrameIndex, heroState, resolveFrame } from './heroSprite.js';
+import { enemyState } from './enemySprite.js';
 import { ART_SCALE } from './artScale.js';
 import { validateBackground } from './background.js';
 
@@ -342,9 +343,10 @@ export function buildWorld(createCanvas, zones, images = null) {
 }
 
 export class Renderer {
-  constructor(displayCanvas, { reducedMotion = false, createCanvas, hero = null, heroSheet = null } = {}) {
+  constructor(displayCanvas, { reducedMotion = false, createCanvas, hero = null, heroSheet = null, enemySheets = {} } = {}) {
     this.hero = hero;           // legacy hero sheet: fallback for states the new sheet lacks
     this.heroSheet = heroSheet; // JSON-mapped production sheet (may cover only some states)
+    this.enemySheets = enemySheets; // JSON-mapped sheet per enemy kind; a kind without one is drawn procedurally
     this.display = displayCanvas;
     this.ctx = displayCanvas.getContext('2d');
     this.createCanvas = createCanvas || ((w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; });
@@ -522,13 +524,15 @@ export class Renderer {
     let outline = null;
     if (f.kiaiActive) outline = this.reducedMotion || Math.floor(time * 12) % 3 !== 0 ? COLORS.kiai : '#ffe9b0';
     const y = screenY(f.y, f.z);
-    if (f.kind === 'player' && this.heroSheet && this.heroSheet.ready) {
-      const hs = heroState(f, { victory });
-      const index = resolveFrame(this.heroSheet, hs);
+    // A JSON-mapped sheet, for Tamas or for an enemy kind that has one, is drawn in art pixels outside
+    // the game-unit transform; a state the sheet does not map falls through to the other artwork.
+    const sheet = f.kind === 'player' ? this.heroSheet : this.enemySheets[f.kind];
+    if (sheet && sheet.ready) {
+      const index = resolveFrame(sheet, f.kind === 'player' ? heroState(f, { victory }) : enemyState(f));
       if (index !== null) {
         g.save();
         g.setTransform(1, 0, 0, 1, 0, 0);
-        this.heroSheet.draw(g, index, (f.x - this.camX) * ART_SCALE, y * ART_SCALE, f.facing, { alpha, flash: flash ? '#fff' : null, outline });
+        sheet.draw(g, index, (f.x - this.camX) * ART_SCALE, y * ART_SCALE, f.facing, { alpha, flash: flash ? '#fff' : null, outline });
         g.restore();
         return;
       }
