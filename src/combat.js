@@ -12,8 +12,9 @@ export const ATTACKS = {
   crouchKick:  { startup: 0.12, active: 0.12, recovery: 0.24, damage: 12, knockback: 60, box: { x: 6, y: -16, w: 20, h: 8 } },
   // Grab: reaches for the fighter in front; a guard does not stop it. On contact it becomes a throw.
   grab:        { startup: 0.08, active: 0.08, recovery: 0.28, damage: 0, knockback: 0, box: { x: 2, y: -34, w: 16, h: 30 }, grab: true },
-  // The throw itself is only an animation: the grabbed fighter was launched when the grab connected.
-  throw:       { startup: 0, active: 0.16, recovery: 0.30, damage: 0, knockback: 0, box: { x: 0, y: 0, w: 0, h: 0 }, ranged: true },
+  // The throw has no hitbox. Start-up is the hold (the victim stands in the grip), the victim is
+  // turned down during the active phase and lies in front of Tamas while he recovers.
+  throw:       { startup: 0.20, active: 0.20, recovery: 0.30, damage: 0, knockback: 0, box: { x: 0, y: 0, w: 0, h: 0 }, ranged: true },
   // Enemy attacks (slower and clearly telegraphed)
   enemyPunch:    { startup: 0.40, active: 0.12, recovery: 0.45, damage: 10, knockback: 40, box: { x: 6, y: -34, w: 15, h: 9 } },
   enemyHighKick: { startup: 0.52, active: 0.14, recovery: 0.55, damage: 14, knockback: 65, box: { x: 6, y: -42, w: 21, h: 12 } },
