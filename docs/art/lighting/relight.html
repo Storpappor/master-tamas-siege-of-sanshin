@@ -1,0 +1,56 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Background re-light workbench</title>
+<style>body{background:#111;color:#ddd;font:12px monospace;margin:8px} canvas{image-rendering:pixelated;display:block;margin:4px 0}</style>
+<p>Re-light workbench: loads the production backgrounds, runs relight.mjs, shows the results. Driven from the console via <code>window.RL</code>.</p>
+<div id="out"></div>
+<script type="module">
+// Dynamic import with a timestamp so an edited relight.mjs is never served from the browser cache.
+const { relightStreet, relightDojo, findPipes, findPillars, STREET_DEFAULTS, DOJO_DEFAULTS } = await import(`./relight.mjs?t=${Date.now()}`);
+const load = (u) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('load ' + u)); i.src = u + '?t=' + Date.now(); });
+const toImg = (img) => { const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height); return { w: c.width, h: c.height, data: d.data }; };
+const toCanvas = (img) => { const c = document.createElement('canvas'); c.width = img.w; c.height = img.h; c.getContext('2d').putImageData(new ImageData(img.data, img.w, img.h), 0, 0); return c; };
+// Always start from the preserved pre-relight production assets, never from an already lit output.
+const street = toImg(await load('source/street-v1.png'));
+const dojo = toImg(await load('source/dojo-approved.png'));
+// Neon lives in the shopfront architecture, horizontally: a thin magenta border around the Sanshin
+// sign (short vertical sides only), a magenta strip under the pizzeria awning, a cyan edge under the
+// ETC sign plate and one short cyan strip above a window near the dojo. Everything else is dark
+// architecture that only receives light. Boxes are half-open [x0, y0, x1, y1] in art pixels.
+const STREET_GEOMETRY = {
+  floorRow: 244, kerbRow: 300, groundFloorTop: 120, signBox: [1783, 100, 1937, 136], doorBox: [1816, 140, 1904, 244],
+  pipes: [],
+  neonStrips: [
+    { box: [82, 141, 220, 144], colour: 'magenta' },   // beneath the pizzeria awning
+    { box: [433, 151, 526, 154], colour: 'cyan' },     // lower edge of the ETC sign plate
+    { box: [1636, 125, 1700, 128], colour: 'cyan' },   // above the lit window left of the dojo
+  ],
+  coolZones: [[1942, 2000]], // the pale yellow building is not a light source
+};
+// Ceiling tube fixtures measured on dojo.png (bright runs in rows 4-18); the first-screen tube is the
+// neutral one and the tube over the TEAM SANSHIN emblem is warm, as in the reference. The rest alternate.
+// Measured on the approved dojo: ceiling fixtures, the TEAM SANSHIN lettering and the painted peach
+// halo behind it (which becomes plain wall and gets a real amber pool instead), the cloth banner,
+// and the red mat grid. Pillars are detected from their red columns.
+const DOJO_GEOMETRY = {
+  floorRow: 244, lettersBox: [280, 40, 560, 180], haloBox: [262, 29, 580, 200], bannerBox: [574, 66, 737, 138],
+  matBorderRows: [[244, 255], [293, 308], [355, 359]],
+  mirrorBoxes: [[982, 62, 1139, 151]], // the dark wall mirror, measured on the source (shares a colour with the plaster)
+  scrollBox: [1636, 44, 1704, 154],      // the hanging calligraphy scroll on the boss screen (cream cloth, wooden rods)
+  bannerHaloBox: [540, 18, 758, 145],    // painted glow around the SANSHIN KAN banner, flattened to plaster
+  matBorderCols: [[6, 34], [279, 298], [549, 579], [814, 842], [1084, 1112], [1354, 1382], [1624, 1652]],
+  tubes: [
+    { x0: 153, x1: 216, y0: 4, y1: 18, warm: false }, { x0: 419, x1: 489, y0: 4, y1: 18, warm: true },
+    { x0: 740, x1: 798, y0: 4, y1: 18, warm: false }, { x0: 998, x1: 1068, y0: 4, y1: 18, warm: false },
+    { x0: 1218, x1: 1288, y0: 4, y1: 18, warm: false }, { x0: 1456, x1: 1528, y0: 4, y1: 18, warm: false },
+  ],
+};
+window.RL = {
+  street, dojo, STREET_DEFAULTS, DOJO_DEFAULTS, STREET_GEOMETRY, DOJO_GEOMETRY, findPipes, findPillars, toCanvas,
+  runStreet(params = {}, geometry = {}) { return relightStreet(street, { ...STREET_GEOMETRY, ...geometry }, params); },
+  runDojo(params = {}, geometry = {}) { return relightDojo(dojo, { ...DOJO_GEOMETRY, ...geometry }, params); },
+  show(img, label) { const out = document.getElementById('out'); const p = document.createElement('p'); p.textContent = label; out.append(p, toCanvas(img)); },
+  async post(img, name) { const c = toCanvas(img); const blob = await new Promise((r) => c.toBlob(r, 'image/png')); return (await fetch('http://127.0.0.1:8111/save?name=' + name, { method: 'POST', body: blob })).text(); },
+};
+document.getElementById('out').textContent = 'ready: street ' + street.w + 'x' + street.h + ', dojo ' + dojo.w + 'x' + dojo.h;
+</script>
