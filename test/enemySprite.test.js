@@ -8,6 +8,8 @@ import { Player, Enemy, ENEMY_TYPES } from '../src/entities.js';
 import { ATTACKS, attackDuration } from '../src/combat.js';
 import { STEP, GRAB, PHYSICS } from '../src/constants.js';
 import { GET_UP_TIME, poseFor } from '../src/sprites.js';
+import { readFileSync } from 'node:fs';
+import { decodePng } from '../scripts/append-sheet.mjs';
 
 const idle = { left: false, right: false, up: false, down: false, duck: false, block: false, jump: false, punch: false, kick: false, kiai: false };
 const near = (a, b, eps = 1e-6) => Math.abs(a - b) < eps;
@@ -18,6 +20,30 @@ const STRIKER_MAP = { cell: { w: 128, h: 96 }, anchor: { x: 64, y: 95 }, columns
   idle: [0], walk: [4, 5, 6, 7], enemyPunch: [8, 9, 10], hurt: [12, 13], knockdown: [16, 17, 18],
   held: [20], thrownDown1: [24], thrownDown2: [28], fallen: [32], getUp: [36],
 } };
+
+test('the shipped striker.json and striker.png follow the brief\'s delivery contract', () => {
+  const map = JSON.parse(readFileSync(new URL('../assets/sprites/striker.json', import.meta.url), 'utf8'));
+  const sheet = new SpriteSheet({ map });
+  assert.deepEqual(sheet.cell, { w: 128, h: 96 });
+  assert.deepEqual(sheet.anchor, { x: 64, y: 95 });
+  assert.equal(sheet.columns, 4);
+  assert.deepEqual(map.states, STRIKER_MAP.states, 'one state per row, the agreed 18 cells');
+  const png = decodePng(readFileSync(new URL('../assets/sprites/striker.png', import.meta.url)));
+  assert.equal(png.width, 512);
+  assert.equal(png.height, 960);
+  let semi = 0;
+  for (let i = 3; i < png.rgba.length; i += 4) if (png.rgba[i] !== 0 && png.rgba[i] !== 255) semi++;
+  assert.equal(semi, 0, 'binary alpha: the hit flash and the Kiai outline work on the alpha channel');
+  // The idle figure stands 86 px tall with its feet on the anchor row.
+  const alphaAt = (x, y) => png.rgba[(y * png.width + x) * 4 + 3];
+  let top = 96, bottom = -1;
+  for (let y = 0; y < 96; y++) for (let x = 0; x < 128; x++) if (alphaAt(x, y)) { top = Math.min(top, y); bottom = Math.max(bottom, y); }
+  assert.equal(top, 10);
+  assert.equal(bottom, 95);
+  for (const state of Object.keys(map.states)) {
+    assert.notEqual(resolveFrame(sheet, { state, phase: 'active', progress: 0.5, loop: 1 }), null, `${state} resolves on the shipped sheet`);
+  }
+});
 
 test('every enemy type has a sheet path next to tamas.json', () => {
   assert.deepEqual(Object.keys(ENEMY_SHEETS).sort(), Object.keys(ENEMY_TYPES).sort());
