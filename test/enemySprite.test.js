@@ -12,8 +12,9 @@ import { GET_UP_TIME, poseFor } from '../src/sprites.js';
 const idle = { left: false, right: false, up: false, down: false, duck: false, block: false, jump: false, punch: false, kick: false, kiai: false };
 const near = (a, b, eps = 1e-6) => Math.abs(a - b) < eps;
 
-// A striker-shaped map in the layout the brief asks for: one state per row.
-const STRIKER_MAP = { cell: { w: 96, h: 96 }, anchor: { x: 48, y: 95 }, columns: 4, states: {
+// A striker-shaped map in the layout the brief asks for: one state per row, in the wider cell the
+// brief recommends so the lying poses fit (the loader reads cell and anchor per map).
+const STRIKER_MAP = { cell: { w: 128, h: 96 }, anchor: { x: 64, y: 95 }, columns: 4, states: {
   idle: [0], walk: [4, 5, 6, 7], enemyPunch: [8, 9, 10], hurt: [12, 13], knockdown: [16, 17, 18],
   held: [20], thrownDown1: [24], thrownDown2: [28], fallen: [32], getUp: [36],
 } };
@@ -138,6 +139,7 @@ test('resolveFrame picks the cells of a striker map and returns null for whateve
   assert.equal(resolveFrame(sheet, { state: 'enemyHighKick', phase: 'active', progress: 0 }), null, 'another type\'s attack is not on this sheet');
   const bare = new SpriteSheet({ map: { cell: { w: 96, h: 96 }, anchor: { x: 48, y: 95 }, columns: 4, states: {} } });
   assert.equal(resolveFrame(bare, { state: 'idle', progress: 0 }), null);
+  assert.deepEqual(sheet.cellRect(5), { x: 128, y: 96, w: 128, h: 96 }, 'cells are cut at the map\'s own size');
 });
 
 // A recording 2D context: enough for drawFighter (fillRect) and SpriteSheet.draw (drawImage).
@@ -182,6 +184,27 @@ test('Renderer.drawOne draws an enemy from its sheet when it has one and procedu
   striker.takeHit({ damage: 10, blocked: false, direction: 1, knockback: 10 });
   const unmapped = draw({ ...base, enemySheets: partial }, striker);
   assert.ok(unmapped.fillRect > 50 && unmapped.drawImage === 0, 'hurt is not on the partial sheet: procedural');
+  // The throw victim's states fall back one by one as well: a sheet with only idle keeps the
+  // procedural held, airborne, lying and get-up poses.
+  const game = new Game({ input: null, rng: () => 0.5 });
+  game.start();
+  const victim = new Enemy('striker', game.player.x + 12, -1, () => 0.5, game.player.z);
+  victim.cooldown = 99;
+  game.enemies.push(victim);
+  game.step(STEP, { ...idle, punch: true, kick: true });
+  const seen = new Set();
+  for (let i = 1; i <= 90; i++) {
+    const es = enemyState(victim);
+    if (['held', 'thrownDown1', 'thrownDown2', 'fallen', 'getUp'].includes(es.state)) {
+      seen.add(es.state);
+      const calls = draw({ ...base, enemySheets: partial }, victim);
+      assert.ok(calls.fillRect > 50 && calls.drawImage === 0, `${es.state} unmapped: procedural`);
+      const full = draw({ ...base, enemySheets: sheets }, victim);
+      assert.ok(full.drawImage === 1 && full.fillRect === 0, `${es.state} mapped: sheet`);
+    }
+    game.step(STEP, idle);
+  }
+  assert.deepEqual([...seen].sort(), ['fallen', 'getUp', 'held', 'thrownDown1', 'thrownDown2']);
   // A sheet that is not ready yet (still loading) is ignored.
   const loading = new SpriteSheet({ map: STRIKER_MAP });
   const notReady = draw({ ...base, enemySheets: { striker: loading } }, new Enemy('striker', 120, -1, () => 0.5, p.z));
