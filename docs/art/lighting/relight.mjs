@@ -339,6 +339,7 @@ export const DOJO_DEFAULTS = {
   wallPaletteShare: 0.012,
   bandGrain: 0.04, bandEdge: 0.8,
   wood: [0.68, 0.43, 0.22], woodShadeRef: 0.5, banner: [0.84, 0.76, 0.6], other: 0.9,
+  mirror: [0.24, 0.25, 0.4], mirrorFrame: [0.56, 0.56, 0.7], mirrorSheen: 0.3,
   // Light.
   ambient: [0.23, 0.19, 0.4], junctionDrop: 0.3, ceilingDrop: 0.35, floorAmbient: 1.08, floorTint: [1.0, 1.25, 1.0], floorFall: 0.3,
   neutral: [0.92, 0.94, 1.0], warm: [1.0, 0.6, 0.2],
@@ -458,6 +459,15 @@ export function relightDojo(img, geometry, params = {}) {
       const edge = (x <= a || x >= b) ? P.pillarEdge : 1;
       if (sat < 0.3 && val > 0.65) { set(P.ivory, round * edge * shadeOf(0.72) ** 0.4); obj[i] = 0; continue; }
       if (red) { set(P.pillar, round * edge); continue; }
+    }
+    // Wall mirror: a dark glass panel with a light frame and a soft diagonal sheen, so it reads
+    // as an object instead of dissolving into the plaster it shares a colour with.
+    const mb = (geometry.mirrorBoxes || []).find((box) => inBox(x, y, box));
+    if (mb) {
+      const onFrame = x === mb[0] || x === mb[2] - 1 || y === mb[1] || y === mb[3] - 1;
+      if (onFrame) { set(P.mirrorFrame); obj[i] = 1; }
+      else { const u = ((x - mb[0]) + (y - mb[1])) / ((mb[2] - mb[0]) + (mb[3] - mb[1])); const sheen = 1 + P.mirrorSheen * Math.max(0, 1 - Math.abs(u - 0.38) * 6) - 0.1 * ((y - mb[1]) / (mb[3] - mb[1])); set(P.mirror, sheen); }
+      continue;
     }
     if (inBox(x, y, geometry.lettersBox) && hue >= 195 && hue <= 265 && val < 0.3) { set([r * P.letters, g * P.letters, b * P.letters]); continue; }
     if (inBox(x, y, geometry.haloBox)) {

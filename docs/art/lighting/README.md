@@ -62,7 +62,9 @@ materials under light, from the preserved approved asset, keeping every object p
   crosses mats and bands alike; only the fixture above TEAM SANSHIN is amber, the rest are
   near neutral. The floor darkens toward the viewer.
 - **Materials**: cylindrical shading and a dark edge on the padded pillars, muted ivory
-  bands, warm wood, cream banner cloth. Tube faces and the exit sign stay emissive.
+  bands, warm wood, cream banner cloth, and the wall mirror as dark glass with a light frame
+  and a soft sheen (it shares a colour with the plaster, so it is placed by a measured box).
+  Tube faces and the exit sign stay emissive.
 - **Shadows**: a cool shadow along the wall base on the floor, contact shadows at the pillar
   bases and beside each pillar foot, and drop shadows under every wall object.
 
