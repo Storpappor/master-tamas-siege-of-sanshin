@@ -200,6 +200,15 @@ test('the Kicker map of its brief resolves both attacks by phase and the walk fo
   const cells = new Set();
   for (let i = 0; i < 29; i++) { cells.add(resolveFrame(sheet, enemyState(r))); r.update(STEP, p); }
   assert.deepEqual([...cells].sort(), [4, 5, 6, 7], 'one full forward cycle during the retreat');
+  // The complete map populates 21 slots; the first package's partial map leaves the three pending
+  // victim states out (18 slots), so held, rising and falling fall back while fallen and getUp resolve.
+  assert.equal(Object.values(KICKER_MAP.states).flat().length, 21);
+  const { held, thrownDown1, thrownDown2, ...firstPackage } = KICKER_MAP.states;
+  const partial = new SpriteSheet({ map: { ...KICKER_MAP, states: firstPackage } });
+  assert.equal(Object.values(firstPackage).flat().length, 18);
+  for (const state of ['held', 'thrownDown1', 'thrownDown2']) assert.equal(resolveFrame(partial, { state, progress: 0.5 }), null, `${state} falls back`);
+  assert.equal(resolveFrame(partial, { state: 'fallen', progress: 0.5 }), 36);
+  assert.equal(resolveFrame(partial, { state: 'getUp', progress: 0.5 }), 40);
 });
 
 // A recording 2D context: enough for drawFighter (fillRect) and SpriteSheet.draw (drawImage).

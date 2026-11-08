@@ -26,7 +26,7 @@ the Striker's proportions or colour count over to it.
 | Kicker geometry measured, size and cell derived from every pose | done, sections 1-3 |
 | Pipeline verified in the real game with a labelled PLACEHOLDER sheet in the recommended 128 × 112 cell, both facings, both attacks, the whole throw | done, `preview/kicker-diagnostic-both-facings.png` (section 4) |
 | Attacks, movement, victim behaviour | documented from the simulation, sections 5-7; frame counts measured at 60 Hz |
-| Kicker sheet (K1 at the sizes of section 2, in the cell of section 3) | **to be delivered** by the art chat (section 8); the three victim cells wait for the arm-treatment review (section 7) |
+| Kicker sheet (K1 at the sizes of section 2, in the cell of section 3) | **to be delivered** by the art chat (section 8): a first package of 18 cell slots with the partial map, then the three victim slots 24, 28 and 32 after the arm-treatment review (section 7); 21 slots in all |
 | Thrower and boss sheets | later, same mechanism |
 
 ---
@@ -332,15 +332,17 @@ partly obscured by the held victim is an accepted minor limitation, and the fore
 of the Striker brief's section 8 **remains deferred**; this brief needs no renderer feature for it.
 A separate proposal exists to revise the Striker's cells 20, 24 and 28 with a **"controlled arm"
 treatment** (the victim's near arm extended toward Tamas's grips during the hold and the
-throw-down). It is **under paired visual review in the hero-art session and is not approved**: it
-is not adopted here as a requirement, and the Striker sheet on `main` stays as it is. The detailed
+throw-down): the **Striker R1 candidate**. It is **under paired visual review in the hero-art
+session and has not been approved**: it is not adopted here as a requirement, and the Striker
+sheet on `main` stays as it is. The detailed
 arm treatment of the Kicker's `held`, `thrownDown1` and `thrownDown2` cells (24, 28 and 32 in the
 map of section 8) is therefore marked **PENDING that separate paired review**. Everything else
 about those three cells (size, anchor, orientation, the grip region, the head and feet directions)
 is fixed above and in section 3. **Those three native Kicker cells are produced after that
-treatment is settled; the other sixteen cells can be produced now**, and a package without them
-can be staged and reviewed in the game, since an unmapped state falls back to the procedural pose
-for that frame only.
+treatment is settled; the other eighteen cell slots proceed independently now**, as the first
+artwork package of section 8 (its partial map omits the three pending states, so the game draws
+them from the documented per-state procedural fallback; `fallen` [36] and `getUp` [40] are part of
+that first package).
 
 ---
 
@@ -364,7 +366,10 @@ spreads them evenly. One state starts a new row.
 | 9 | `fallen` | 1 (progress available) | lying after the throw, frames 31-69 | progress 0 at the touchdown, 1 when the get-up starts |
 | 10 | `getUp` | 1 (progress available) | the last 0.25 s of the floor time, frames 70-84 | progress 0 → 1 |
 
-Minimum **19 cells in 11 rows**. Mirroring: every cell faces right; the renderer flips the whole
+**Cell count: 21 populated cell slots in 11 rows** (1 + 4 + 3 + 3 + 2 + 3 + 1 + 1 + 1 + 1 + 1),
+each slot its own drawing; no drawing is reused across slots, so 21 slots means 21 cells to draw.
+Without the three pending victim slots 24, 28 and 32 that is **18 slots** for the first package.
+(An earlier report of this brief said 19 and 16; those were miscounts, corrected here.) Mirroring: every cell faces right; the renderer flips the whole
 cell about the anchor x (`ctx.scale(-1, 1)`) for a left-facing Kicker, which is every Kicker
 standing to Tamas's right and every held or thrown victim of a right-facing Tamas, so never bake a
 left-facing cell. A state missing from the map is drawn procedurally for that frame only, so a
@@ -377,9 +382,9 @@ Isolated package, loaded on its own through `SpriteSheet.load`, staged by copyin
   the rows above, **binary alpha** (no semi-transparent pixels: the hit flash uses `source-in` and
   the Kiai outline works on the alpha), every cell facing right, the standing figure 96 px tall with
   its soles on row 111 of its cell and centred on column 64.
-  **Populated cells (19):** 0 · 4, 5, 6, 7 · 8, 9, 10 · 12, 13, 14 · 16, 17 · 20, 21, 22 · 24 ·
-  28 · 32 · 36 · 40. **Empty, fully transparent (25):** 1-3, 11, 15, 18-19, 23, 25-27, 29-31,
-  33-35, 37-39, 41-43.
+  **Populated cells (21):** 0 · 4, 5, 6, 7 · 8, 9, 10 · 12, 13, 14 · 16, 17 · 20, 21, 22 · 24 ·
+  28 · 32 · 36 · 40. **Empty, fully transparent (23 of the 44 slots):** 1-3, 11, 15, 18-19, 23,
+  25-27, 29-31, 33-35, 37-39, 41-43.
 - `kicker.json`, exactly this map (`"image"` may be left out; without it the PNG is taken from the
   JSON's own name):
 
@@ -405,11 +410,39 @@ Isolated package, loaded on its own through `SpriteSheet.load`, staged by copyin
   }
   ```
 
-  This exact layout is the map `test/enemySprite.test.js` resolves against and the one the
-  diagnostic sheet uses. Extra cells for a "progress" state go on that state's row (for example
-  `"held": [24, 25]`). A package delivered without the three PENDING cells leaves `held`,
-  `thrownDown1` and `thrownDown2` out of `states` and their cells transparent; they are added when
-  the arm treatment is settled.
+  This exact layout is the complete map `test/enemySprite.test.js` resolves against and the one
+  the diagnostic sheet uses. Extra cells for a "progress" state go on that state's row (for
+  example `"held": [24, 25]`).
+
+- **Partial-delivery map for the first artwork package (18 cells).** The three pending victim
+  states are left out of `states` and their slots 24, 28 and 32 stay fully transparent on the same
+  512 × 1232 sheet; the game then draws `held`, `thrownDown1` and `thrownDown2` from the
+  procedural fallback for those frames and everything else, `fallen` [36] and `getUp` [40]
+  included, from the sheet (`test/enemySprite.test.js` pins this fallback for the partial map):
+
+  ```json
+  {
+    "image": "kicker.png",
+    "cell": { "w": 128, "h": 112 },
+    "anchor": { "x": 64, "y": 111 },
+    "columns": 4,
+    "states": {
+      "idle": [0],
+      "walk": [4, 5, 6, 7],
+      "enemyHighKick": [8, 9, 10],
+      "enemyLowSweep": [12, 13, 14],
+      "hurt": [16, 17],
+      "knockdown": [20, 21, 22],
+      "fallen": [36],
+      "getUp": [40]
+    }
+  }
+  ```
+
+  **Populated cells (18):** 0 · 4, 5, 6, 7 · 8, 9, 10 · 12, 13, 14 · 16, 17 · 20, 21, 22 · 36 ·
+  40. **Empty (26):** the 23 above plus 24, 28 and 32. When the arm treatment is settled, the
+  second package adds the three drawings in slots 24, 28 and 32 and the three state entries, which
+  turns the partial map into the complete one above; nothing else in the PNG or the map changes.
 
 Per-state fallback and staging check, no code needed: with the two files in `assets/sprites/`,
 `npm start`, and in the console
@@ -421,8 +454,8 @@ the procedural Kicker is back.
 
 What the art chat delivers for the Kicker, in one folder:
 
-1. `kicker.png` and `kicker.json` as above (16 cells now; cells 24, 28 and 32 after the review of
-   section 7).
+1. `kicker.png` and `kicker.json`: the first package with the **partial map (18 cells)**; the
+   second adds cells 24, 28 and 32 with the complete map after the review of section 7.
 2. A real-game capture of **both facings**: stage the package, run the dev server, open
    `docs/art/preview/enemy-states-harness.html?kind=kicker` and save `window.__png` (a base64 data
    URL) as `kicker-native-v1-ingame-states.png`; the harness captures exactly the 72 panels of
