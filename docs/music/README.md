@@ -91,8 +91,17 @@ steps and resolves each raw event with the game's state into one cue:
 | `hit` | the last strike was a kick | `kickHit` / `punchHit` |
 | `hitHeavy` | a thrown fighter just landed | `throwLand` / `kiaiHit` |
 | `enemyDown` | a thrown fighter just landed | `throwLand` / `enemyKo` |
-| `bossAppear` | | `bossEnter`, then the boss track if available |
+| `bossAppear` | | `bossEnter`; the boss track waits for Kage's dialogue |
 | `hurt`, `block`, `jump`, `land`, `shuriken`, `kiaiStart`, `victory`, `gameOver` | | one cue each |
+
+### When the boss theme starts
+
+The encounter begins, musically, when Master Kage's introductory dialogue opens: the game
+state becomes `dialogue` while `game.boss` is alive. Entering the dojo, the dojo's own zone
+card and Kage's spawn (which happen with the stage track running) do not switch tracks, and the
+dialogue closing or any later exchange does not restart the boss theme: it starts once per run.
+In the game, the spawn and the dialogue land in the same simulation step, so a trigger that
+only looked at the boss on frames without a state change missed the hand-over entirely.
 
 ### Missing hooks
 
