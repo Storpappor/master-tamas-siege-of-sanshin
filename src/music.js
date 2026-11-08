@@ -10,16 +10,18 @@
 // so they also work under the GitHub Pages path. A track with `src: null` is pending: it is
 // never requested, and asking the mixer to play it leaves the current track alone.
 export const MUSIC = {
-  volume: 0.15,         // music gain; the effects keep their own master gain in sound.js
+  volume: 0.15,         // stage gain; menu and boss carry their own below, balanced by measured loudness
   fadeOut: 0.5,         // seconds; used when a run ends and when tracks hand over
   tracks: {
     // The 92 % tempo render (121.4 BPM) of "Triumph in the Ring"; the source tempo file sits next
     // to it. The loop points belong to this file: see docs/music/README.md before switching.
     stage: { src: '../assets/audio/triumph-in-the-ring-92.mp3', loopStart: 1.28667, loopEnd: 125.84646 },
-    // Menu theme: plays on the intro cards, the title and the result screens. Pending delivery.
-    menu: { src: null, loopStart: 0, loopEnd: 0 },
-    // Boss theme: takes over from the stage track when Master Kage appears. Pending delivery.
-    boss: { src: null, loopStart: 0, loopEnd: 0 },
+    // Menu theme (133 BPM): the intro cards, the title and the result screens. The two-beat pickup
+    // plays once; the loop runs from the entry downbeat to the downbeat of the final hit.
+    menu: { src: '../assets/audio/menu-theme.mp3', volume: 0.10, loopStart: 1.98873, loopEnd: 116.48144 },
+    // Boss theme (131 BPM): takes over from the stage track when Master Kage appears. The 7.7 s
+    // build plays once; the loop runs from the groove's entry to the downbeat of the final hit.
+    boss: { src: '../assets/audio/boss-theme.mp3', volume: 0.12, loopStart: 7.70581, loopEnd: 129.62725 },
   },
 };
 
@@ -123,10 +125,19 @@ export class Music {
   }
 
   pause() {
+    this.cutFade();
     if (this.intent !== 'playing') return;
     this.position = this.currentPosition();
     this.intent = 'paused';
     this.sync();
+  }
+
+  // Silence a fade-out tail at once (a pause, the mute or a hidden tab must leave nothing playing).
+  cutFade() {
+    if (!this.fading) return;
+    this.stopSource(this.fading);
+    this.fading = null;
+    if (this.gain && !this.source) { this.gain.gain.cancelScheduledValues(this.ctx.currentTime); this.gain.gain.value = this.volume; }
   }
 
   resume() {
@@ -235,6 +246,7 @@ export class Music {
       this.stopSource(this.source);
       this.source = null;
     }
+    if (!this.enabled || !this.pageActive) this.cutFade();
   }
 
   stopSource(src) {
@@ -285,7 +297,7 @@ export class MusicMixer {
     return true;
   }
 
-  pause() { this.currentTrack?.pause(); }
+  pause() { for (const t of Object.values(this.tracks)) t.cutFade(); this.currentTrack?.pause(); }
   resume() { this.currentTrack?.resume(); }
   // End the current track (a run is over); the others keep their held positions.
   fadeOut() { this.currentTrack?.fadeOut(); this.current = null; }

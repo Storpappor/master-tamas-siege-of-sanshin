@@ -301,3 +301,22 @@ test('resuming a track that is still fading cuts the fade instead of letting it 
   assert.equal(ctx.sources[0].stopped, 10.2, 'the fading stage source is cut now');
   assert.deepEqual(ctx.sources[2].started, { when: 10.2, offset: 10 });
 });
+
+test('a pause, the mute or a hidden tab cut a hand-over fade that is still running', async () => {
+  for (const [name, act] of [
+    ['pause', (m) => m.pause()],
+    ['mute', (m) => m.setEnabled(false)],
+    ['hidden', (m) => m.setPageActive(false)],
+  ]) {
+    const { ctx, m } = await mixer({ stage: { src: 's.mp3' }, boss: { src: 'b.mp3' } });
+    m.play('stage', { fromStart: true });
+    ctx.currentTime = 10;
+    m.play('boss', { fromStart: true });
+    assert.equal(ctx.sources[0].stopped, 10.5, `${name}: the stage was fading`);
+    ctx.currentTime = 10.1;
+    act(m);
+    assert.equal(ctx.sources[0].stopped, 10.1, `${name}: the fading stage source is cut at once`);
+    assert.equal(ctx.sources[1].stopped, 10.1, `${name}: the boss source is held`);
+    assert.equal(ctx.sources.filter((s) => s.stopped === null || s.stopped > ctx.currentTime).length, 0, `${name}: nothing left playing`);
+  }
+});

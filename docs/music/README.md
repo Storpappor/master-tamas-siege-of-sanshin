@@ -51,13 +51,29 @@ of them current; handing over fades the old track on its own gain and remembers 
 so the menu theme continues between the intro cards, the title and the result screens, and the
 stage track comes back where it was if play goes on after the boss. A track with `src: null` is
 pending: it is never requested (no failed network request) and asking for it leaves the current
-track alone, so the game keeps the stage track through the boss until the boss theme arrives.
+track alone (the stage track carries on through the boss, result screens stay quiet).
 
-| Track | Asset | Status |
-|---|---|---|
-| `stage` | `assets/audio/triumph-in-the-ring-92.mp3` | shipped; loop 1.28667 s to 125.84646 s |
-| `menu` | `assets/audio/<menu theme>.mp3` | **pending** delivery; set `src`, loop points and check the seam |
-| `boss` | `assets/audio/<boss theme>.mp3` | **pending** delivery; same |
+| Track | Asset | Gain | Loop | Body level |
+|---|---|---|---|---|
+| `stage` | `assets/audio/triumph-in-the-ring-92.mp3` (121.4 BPM, 2:10) | 0.15 | 1.28667 s to 125.84646 s | −21.7 dBFS |
+| `menu` | `assets/audio/menu-theme.mp3` (133 BPM, 2:00, supplied tempo) | 0.10 | 1.98873 s to 116.48144 s | −18.5 dBFS |
+| `boss` | `assets/audio/boss-theme.mp3` (131 BPM, 2:12, supplied tempo) | 0.12 | 7.70581 s to 129.62725 s | −19.4 dBFS |
+
+Gains: the menu and boss files are 3.2 dB and 2.3 dB louder than the stage file (body RMS,
+first and last 8 s excluded), so their gains bring them to the stage track's perceived level;
+the boss sits about 0.4 dB above it and gets its intensity from the arrangement, leaving the
+impacts on top. The effects keep their own master gain (0.24) and heavy cues duck the music.
+
+Menu and boss loop points were derived on each decoded file separately, with the beat grid
+fitted locally at the start and at the end of the file (the global tempo drifts over two
+minutes): `loopStart` sits where the attack of the entry downbeat begins, after the opening
+that plays once (the menu's two-beat pickup, the boss's 7.7 s build); `loopEnd` sits where the
+attack of the final hit begins, so the ending's hit, ring-out and silence are never looped
+and the entry's hit stands in for it. Each point was then moved by under 1.5 ms to the sample
+pair with the smallest waveform jump across the seam (menu 0.004, boss 0.010 full scale,
+against 0.21 and 0.39 at the attack starts). Both files carry a gapless header, and Chromium
+and CoreAudio decode them to the same alignment. `loop-seam-menu.mp3` and `loop-seam-boss.mp3`
+play the last four bars before `loopEnd` followed by the first four from `loopStart`, twice.
 
 ## Sound cues and the audio director
 
