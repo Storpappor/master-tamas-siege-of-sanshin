@@ -21,7 +21,12 @@ made (`SPRINT_CELL_RATE` and `resolveFrame` in `src/heroSprite.js`) and tested. 
 browser: five simulation frames per cell, 48 → 53 → 48 every 30 frames, idle → sprint from cell
 48, punch mid-sprint and back, release → idle. Real-game sheet: `preview/integrated-sprint.png`.
 As received, the contact and push-off cells are 85-86 px tall (rows 10/11-95, the lean), the
-flight cells 79 px ending on row 87; nothing is resized.
+flight cells 79 px ending on row 87; nothing is resized. **Known temporary art issue:** idle,
+walk and the attacks are still the 80 px production figure, so Tamas grows by 10 px when the sprint
+starts and shrinks back when it stops (see `preview/integrated-sprint.png`). Decided on the
+integration review: keep the native cells at the approved 90 px H1 scale and the frozen cells as
+they are; consistent proportions across old and new states come in a separate, coordinated artwork
+update. Final visual approval by the art chat is pending.
 
 ## What the game does today
 

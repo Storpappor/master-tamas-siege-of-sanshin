@@ -209,8 +209,12 @@ drive the preview strip.
 needed) with the procedural fighters, one panel per beat: grab reach, hold start, hold end,
 throw-down rising, throw-down falling, ground impact, lying, get-up. Each caption carries the
 time, Tamas's pose, the victim's pose and the victim's offset. It shows the motion and the
-timing, not the production art. Captions print the time with two decimals, so the GROUND IMPACT
-panel reads `T 0.52S`: that is frame 31, 0.517 s, not 0.525 s.
+timing, not the production art. Each caption now states the frame and the time to three decimals
+with the unit set apart (`FRAME 31  0.517 SEC`). The earlier strip printed `T 0.52S`, the
+two-decimal time with the unit letter directly after it; in the bitmap font that S read as a 5, so
+the art chat saw "0.525" (and "0.085", "0.285" and so on in the other panels). The simulation was
+never sampled at 0.525 s: GROUND IMPACT is frame 31, 31/60 = 0.5167 s, and all gameplay timing is
+as measured in section 3.3.
 
 The integrated build is documented by three sheets captured from the real game (the art buffer at
 3×, same simulation, same renderer): `preview/integrated-sprint.png`,
@@ -261,17 +265,27 @@ arrays into `assets/sprites/tamas.json`; the script refuses to touch an existing
 `test/spriteSheet.test.js` asserts `frameFor('throw', { phase })` → startup 60, active 61,
 recovery 62. The only code change beyond the brief was `throwPhase` (section 3.3).
 
-## Notes for the art chat (integration review, 8 November)
+## Integration review: decisions and known visual items (8 November)
 
-- **Presentation change, flagged:** the GROUND IMPACT cell now waits for the actual touchdown
-  (`throwPhase`). Drawn durations: GRAB hold 13 frames, THROW DOWN 13 frames, GROUND IMPACT 17
-  frames. Gameplay values (0.20 / 0.20 / 0.30 s attack phases, +12 grip, +25 landing, damage 20,
-  floor time 0.9 s, release-time damage, landing-time effects, interruption) are unchanged.
-- **Draw order, observation only:** the held victim is drawn over Tamas, as agreed. With the bulky
-  procedural striker and boss this covers Tamas's near forearm during the hold, so the grip reads
-  through proximity and the visible upper arm rather than the fingers; the kicker and thrower show
-  the near hand at the collar. No change made; say if the victim should go behind Tamas instead.
+Decided by the founder on the integration review:
+
+- **Touchdown fix kept (drawing only):** the THROW DOWN cell holds while the victim is airborne and
+  GROUND IMPACT begins on the actual touchdown (`throwPhase`). Drawn durations: GRAB hold 13
+  frames, THROW DOWN 13 frames, GROUND IMPACT 17 frames. Gameplay values (0.20 / 0.20 / 0.30 s
+  attack phases, +12 grip, +25 landing, damage 20, floor time 0.9 s, release-time damage,
+  landing-time effects, interruption) are unchanged and verified.
+- **Draw order kept:** the held victim is drawn over Tamas, as agreed.
+- **Native 90 px scale kept:** the new cells stay at the approved H1 scale; the frozen production
+  cells stay as they are in this change.
+
+Known visual items, not blockers, open for the art chat (final visual approval pending: the art
+chat has had the written report but not the three `preview/integrated-*.png` captures):
+
+- **Temporary art issue, 80 → 90 px:** idle, walk and the attacks are still the 80 px production
+  figure, so Tamas grows by 10 px when a sprint or a throw starts and shrinks back after. Nothing is
+  resized by the game. Consistent proportions across the older and newer states will be handled in
+  a separate, coordinated artwork update.
+- **Visual follow-up, obscured forearm:** with the bulky procedural striker and boss the victim's
+  body covers Tamas's near forearm during the hold, so the grip reads through proximity and the
+  visible upper arm rather than the fingers; the kicker and thrower show the near hand at the collar.
 - The hit flash on the victim at the release (frame 18) is the standard white hit flash.
-- The native cells use the 90 px H1 figure; idle, walk and attacks are still the 80 px production
-  cells, so the figure grows by 10 px when a throw or a sprint starts and shrinks back after. Nothing
-  is resized by the game; this is visible in the integrated sheets and is for the art chat to judge.

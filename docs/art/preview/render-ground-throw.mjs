@@ -87,11 +87,12 @@ const picks = [
 ];
 for (const [label, f] of picks) if (!f) throw new Error(`no frame for ${label}`);
 
+const BAR = 18; // caption bar height in panel units: label, frame + time, poses
 const rows = Math.ceil(picks.length / COLS);
-const img = new Raster(PANEL.w * SCALE * COLS, (PANEL.h + 12) * SCALE * rows);
+const img = new Raster(PANEL.w * SCALE * COLS, (PANEL.h + BAR) * SCALE * rows);
 img.fillStyle = '#2a2420'; img.fillRect(0, 0, img.w, img.h);
 picks.forEach(([label, f], n) => {
-  const ox = (n % COLS) * PANEL.w * SCALE, oy = Math.floor(n / COLS) * (PANEL.h + 12) * SCALE;
+  const ox = (n % COLS) * PANEL.w * SCALE, oy = Math.floor(n / COLS) * (PANEL.h + BAR) * SCALE;
   img.save();
   img.translate(ox, oy);
   img.scale(SCALE, SCALE);
@@ -111,10 +112,12 @@ picks.forEach(([label, f], n) => {
   img.save();
   img.translate(ox, oy + PANEL.h * SCALE);
   img.scale(SCALE, SCALE);
-  img.fillStyle = '#1a1512'; img.fillRect(0, 0, PANEL.w, 12);
+  img.fillStyle = '#1a1512'; img.fillRect(0, 0, PANEL.w, BAR);
   drawText(img, `${label}`, 2, 1, { color: '#ffd166', scale: 1 });
   const ahead = ((f.e.x - f.p.x) * f.p.facing).toFixed(0);
-  drawText(img, `T ${f.t.toFixed(2)}S  ${(f.heroPose).toUpperCase()}  V:${f.pose.toUpperCase()}  +${ahead}`, 2, 7, { color: '#cfc8b6', scale: 1 });
+  // Three decimals and a separated unit: an earlier "T 0.52S" was read as 0.525 (the S looked like a 5).
+  drawText(img, `FRAME ${f.i}  ${f.t.toFixed(3)} SEC`, 2, 7, { color: '#cfc8b6', scale: 1 });
+  drawText(img, `${(f.heroPose).toUpperCase()}  V ${f.pose.toUpperCase()}  +${ahead}`, 2, 13, { color: '#cfc8b6', scale: 1 });
   img.restore();
 });
 writeFileSync(new URL('./ground-throw.png', import.meta.url), png(img));
