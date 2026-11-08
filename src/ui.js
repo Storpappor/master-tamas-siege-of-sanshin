@@ -52,13 +52,14 @@ export function createUi(root) {
     }, TYPE_MS);
   }
 
-  function finishStory() {
+  function finishStory(skipped = false) {
     if (!active) return;
     stopTyping();
     const done = active.onDone;
     active = null;
     story.hidden = true;
     window.removeEventListener('keydown', onStoryKey);
+    if (skipped && api.onMenu) api.onMenu('back');
     if (done) done();
   }
 
@@ -71,27 +72,29 @@ export function createUi(root) {
     }
     active.index += 1;
     if (active.index >= active.screens.length) finishStory();
-    else renderScreen();
+    else { renderScreen(); if (api.onMenu) api.onMenu('move'); }
   }
 
   function onStoryKey(e) {
     if (!active) return;
     if (e.code === 'Enter' || e.code === 'Space' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); advanceStory(); }
-    else if ((e.code === 'Escape' || e.key === 'Escape') && active.skippable) { e.preventDefault(); finishStory(); }
+    else if ((e.code === 'Escape' || e.key === 'Escape') && active.skippable) { e.preventDefault(); finishStory(true); }
   }
 
   if (story) {
     story.addEventListener('click', (e) => {
-      if (skipButton && skipButton.contains(e.target)) { finishStory(); return; }
+      if (skipButton && skipButton.contains(e.target)) { finishStory(true); return; }
       advanceStory();
     });
   }
 
   const fmtTime = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
-  return {
+  const api = {
     // Optional painter for hero canvases inside overlays (set by main.js once the sprite is loaded).
     heroPainter: null,
+    // Optional listener for menu interactions: 'move' when a story card advances, 'back' on skip.
+    onMenu: null,
 
     get storyActive() {
       return Boolean(active);
@@ -190,4 +193,5 @@ export function createUi(root) {
       root.classList.toggle('kg-root--touch', on);
     },
   };
+  return api;
 }
