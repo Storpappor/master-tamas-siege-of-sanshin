@@ -68,9 +68,13 @@ export function createAudioDirector({ game, sound, music }) {
     const p = game.player;
     switch (ev.name) {
       case 'start': return ctx.runStarted ? 'gameStart' : ctx.doorOpened ? 'doorEnter' : 'waveClear';
-      case 'punch':
-        seen.lastStrike = p.attack?.name || 'punch';
-        return p.attack?.name === 'grab' ? 'grabReach' : 'whooshLight';
+      case 'punch': {
+        // A grab's start arrives as a punch. By the time a frame's steps are done the grab may
+        // already hold its victim (attack name 'throw'), so both names mean the reach.
+        const name = p.attack?.name || 'punch';
+        seen.lastStrike = name;
+        return name === 'grab' || name === 'throw' ? 'grabReach' : 'whooshLight';
+      }
       case 'kick': seen.lastStrike = 'kick'; return 'whooshHeavy';
       case 'kiai': seen.lastStrike = p.attack?.name || 'punch'; return 'kiaiStrike';
       case 'hit': return /kick/i.test(seen.lastStrike) ? 'kickHit' : 'punchHit';

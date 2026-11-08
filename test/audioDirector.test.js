@@ -191,6 +191,15 @@ test('grab and throw: reach, grip, toss, then the landing when the victim hits t
   assert.deepEqual(sound.cues, ['grabReach', 'grabHold', 'throwToss', 'throwLand']);
 });
 
+test('a grab that already holds its victim when the frame ends is still the reach', () => {
+  const { game, sound, director } = setup({ state: 'playing' });
+  director.update();
+  game.player.attack = { name: 'throw', released: false };
+  sound.play('punch');
+  director.update();
+  assert.deepEqual(sound.cues, ['grabReach', 'grabHold']);
+});
+
 test('a slam that knocks the victim out is still the landing, not a plain knockout', () => {
   const enemy = { thrown: true, dead: false, held: false, attack: null };
   const { sound, director } = setup({ state: 'playing', enemies: [enemy] });
