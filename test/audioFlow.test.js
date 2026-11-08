@@ -75,9 +75,9 @@ test('boss with no boss track: the stage track carries on, unrestarted, under th
   assert.equal(music.current, 'stage');
   assert.equal(ctx.sources.at(-1), stageSource, 'same source: no restart, no second track');
   assert.equal(liveSources(ctx), 1);
-  game.boss.dead = true;
+  game.boss = null;
   director.update();
-  assert.equal(ctx.sources.at(-1), stageSource, 'the boss falling changes nothing either');
+  assert.equal(ctx.sources.at(-1), stageSource, 'the boss going changes nothing either');
 });
 
 test('run ends with no menu track: the stage fades under the jingle and the result screen stays quiet', async () => {

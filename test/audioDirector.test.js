@@ -126,7 +126,10 @@ test('the boss theme starts when Kage\'s dialogue opens, once per run, not when 
   game.state = 'playing';
   director.update();
   assert.deepEqual(music.log, ['play:boss:top'], 'started exactly once');
-  game.boss.dead = true;
+  game.boss.dead = true;                    // his defeat ends the run in the same step: the ending fade handles it
+  director.update();
+  assert.deepEqual(music.log, ['play:boss:top'], 'a dead boss alone does not bring the stage track back');
+  game.boss = null;                         // gone with play continuing
   director.update();
   assert.deepEqual(music.log.slice(1), ['play:stage'], 'back to the stage if play goes on');
 });
@@ -351,6 +354,7 @@ test('with the real game: the stage track plays into the dojo and up to Kage, an
   // Walk up to Kage: his wave triggers at its x, he arrives 1.6 s later.
   game.spawner.waveIndex = LEVEL_1.waves.length - 1;
   game.player.x = LEVEL_1.waves.at(-1).x;
+  game.camX = game.player.x - 200;        // the camera has followed him across the dojo
   let bossSpawnedAt = null;
   for (let t = 0; t < 4 && game.state === 'playing'; t += STEP) {
     game.step(STEP, idle);

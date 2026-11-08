@@ -34,6 +34,7 @@ export function createAudioDirector({ game, sound, music }) {
     ending: game.ending,
     transition: game.transition,
     bossAlive: Boolean(game.boss && !game.boss.dead),
+    bossPresent: Boolean(game.boss && !game.boss.remove),
     encounter: false,        // the boss theme has started this run
     attackName: null,
     released: false,
@@ -43,6 +44,7 @@ export function createAudioDirector({ game, sound, music }) {
   };
 
   const bossAlive = () => Boolean(game.boss && !game.boss.dead);
+  const bossPresent = () => Boolean(game.boss && !game.boss.remove);
 
   // Which track the current moment wants, or null when it wants silence.
   function followMusic() {
@@ -63,8 +65,10 @@ export function createAudioDirector({ game, sound, music }) {
       if (alive && state === 'dialogue' && !seen.encounter) {
         seen.encounter = true;
         music.play('boss', { fromStart: true });
-      } else if (!alive && seen.bossAlive && music.current === 'boss') {
-        music.play('stage');                                             // play went on after him
+      } else if (!bossPresent() && seen.bossPresent && music.current === 'boss') {
+        // Kage gone without the run ending (his defeat ends it, in the same step, and the
+        // ending fade above takes over): back to the stage track where it left off.
+        music.play('stage');
       }
     }
     // The menu theme runs across the intro, the title and the result screens without restarting.
@@ -133,6 +137,7 @@ export function createAudioDirector({ game, sound, music }) {
     seen.ending = game.ending;
     seen.transition = game.transition;
     seen.bossAlive = bossAlive();
+    seen.bossPresent = bossPresent();
     seen.thrown = thrownNow;
   }
 
