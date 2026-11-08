@@ -1,0 +1,122 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Enemy sheet review harness</title>
+<!--
+  Review harness for an enemy sprite sheet: runs the real simulation and the real renderer through
+  scripted fights and captures labelled panels of every drawing state in both facings, so a sheet can
+  be checked in the game without playing to the wave that spawns the type.
+    node scripts/serve.mjs   (any PORT), then open
+    http://localhost:8080/docs/art/preview/enemy-states-harness.html?kind=kicker&sheet=kicker-diagnostic-sheet.json
+  `kind` is the enemy type (kicker by default); `sheet` is a map URL relative to this page (the
+  production path assets/sprites/<kind>.json when omitted; with no sheet at all the type is drawn
+  procedurally, which is also useful as the "before" picture). Each panel's caption names the frame,
+  Tamas's state and cell, and the enemy's state, phase or cell and its offset in units. When done,
+  the page sets window.__png to the composite as a data URL. Diagnostic tooling only: nothing here
+  is loaded by the game.
+-->
+<style>body { margin: 0; background: #222; color: #ddd; font: 12px monospace; } canvas { display: block; image-rendering: pixelated; }</style>
+<p id="status">loading…</p>
+<script type="module">
+import { Game } from '../../../src/game.js';
+import { Enemy } from '../../../src/entities.js';
+import { Renderer } from '../../../src/renderer.js';
+import { HeroSprite, SpriteSheet, heroState, resolveFrame } from '../../../src/heroSprite.js';
+import { enemyState } from '../../../src/enemySprite.js';
+import { BACKGROUNDS, loadBackground } from '../../../src/background.js';
+import { ART_SCALE } from '../../../src/artScale.js';
+import { STEP, FLOOR_TOP } from '../../../src/constants.js';
+
+const q = new URLSearchParams(location.search);
+const kind = q.get('kind') || 'kicker';
+const sheetUrl = q.get('sheet') || `../../../assets/sprites/${kind}.json`;
+const status = document.getElementById('status');
+const NONE = { left: false, right: false, up: false, down: false, duck: false, block: false, jump: false, punch: false, kick: false, kiai: false };
+
+const display = document.createElement('canvas'); display.width = 640; display.height = 360;
+const hero = new HeroSprite({ artScale: ART_SCALE });
+await hero.load('../../../assets/tamas-hero-spritesheet.png');
+const heroSheet = new SpriteSheet();
+await heroSheet.load(new URL('../../../assets/sprites/tamas.json', location.href).href);
+const enemySheets = {};
+let sheet = null;
+try { sheet = await new SpriteSheet().load(new URL(sheetUrl, location.href).href); enemySheets[kind] = sheet; } catch (e) { status.textContent = `no sheet (${e.message}): procedural ${kind}`; }
+const renderer = new Renderer(display, { hero, heroSheet, enemySheets });
+const backgrounds = {};
+for (const [art, path] of Object.entries(BACKGROUNDS)) { try { backgrounds[art] = await loadBackground(new URL(path, new URL('../../../src/', location.href)).href); } catch { /* procedural zone */ } }
+renderer.setBackgrounds(backgrounds);
+renderer.resize(640, 1);
+
+// A scripted fight: Tamas at x 150 and the enemy `d` units in front of him. `facing` is Tamas's
+// facing, so the enemy faces the other way (mirrored on the sheet when it faces left).
+function fight({ d, facing = 1, rng = 0.5, cooldown = 99, hp = null }) {
+  const game = new Game({ input: null, rng: () => 0.5 });
+  game.start();
+  game.banner = null;
+  game.elapsed = 3; // past the FIGHT! card
+  game.spawner.waveIndex = game.level.waves.length;
+  const p = game.player;
+  p.x = 160; p.facing = facing;
+  const e = new Enemy(kind, p.x + facing * d, -facing, () => rng, p.z);
+  e.cooldown = cooldown;
+  if (hp !== null) e.hp = hp;
+  game.enemies.push(e);
+  return { game, p, e, frame: 0 };
+}
+const press = (keys) => ({ ...NONE, ...keys });
+
+// Scenarios: a fight set-up, then per frame the input held and which frames to capture with a label.
+const SCENARIOS = [
+  { name: 'idle', setup: { d: 20 }, captures: { 2: 'idle' } },
+  { name: 'walk in', setup: { d: 100, cooldown: 0, rng: 0.1 }, captures: { 4: 'walk in 1', 11: 'walk in 2', 19: 'walk in 3', 26: 'walk in 4' } },
+  { name: 'high kick, Tamas ducks', setup: { d: 20, cooldown: 0, rng: 0.1 }, input: (f) => (f >= 22 && f <= 48 ? press({ duck: true }) : NONE),
+    captures: { 15: 'high kick wind-up', 35: 'high kick hit', 50: 'high kick recovery', 77: 'retreat 1', 84: 'retreat 2', 92: 'retreat 3', 99: 'retreat 4' } },
+  { name: 'high kick lands', setup: { d: 20, cooldown: 0, rng: 0.1 }, captures: { 34: 'high kick lands' } },
+  { name: 'sweep, Tamas jumps', setup: { d: 20, cooldown: 0, rng: 0.9 }, input: (f) => (f === 9 ? press({ jump: true }) : NONE),
+    captures: { 15: 'sweep wind-up', 31: 'sweep hit', 50: 'sweep recovery' } },
+  { name: 'sweep lands', setup: { d: 20, cooldown: 0, rng: 0.9 }, captures: { 30: 'sweep lands' } },
+  { name: 'hurt', setup: { d: 14 }, input: (f) => (f === 1 ? press({ punch: true }) : NONE), captures: { 12: 'hurt impact', 20: 'hurt stagger' } },
+  { name: 'KO', setup: { d: 16, hp: 5 }, input: (f) => (f === 1 ? press({ kick: true }) : NONE), captures: { 16: 'KO hit', 27: 'KO topple', 33: 'KO floor', 50: 'KO lying', 60: 'KO fading' } },
+  { name: 'throw', setup: { d: 12 }, input: (f) => (f === 1 ? press({ punch: true, kick: true }) : NONE),
+    captures: { 3: 'grab reach', 11: 'hold', 17: 'hold end', 21: 'rising', 27: 'falling', 31: 'impact', 50: 'lying', 75: 'getUp', 86: 'up again' } },
+  { name: 'lethal throw', setup: { d: 12, hp: 15 }, input: (f) => (f === 1 ? press({ punch: true, kick: true }) : NONE), captures: { 18: 'lethal release', 31: 'lethal landing', 70: 'lethal fading' } },
+];
+
+const PW = 260, PH = 176, CAP = 14, COLS = 5;
+const panels = [];
+for (const facing of [1, -1]) {
+  for (const s of SCENARIOS) {
+    const run = fight({ ...s.setup, facing });
+    const last = Math.max(...Object.keys(s.captures).map(Number));
+    for (let f = 1; f <= last; f++) {
+      run.game.step(STEP, s.input ? s.input(f) : NONE);
+      if (!s.captures[f]) continue;
+      renderer.render(run.game, f / 60);
+      const { p, e } = run;
+      const es = enemyState(e), hs = heroState(p);
+      const kc = sheet ? resolveFrame(sheet, es) : null;
+      const tc = resolveFrame(heroSheet, hs);
+      const cx = ((p.x + e.x) / 2 - renderer.camX) * ART_SCALE;
+      const sy = (FLOOR_TOP + p.z) * ART_SCALE - (PH - 12);
+      const c = document.createElement('canvas'); c.width = PW; c.height = PH;
+      c.getContext('2d').drawImage(renderer.buffer, Math.round(cx - PW / 2), sy, PW, PH, 0, 0, PW, PH);
+      const dir = facing === 1 ? 'K faces L (mirrored)' : 'K faces R (as drawn)';
+      const kstate = `${es.state}${es.phase ? '/' + es.phase : ''}${kc === null ? ' procedural' : ' c' + kc}`;
+      panels.push({ c, caption: `${dir} | ${s.captures[f]} f${f} | T ${hs.state} c${tc} | K ${kstate} ${(e.x - p.x) * facing >= 0 ? '+' : ''}${Math.round((e.x - p.x) * facing)}` });
+    }
+  }
+}
+const rows = Math.ceil(panels.length / COLS);
+const out = document.createElement('canvas'); out.width = COLS * PW; out.height = rows * (PH + CAP);
+const g = out.getContext('2d');
+g.fillStyle = '#111'; g.fillRect(0, 0, out.width, out.height);
+g.font = '11px monospace'; g.fillStyle = '#ffd166'; g.textBaseline = 'top';
+panels.forEach((pnl, i) => {
+  const x = (i % COLS) * PW, y = Math.floor(i / COLS) * (PH + CAP);
+  g.fillText(pnl.caption, x + 2, y + 1, PW - 4);
+  g.drawImage(pnl.c, x, y + CAP);
+});
+document.body.appendChild(out);
+status.textContent = `${panels.length} panels, ${kind} sheet: ${sheet ? `${sheet.cell.w} x ${sheet.cell.h}, anchor ${sheet.anchor.x},${sheet.anchor.y}, ${Object.keys(sheet.states).length} states` : 'none (procedural)'}`;
+window.__png = out.toDataURL('image/png');
+window.__done = true;
+</script>

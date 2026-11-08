@@ -168,6 +168,40 @@ test('resolveFrame picks the cells of a striker map and returns null for whateve
   assert.deepEqual(sheet.cellRect(5), { x: 128, y: 96, w: 128, h: 96 }, 'cells are cut at the map\'s own size');
 });
 
+// The Kicker map of its brief: its own cell (the 96 px figure plus the walk bob needs the taller
+// cell, the lying poses the wide one) and anchor, one state per row, both attacks as 3-cell states.
+const KICKER_MAP = { cell: { w: 128, h: 112 }, anchor: { x: 64, y: 111 }, columns: 4, states: {
+  idle: [0], walk: [4, 5, 6, 7], enemyHighKick: [8, 9, 10], enemyLowSweep: [12, 13, 14], hurt: [16, 17],
+  knockdown: [20, 21, 22], held: [24], thrownDown1: [28], thrownDown2: [32], fallen: [36], getUp: [40],
+} };
+
+test('the Kicker map of its brief resolves both attacks by phase and the walk forward in both directions', () => {
+  const sheet = new SpriteSheet({ map: KICKER_MAP });
+  assert.deepEqual(sheet.cellRect(5), { x: 128, y: 112, w: 128, h: 112 }, 'cells are cut at the Kicker map\'s own size');
+  for (const [attack, cells] of [['enemyHighKick', [8, 9, 10]], ['enemyLowSweep', [12, 13, 14]]]) {
+    assert.deepEqual(['startup', 'active', 'recovery'].map((phase) => resolveFrame(sheet, { state: attack, phase, progress: 0 })), cells, attack);
+  }
+  assert.equal(resolveFrame(sheet, { state: 'enemyPunch', phase: 'active', progress: 0 }), null, 'the Striker\'s punch is not on this sheet');
+  // From the simulation: the sweep's crouched preparation is the sweep's own first cell, not a crouch state.
+  const p = new Player(100);
+  const k = new Enemy('kicker', p.x + 20, -1, () => 0.9, p.z);
+  k.cooldown = 0;
+  k.update(STEP, p);
+  assert.equal(resolveFrame(sheet, enemyState(k)), 12);
+  // After a kick the Kicker steps back for 0.5 s; the walk cells still play forward on the walk counter.
+  const r = new Enemy('kicker', p.x + 20, -1, () => 0.1, p.z);
+  r.cooldown = 0;
+  r.update(STEP, p);
+  assert.equal(r.attack.name, 'enemyHighKick');
+  for (let i = 0; i < 80 && r.attack; i++) r.update(STEP, p);
+  r.update(STEP, p);
+  assert.equal(r.state, 'walk');
+  assert.ok(r.vx * r.facing < 0, 'moving away from Tamas while facing him');
+  const cells = new Set();
+  for (let i = 0; i < 29; i++) { cells.add(resolveFrame(sheet, enemyState(r))); r.update(STEP, p); }
+  assert.deepEqual([...cells].sort(), [4, 5, 6, 7], 'one full forward cycle during the retreat');
+});
+
 // A recording 2D context: enough for drawFighter (fillRect) and SpriteSheet.draw (drawImage).
 function recordingContext() {
   const calls = { fillRect: 0, drawImage: 0, scale: [] };
