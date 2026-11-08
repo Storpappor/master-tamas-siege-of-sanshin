@@ -101,6 +101,14 @@ const WALK_FRAMES = ['walk1', 'walk2', 'walk3', 'walk4'];
 // A fighter on the floor kneels up for the last part of its floor time (drawing only).
 export const GET_UP_TIME = 0.25;
 
+// Drawing phase of a throw. The victim's hop takes one simulation frame longer than the attack's
+// active phase, so on the recovery's first frame the victim is still in the air: keep showing the
+// throw-down until the actual touchdown, then the GROUND IMPACT pose. Presentation only.
+export function throwPhase(f) {
+  const v = f.attack && f.attack.victim;
+  return f.attackPhase === 'recovery' && v && v.thrown ? 'active' : f.attackPhase;
+}
+
 // Map a fighter's current state to a pose name.
 export function poseFor(f) {
   if (f.held) return 'held';
@@ -110,7 +118,7 @@ export function poseFor(f) {
   if (f.attack) {
     const name = f.attack.name;
     if (name === 'grab') return 'grab';
-    if (name === 'throw') return f.attackPhase === 'startup' ? 'grab' : f.attackPhase === 'active' ? 'throw' : 'throwDone';
+    if (name === 'throw') { const ph = throwPhase(f); return ph === 'startup' ? 'grab' : ph === 'active' ? 'throw' : 'throwDone'; }
     const isKick = /kick/i.test(name);
     const isCrouch = name.startsWith('crouch') || LOW_ATTACKS.has(name);
     if (f.attackPhase === 'startup') {

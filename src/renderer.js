@@ -3,7 +3,7 @@
 import { VIEW_W, VIEW_H, GROUND_Y, FLOOR_TOP, WORLD_WIDTH, COLORS, screenY } from './constants.js';
 import { LEVEL_1 } from './level.js';
 import { drawFighter, drawShuriken, drawText } from './sprites.js';
-import { heroFrameIndex, heroState } from './heroSprite.js';
+import { heroFrameIndex, heroState, resolveFrame } from './heroSprite.js';
 import { ART_SCALE } from './artScale.js';
 import { validateBackground } from './background.js';
 
@@ -517,7 +517,7 @@ export class Renderer {
     const y = screenY(f.y, f.z);
     if (f.kind === 'player' && this.heroSheet && this.heroSheet.ready) {
       const hs = heroState(f, { victory });
-      const index = this.heroSheet.frameFor(hs.state, hs);
+      const index = resolveFrame(this.heroSheet, hs);
       if (index !== null) {
         g.save();
         g.setTransform(1, 0, 0, 1, 0, 0);

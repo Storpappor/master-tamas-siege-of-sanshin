@@ -6,6 +6,16 @@ on `main` at `fe81749`), as uncommitted changes to `combat.js`, `constants.js`, 
 `game.js`, `sprites.js`, `heroSprite.js`, `renderer.js`, the tests and the geometry pin. Nothing is
 merged. Section 1 records the baseline it replaces, for the record.
 
+**Integration update (8 November 2026, later the same day):** the native cells from the review
+package `tamas-native-controls-review-v1` are appended to the production atlas with
+`node scripts/append-sheet.mjs`: `grab` → cells 56-58, `throw` → cells 60-62, atlas now
+384 × 1536 px, every existing cell byte-identical. One presentation change was needed
+(`throwPhase`, sections 3.3 and 3.6) so that the GROUND IMPACT cell begins on the touchdown
+frame. Real-game review sheets captured from the integrated build: `preview/integrated-throw-striker.png`
+(the whole sequence) and `preview/integrated-throw-enemy-types.png` (hold, throw-down, last
+airborne frame and touchdown for the kicker, the thrower and the boss). See "Notes for the art
+chat" at the end.
+
 **Target reference:** "TAMAS — GROUND THROW CONCEPT", panels GRAB / THROW DOWN / GROUND IMPACT
 (approved; received as `02-ground-throw-APPROVED-CONCEPT.png`, 2172 × 724 px, a visual concept, not a
 native sheet or a timing specification). The earlier forward-throw concept is withdrawn.
@@ -17,8 +27,8 @@ native sheet or a timing specification). The earlier forward-throw concept is wi
 | Hold, downward throw, nearby landing, impact beat, interruption (simulation) | implemented, 62 tests pass, checked in the browser |
 | Victim poses: held, turning over (two poses), lying, getting up (procedural, all enemy types) | implemented (`POSES` in `src/sprites.js`) |
 | Tamas's poses for the three phases, procedural fallback | implemented (`grab`, `throw`, `throwDone`) |
-| Tamas's production cells `grab` (3) and `throw` (3) | **awaiting native artwork**; the live game shows the legacy sheet's punch and victory cells meanwhile |
-| Native H1 (90 px) proportions on new cells | awaiting native artwork; the shipped sheet is still the 80 px figure |
+| Tamas's production cells `grab` (3) and `throw` (3) | **integrated**: native cells 56-58 and 60-62 on the production atlas, checked frame by frame in the browser against all four enemy types |
+| Native H1 (90 px) proportions on new cells | delivered in the native cells (90 px standing figure, rows 6-95); idle, walk and the other original cells remain the 80 px figure, shown side by side in `preview/integrated-sprint.png` |
 
 The victim is a separate fighter with its own (procedural) art path; nothing of the victim is
 drawn on Tamas's cells.
@@ -79,16 +89,20 @@ Measured on a striker standing 12 units in front (the test duel and the browser 
 | 0.083 s | 5 | contact: switches to `throw` startup the same step | gripped: moved to +12, same depth, turned to face Tamas, `held` |
 | 0.083 – 0.283 s | 5-17 | `throw` startup, **the hold (13 frames, 0.22 s)** | held: cannot move or act, no timers run, drawn **over** Tamas |
 | 0.300 s | 18 | `throw` active begins: **release** | thrown: 20 damage (40 in Kiai), `THROW!`, score and combo credited |
-| 0.300 – 0.483 s | 18-29 | `throw` active, the throw-down | turning over: rises 2.8 units at most, comes down |
-| 0.517 s | 31 | `throw` recovery, first frame (**GROUND IMPACT**) | lands at **+25**, `slam`: shake 0.2, 8 dust particles, impact sound |
+| 0.300 – 0.500 s | 18-30 | `throw` active on 18-29, recovery begins on 30; the **THROW DOWN** cell is shown on all 13 frames (`throwPhase`) | turning over: rises 3.3 units at most, 0.1 above the floor at +24 on frame 30 |
+| 0.517 s | 31 | `throw` recovery, second frame: the **GROUND IMPACT** cell begins on the touchdown frame | lands at **+25**, `slam`: shake 0.2, 8 dust particles, impact sound |
 | 0.517 – 0.783 s | 31-47 | `throw` recovery | lying (`fallen`) |
 | 0.783 s | 47 | idle | lying |
 | 1.167 – 1.417 s | 70-85 | idle | kneeling up (`getUp`, the last 0.25 s of the floor time) |
 | 1.417 s | 85 | | back in the fight in one frame; the 0.9 s floor time is unchanged |
 
-The victim reaches the floor one frame after the active phase ends, so the GROUND IMPACT cell
-begins on the same frame the victim lands. The hold is one frame longer than the nominal 0.20 s
-because the contact frame itself counts.
+The victim reaches the floor one frame after the active phase ends: the recovery starts on frame
+30, the touchdown is frame 31. `throwPhase` in `src/sprites.js` therefore reports `active` for
+that one recovery frame while the victim is still airborne, so the THROW DOWN cell holds 13
+frames (0.217 s) and the GROUND IMPACT cell begins exactly on the touchdown frame and holds 17
+frames (0.283 s). This is drawing only: attack timing, damage, score, landing offset and the
+`slam` effects are untouched. The hold is one frame longer than the nominal 0.20 s because the
+contact frame itself counts.
 
 Trajectory (the existing `takeThrow` physics with small values; `GRAB` in `src/constants.js`):
 
@@ -168,22 +182,25 @@ If hand-drawn enemy sheets come later, these five states are the ones a throw ne
 
 ### 3.6 Final phase-to-cell mapping for Tamas
 
-`heroState` already returns the attack phase, and `SpriteSheet.frameFor` maps a 3-cell state as
-startup → cell 0, active → cell 1, recovery → last cell. With the 0.20 s start-up that gives:
+`heroState` returns the attack phase (for the throw via `throwPhase`, which waits for the
+touchdown), and `SpriteSheet.frameFor` maps a 3-cell state as startup → cell 0, active → cell 1,
+recovery → last cell. With the 0.20 s start-up that gives:
 
 | State | Cell 0 | Cell 1 | Cell 2 |
 |---|---|---|---|
 | `grab` (3 cells) | reach begins — 0.07 s, the only grab cell seen on a hit | reach extended — 0.08 s on a miss (or on a late contact inside the window) | miss recovery — 0.28 s |
-| `throw` (3 cells) | **GRAB**: close grip, drawing the victim in — the hold, 0.22 s | **THROW DOWN**: turning the victim over, feet planted — 0.20 s | **GROUND IMPACT**: standing over the victim, settled — 0.30 s, from the frame the victim lands |
+| `throw` (3 cells) | **GRAB**: close grip, drawing the victim in — the hold, 0.22 s (13 frames, 5-17) | **THROW DOWN**: turning the victim over, feet planted — 0.22 s (13 frames, 18-30, until the touchdown) | **GROUND IMPACT**: standing over the victim, settled — 0.28 s (17 frames, 31-47), from the touchdown frame |
 
 Successful grab as seen by the player: grab 0 → throw 0 → throw 1 → throw 2 → idle. Feet stay on
 the anchor row in every cell; the balance reads through torso, hips and arms. The victim is never
 on Tamas's cells.
 
-Until the native cells exist, the production sheet has no `grab`/`throw` states and the game falls
-back to the legacy sheet (punch cell during the grab, raised-arm cell during the whole throw,
-idle during recovery). The procedural poses `grab`, `throw` and `throwDone` cover the no-sheet
-fallback and the preview below.
+Integrated on the production atlas: `grab` → cells 56, 57, 58 and `throw` → cells 60, 61, 62
+(`assets/sprites/tamas.json`), asserted in `test/spriteSheet.test.js`. Measured in the browser on
+the integrated build, for the striker, the kicker, the thrower and the boss alike: cell 60 on
+frames 5-17, cell 61 on frames 18-30, cell 62 from frame 31, the frame the victim's `down` flag
+is set. The procedural poses `grab`, `throw` and `throwDone` remain the no-sheet fallback and
+drive the preview strip.
 
 ### 3.7 Preview
 
@@ -192,7 +209,13 @@ fallback and the preview below.
 needed) with the procedural fighters, one panel per beat: grab reach, hold start, hold end,
 throw-down rising, throw-down falling, ground impact, lying, get-up. Each caption carries the
 time, Tamas's pose, the victim's pose and the victim's offset. It shows the motion and the
-timing, not the production art.
+timing, not the production art. Captions print the time with two decimals, so the GROUND IMPACT
+panel reads `T 0.52S`: that is frame 31, 0.517 s, not 0.525 s.
+
+The integrated build is documented by three sheets captured from the real game (the art buffer at
+3×, same simulation, same renderer): `preview/integrated-sprint.png`,
+`preview/integrated-throw-striker.png` and `preview/integrated-throw-enemy-types.png`. Each panel
+carries the frame, the time, Tamas's state and cell, and the victim's pose, offset and height.
 
 ---
 
@@ -231,8 +254,24 @@ Isolated review package, loaded on its own through `SpriteSheet.load`:
   }
   ```
 
-Integration (developer): append one row per state to `assets/sprites/tamas.png` after the sprint
-rows (grab row 14 → cells 56-58, throw row 15 → cells 60-62; 384 × 1536 px), or rows 12-13 if this
-sheet lands first; add the arrays to `assets/sprites/tamas.json`; assert them in
-`test/spriteSheet.test.js` with `frameFor('throw', { phase })` → startup 60, active 61, recovery 62.
-No further code is needed: the routing for both states is already in place.
+Integration (done 8 November): `node scripts/append-sheet.mjs sprint/tamas-sprint.json
+grab-throw/tamas-grab-throw.json` appended the package rows to `assets/sprites/tamas.png` (grab
+row 14 → cells 56-58, throw row 15 → cells 60-62; atlas 384 × 1536 px) and re-indexed the state
+arrays into `assets/sprites/tamas.json`; the script refuses to touch an existing cell or state.
+`test/spriteSheet.test.js` asserts `frameFor('throw', { phase })` → startup 60, active 61,
+recovery 62. The only code change beyond the brief was `throwPhase` (section 3.3).
+
+## Notes for the art chat (integration review, 8 November)
+
+- **Presentation change, flagged:** the GROUND IMPACT cell now waits for the actual touchdown
+  (`throwPhase`). Drawn durations: GRAB hold 13 frames, THROW DOWN 13 frames, GROUND IMPACT 17
+  frames. Gameplay values (0.20 / 0.20 / 0.30 s attack phases, +12 grip, +25 landing, damage 20,
+  floor time 0.9 s, release-time damage, landing-time effects, interruption) are unchanged.
+- **Draw order, observation only:** the held victim is drawn over Tamas, as agreed. With the bulky
+  procedural striker and boss this covers Tamas's near forearm during the hold, so the grip reads
+  through proximity and the visible upper arm rather than the fingers; the kicker and thrower show
+  the near hand at the collar. No change made; say if the victim should go behind Tamas instead.
+- The hit flash on the victim at the release (frame 18) is the standard white hit flash.
+- The native cells use the 90 px H1 figure; idle, walk and attacks are still the 80 px production
+  cells, so the figure grows by 10 px when a throw or a sprint starts and shrinks back after. Nothing
+  is resized by the game; this is visible in the integrated sheets and is for the art chat to judge.

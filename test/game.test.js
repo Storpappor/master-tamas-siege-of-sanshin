@@ -7,6 +7,8 @@ import { LEVEL_1 } from '../src/level.js';
 import { Enemy, Player } from '../src/entities.js';
 import { ATTACKS } from '../src/combat.js';
 import { STEP, VIEW_W, DEPTH_REACH, GRAB } from '../src/constants.js';
+import { heroState } from '../src/heroSprite.js';
+import { poseFor } from '../src/sprites.js';
 
 function seededRng(seed) {
   let s = seed >>> 0;
@@ -304,9 +306,20 @@ test('punch and kick together grab the enemy in front, hold them and throw them 
   assert.equal(enemy.hp, hp - GRAB.damage, 'damage at the throw');
   assert.equal(game.combo, 1);
   assert.ok(game.texts.some((t) => t.text === 'THROW!'));
-  let air = 0;
-  for (; air < 120 && !enemy.grounded; air++) game.step(STEP, idle);
+  let air = 0, lateFrames = 0;
+  for (; air < 120 && !enemy.grounded; air++) {
+    game.step(STEP, idle);
+    if (!enemy.grounded && p.attackPhase === 'recovery') {
+      // The recovery starts one simulation frame before the touchdown; the artwork waits for it.
+      lateFrames++;
+      assert.equal(heroState(p).phase, 'active', 'the THROW DOWN cell stays up until the victim lands');
+      assert.equal(poseFor(p), 'throw');
+    }
+  }
   assert.ok(air >= 11 && air <= 13, `comes down during the active phase (${air} frames)`);
+  assert.equal(lateFrames, 1, 'the victim lands one frame into the recovery');
+  assert.equal(heroState(p).phase, 'recovery', 'the GROUND IMPACT cell begins on the touchdown frame');
+  assert.equal(poseFor(p), 'throwDone');
   assert.ok(game.shake > 0.15, `the impact shakes the screen (${game.shake})`);
   assert.equal(p.attackPhase, 'recovery', 'Tamas stands over the victim while recovering');
   const ahead = (enemy.x - p.x) * p.facing;

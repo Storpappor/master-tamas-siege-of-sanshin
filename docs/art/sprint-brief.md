@@ -11,12 +11,17 @@ The pose studies in `concepts/` (the four-pose study and the later six-pose stud
 `tamas-sprint-six-pose-study.webp`, an enlarged visual reference, received again on 8 November as
 `03-sprint-six-poses-VISUAL-REFERENCE.png`, 1774 × 887 px) are concepts, not a validated
 384 × 192 production sheet and not a finished loop. This brief fixes the count from the code:
-six cells at 12 cells per second, contact, push-off, flight, then the opposite stride. The native
-PNG/JSON package is still pending.
+six cells at 12 cells per second, contact, push-off, flight, then the opposite stride.
 
-**Status (8 November 2026):** nothing of the sprint is implemented beyond the baseline. The two
-renderer changes in "How a separate sprint sheet gets selected" are specified, not made; they
-land together with the native package.
+**Status (8 November 2026, integration):** the native package `tamas-native-controls-review-v1`
+(`sprint/tamas-sprint.png` + `.json`, 384 × 192, six cells, binary alpha, exactly the production
+sheet's 30 colours) is appended to the production atlas as cells 48-53 (rows 12-13) with
+`scripts/append-sheet.mjs`, existing cells byte-identical. The two renderer changes below are
+made (`SPRINT_CELL_RATE` and `resolveFrame` in `src/heroSprite.js`) and tested. Measured in the
+browser: five simulation frames per cell, 48 → 53 → 48 every 30 frames, idle → sprint from cell
+48, punch mid-sprint and back, release → idle. Real-game sheet: `preview/integrated-sprint.png`.
+As received, the contact and push-off cells are 85-86 px tall (rows 10/11-95, the lean), the
+flight cells 79 px ending on row 87; nothing is resized.
 
 ## What the game does today
 
@@ -41,21 +46,21 @@ Selection is browser-side only. Nothing in `game.js`, `entities.js`, `combat.js`
 unaffected. The fighter already exposes everything the renderer needs: `sprinting`
 (boolean), `state === 'walk'`, `grounded`, `walkCycle`, `vx`, `facing`.
 
-Two small changes, to be made when the sheet is integrated:
+Two small changes, made on 8 November with the native sheet:
 
 1. `heroState` (`src/heroSprite.js`): the walk branch returns
-   `{ state: 'sprint', loop: f.walkCycle * RATE, fallback: 'walk' }` when `f.sprinting`,
-   otherwise today's `{ state: 'walk', loop: f.walkCycle }`. `RATE` is the sampling
-   factor fixed below.
-2. `Renderer.drawOne` (`src/renderer.js`): if `frameFor(hs.state)` returns `null` and
-   `hs.fallback` is set, try `frameFor(hs.fallback, hs)` before falling back to the
-   legacy sheet. Without this, a sheet that has no `sprint` state would drop to the
-   legacy 4×2 art while sprinting. Today `drawOne` falls straight through to the legacy
-   `HeroSprite` for any unmapped state.
+   `{ state: 'sprint', loop: f.walkCycle * SPRINT_CELL_RATE, fallback: 'walk' }` when
+   `f.sprinting`, otherwise `{ state: 'walk', loop: f.walkCycle }`. `SPRINT_CELL_RATE` is the
+   sampling factor fixed below (`RATE` in earlier drafts).
+2. `Renderer.drawOne` (`src/renderer.js`) calls `resolveFrame(sheet, hs)` (`src/heroSprite.js`):
+   if `frameFor(hs.state)` returns `null` and `hs.fallback` is set, it tries
+   `frameFor(hs.fallback, hs)` before falling back to the legacy sheet. A sheet without a
+   `sprint` state therefore shows W1 while sprinting (at the scaled 12 cells/s cadence), and
+   only a sheet without `walk` drops to the legacy 4×2 art.
 
-Both are covered by `test/spriteSheet.test.js` (`heroState mirrors the player state
-machine`), which gets one case: a sprinting player resolves to `sprint`, and to `walk` on
-a map without it.
+Both are covered by `test/spriteSheet.test.js`: a sprinting player resolves to `sprint` with
+`fallback: 'walk'`, one second of sprinting advances twelve cells, and `resolveFrame` picks the
+sprint cells, the walk cells or `null` depending on the map.
 
 `heroFrameIndex` (legacy sheet) keeps using the idle/step pair; no change.
 
@@ -145,13 +150,14 @@ Isolated review package (loaded on its own through `SpriteSheet.load`):
   }
   ```
 
-Integration into the production sheet (done by the developer, with the two renderer
-changes above):
+Integration into the production sheet (done 8 November, together with the grab/throw sheet):
 
-- Append rows 12 and 13 to `assets/sprites/tamas.png` (new size 384 × 1344 px). Cells
-  0-44 stay pixel-identical; rows 0-11 are not re-exported.
-- `assets/sprites/tamas.json` gains `"sprint": [48, 49, 50, 51, 52, 53]`.
-- `test/spriteSheet.test.js` asserts the new state array, as it does for every other state.
+- `node scripts/append-sheet.mjs sprint/tamas-sprint.json grab-throw/tamas-grab-throw.json`
+  appended rows 12-13 (sprint) and 14-15 (grab, throw) to `assets/sprites/tamas.png`, now
+  384 × 1536 px. Cells 0-47 are byte-identical to the previous atlas (checked by the script and
+  again independently); the package rows are copied unchanged.
+- `assets/sprites/tamas.json` gained `"sprint": [48, 49, 50, 51, 52, 53]` (plus `grab` and
+  `throw`); the package JSON files were re-indexed, not copied.
+- `test/spriteSheet.test.js` asserts the new state arrays and the six-cell loop.
 
-If the grab/throw sheet lands first, sprint takes the next free rows instead; the cell
-indices in the JSON follow the row, so the rule is "one state starts a new row".
+The rule "one state starts a new row" held: the cell indices in the JSON follow the row.

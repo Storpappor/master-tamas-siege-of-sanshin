@@ -5,13 +5,17 @@
 // heel across the cell border, so each row is scanned for four separate blobs of opaque
 // pixels instead of being cut blindly on the grid. Every frame is anchored at the feet so the
 // character never shifts between poses, and the gameplay hitbox is unaffected by the artwork.
-import { poseFor } from './sprites.js';
+import { poseFor, throwPhase } from './sprites.js';
 import { PHYSICS } from './constants.js';
 
 export const HERO_COLUMNS = 4;
 export const HERO_ROWS = 2;
 export const HERO_FRAMES = ['idle', 'step', 'punch', 'kick', 'block', 'hit', 'knockdown', 'victory'];
 export const HERO_HEIGHT = 40; // game units for the idle frame; matches the hand-drawn fighters
+
+// The sprint sheet plays at 12 cells per second. The fighter's walk counter advances 15.75 per
+// second while sprinting (9 per second x 1.75), so the renderer scales it; a drawing decision only.
+export const SPRINT_CELL_RATE = 12 / 15.75;
 
 // Pure function so it can be unit tested without a browser.
 export function detectFrames(alpha, width, height, { columns = HERO_COLUMNS, rows = HERO_ROWS, threshold = 20, mergeGap = 12 } = {}) {
@@ -103,7 +107,8 @@ export function heroState(f, { victory = false } = {}) {
     const isKick = /kick/i.test(name);
     const low = name.startsWith('crouch');
     const phase = f.attackPhase;
-    if (name === 'grab' || name === 'throw') return { state: name, phase, progress: 0 };
+    if (name === 'grab') return { state: name, phase, progress: 0 };
+    if (name === 'throw') return { state: name, phase: throwPhase(f), progress: 0 };
     if (low && phase === 'startup') return { state: 'crouch', progress: 0 };
     const state = low ? (isKick ? 'crouchKick' : 'crouchPunch') : (isKick ? 'kick' : 'punch');
     return { state, phase, progress: 0 };
@@ -111,8 +116,19 @@ export function heroState(f, { victory = false } = {}) {
   if (f.state === 'block') return { state: 'block', progress: 0 };
   if (!f.grounded) return { state: 'jump', progress: f.vy < 0 ? 0 : 1 };
   if (f.crouching) return { state: 'crouch', progress: 0 };
-  if (f.state === 'walk') return { state: 'walk', loop: f.walkCycle };
+  if (f.state === 'walk') {
+    if (f.sprinting) return { state: 'sprint', loop: f.walkCycle * SPRINT_CELL_RATE, fallback: 'walk' };
+    return { state: 'walk', loop: f.walkCycle };
+  }
   return { state: 'idle', progress: 0 };
+}
+
+// Cell for a resolved hero state on a JSON-mapped sheet, trying the state's fallback (for example
+// `walk` for a sprint) before giving up; null means the caller should use other artwork.
+export function resolveFrame(sheet, hs) {
+  const index = sheet.frameFor(hs.state, hs);
+  if (index !== null || !hs.fallback) return index;
+  return sheet.frameFor(hs.fallback, hs);
 }
 
 // A sprite sheet described by a JSON frame map (see the asset spec): fixed cells, one anchor,
