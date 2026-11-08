@@ -104,7 +104,9 @@ export const STREET_DEFAULTS = {
   // Sign: dark face, warm readable lettering, the red roundel kept; only the frame emits.
   signFace: 0.6, signLetter: [1.0, 0.9, 0.72],
   // Lamp cores stay bright and small; warm materials (door, awning, tables) are lit but do not emit.
-  lampKeep: 1.0, lampBloomRadius: 7, lampBloom: 0.45,
+  lampKeep: 1.0, lampBloomRadius: 4, lampBloom: 0.2,
+  facadeKnee: 0.1, facadeKneeSlope: 0.25,
+  stripTube: 1.0, stripSpillRadius: 16, stripSpill: 0.8, tubeWeight: 12,
   warmKeep: 0.78, doorEmit: 0.35,
   // Window glass: ground floor amber-lit keeping the pane's own shading, upper floor dark and cool.
   windowGlass: [1.0, 0.58, 0.24], windowBase: 0.14, windowRange: 0.8, windowEmit: 0.22,
@@ -112,9 +114,9 @@ export const STREET_DEFAULTS = {
   // Neon tubes and their local spill on the facade.
   magenta: [1.0, 0.2, 0.85], cyan: [0.15, 0.95, 1.0],
   signTube: 1.0, pipeTube: 0.95, pipeTop: 60,
-  spillRadius: 12, spill: 0.55, signSpillRadius: 9, signSpill: 0.5,
-  // Pavement: limited pools under each light; road: broken horizontal reflections.
-  pool: 0.55, poolRows: 0.9, road: 0.85, roadRowGate: 0.45, roadSeed: 7,
+  spillRadius: 10, spill: 0.55, signSpillRadius: 9, signSpill: 0.5,
+  // Pavement: limited pools under each light; road: irregular clusters of short horizontal strokes.
+  pool: 0.85, poolRows: 0.75, road: 1.1, roadBand: 0.6, roadRowGate: 0.4, roadSeed: 7,
 };
 
 // Deterministic noise in [0, 1) from integer coordinates, for the broken road reflections.
@@ -179,7 +181,9 @@ export function relightStreet(img, geometry, params = {}) {
       continue;
     }
     const isRedText = (hue >= 340 || hue <= 8) && sat > 0.5 && val > 0.45;   // PIZZERIA SÖDER lettering
-    const isWarm = !inCool && ((hue >= 8 && hue <= 62 && sat > 0.32 && val > 0.45) || isRedText);
+    // Timber, awning, lamp housings: strongly saturated. The pale painted lamp cones on the wall
+    // (saturation about 0.45, value 0.9) are ordinary material and take the night grade.
+    const isWarm = !inCool && ((hue >= 8 && hue <= 62 && sat > 0.6 && val > 0.45) || isRedText);
     if (isWarm) {
       // Lit warm material: the door, the awning, tables, lamp housings. Lit, but only the door emits.
       const k = P.warmKeep;
@@ -190,8 +194,11 @@ export function relightStreet(img, geometry, params = {}) {
     // Unlit surface: dark night grade that keeps the material's own shading and a trace of its hue.
     let Lp = P.base + P.gain * Math.pow(L, P.gamma);
     let tint = night;
-    if (y < floorRow) { const t = y / floorRow; Lp *= 1 - P.skyFade * (1 - t) * (1 - t); }
-    else { Lp *= P.pavementLift; tint = pave; if (y >= kerbRow) Lp *= P.roadLevel; }
+    if (y < floorRow) {
+      const t = y / floorRow; Lp *= 1 - P.skyFade * (1 - t) * (1 - t);
+      // Soft knee: pale material (painted lamp cones, cream trim) must not read as a lit patch.
+      if (Lp > P.facadeKnee) Lp = P.facadeKnee + (Lp - P.facadeKnee) * P.facadeKneeSlope;
+    } else { Lp *= P.pavementLift; tint = pave; if (y >= kerbRow) Lp *= P.roadLevel; }
     const mx = Math.max(r, g, b) || 1;
     const hr = r / mx, hg = g / mx, hb = b / mx; const hl = lum(hr, hg, hb) || 1;
     const k = P.keepHue;
@@ -218,6 +225,11 @@ export function relightStreet(img, geometry, params = {}) {
     const cx = Math.round((x0 + x1) / 2);
     for (let y = P.pipeTop; y < floorRow; y++) paintTube(cx - 1, y, cx + 2, y + 1, colour, P.pipeTube * Math.min(1, (y - P.pipeTop) / 40));
   });
+  // Short horizontal strips attached to the shopfronts (under an awning, along a sign edge, above a window).
+  for (const s of geometry.neonStrips || []) {
+    const [x0, y0, x1, y1] = s.box;
+    paintTube(x0, y0, x1, y1, s.colour === 'cyan' ? P.cyan : P.magenta, P.stripTube);
+  }
   const signRing = new Float32Array(n), pipeTubes = new Float32Array(n);
   for (let i = 0; i < n; i++) if (tube[i] > 0) {
     const t = tube[i], x = i % w;
@@ -235,16 +247,21 @@ export function relightStreet(img, geometry, params = {}) {
     const s = (p) => { for (let i = 0; i < n; i++) p[i] *= k; return p; };
     return { r: s(blur(mr, w, h, radius)), g: s(blur(mg, w, h, radius)), b: s(blur(mb, w, h, radius)) };
   };
-  const pipeSpill = glowOf(pipeTubes, tR, tG, tB, P.spillRadius);
+  // Shopfront strips get a wider, stronger spill than the sign ring: they are meant to bathe their
+  // own shopfront in colour, with dark sections between shops.
+  const stripMask = new Float32Array(n), pipeMask = new Float32Array(n);
+  for (let i = 0; i < n; i++) if (pipeTubes[i] > 0) { const x = i % w, y = (i / w) | 0; const inStrip = (geometry.neonStrips || []).some((s) => inBox(x, y, s.box)); if (inStrip) stripMask[i] = pipeTubes[i]; else pipeMask[i] = pipeTubes[i]; }
+  const pipeSpill = glowOf(pipeMask, tR, tG, tB, P.spillRadius);
+  const stripSpill = glowOf(stripMask, tR, tG, tB, P.stripSpillRadius);
   const signSpill = glowOf(signRing, tR, tG, tB, P.signSpillRadius);
   const lampBloom = glowOf(lamp, eR, eG, eB, P.lampBloomRadius);
   for (let y = 0; y < floorRow; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
     if (inBox(x, y, geometry.signBox) || tube[i] > 0) continue;
     const tex = 0.7 + 0.6 * lum(src.r[i], src.g[i], src.b[i]);      // lighter stone catches more light
-    out.r[i] += (pipeSpill.r[i] * P.spill + signSpill.r[i] * P.signSpill) * tex + lampBloom.r[i] * P.lampBloom;
-    out.g[i] += (pipeSpill.g[i] * P.spill + signSpill.g[i] * P.signSpill) * tex + lampBloom.g[i] * P.lampBloom;
-    out.b[i] += (pipeSpill.b[i] * P.spill + signSpill.b[i] * P.signSpill) * tex + lampBloom.b[i] * P.lampBloom;
+    out.r[i] += (pipeSpill.r[i] * P.spill + stripSpill.r[i] * P.stripSpill + signSpill.r[i] * P.signSpill) * tex + lampBloom.r[i] * P.lampBloom;
+    out.g[i] += (pipeSpill.g[i] * P.spill + stripSpill.g[i] * P.stripSpill + signSpill.g[i] * P.signSpill) * tex + lampBloom.g[i] * P.lampBloom;
+    out.b[i] += (pipeSpill.b[i] * P.spill + stripSpill.b[i] * P.stripSpill + signSpill.b[i] * P.signSpill) * tex + lampBloom.b[i] * P.lampBloom;
   }
 
   // Light sources along the street: clusters of emitting columns, each with a colour, a strength
@@ -253,7 +270,7 @@ export function relightStreet(img, geometry, params = {}) {
   let peak = 0;
   for (let x = 0; x < w; x++) {
     let s = 0, r = 0, g = 0, b = 0;
-    for (let y = 40; y < floorRow; y++) { const i = y * w + x; const m = emit[i]; if (!m) continue; const wgt = m * (0.3 + 0.7 * y / floorRow); s += wgt; r += wgt * eR[i]; g += wgt * eG[i]; b += wgt * eB[i]; }
+    for (let y = 40; y < floorRow; y++) { const i = y * w + x; const m = emit[i]; if (!m) continue; const wgt = m * (0.3 + 0.7 * y / floorRow) * (tube[i] > 0 ? P.tubeWeight : 1); s += wgt; r += wgt * eR[i]; g += wgt * eG[i]; b += wgt * eB[i]; }
     colS[x] = s; if (s > 0) { colR[x] = r / s; colG[x] = g / s; colB[x] = b / s; } peak = Math.max(peak, s);
   }
   const sources = [];
@@ -281,25 +298,32 @@ export function relightStreet(img, geometry, params = {}) {
   // Road: broken, mostly horizontal pixel reflections anchored under each source. Rows are gated by
   // deterministic noise so there are dark gaps; dashes vary in length, offset and intensity and
   // spread a little with depth.
+  // Strokes come in clusters: a slow noise over bands of rows switches whole bands off, rows inside an
+  // active band are gated again, strokes are 1 or 2 rows thick, and width, offset and intensity all
+  // vary, so nothing lines up into a ladder.
   for (let si = 0; si < sources.length; si++) {
     const c = sources[si];
     const reach = Math.max(10, c.width * 0.6);
     for (let y = kerbRow; y < h; y++) {
       const depth = (y - kerbRow) / (h - kerbRow);
-      if (hash(si, y, P.roadSeed) > P.roadRowGate) continue;                    // dark row
+      const band = Math.floor((y - kerbRow) / (5 + Math.floor(hash(si, 0, P.roadSeed + 8) * 5)));
+      if (hash(si, band, P.roadSeed + 9) > P.roadBand) continue;                // whole band dark
+      if (hash(si, y, P.roadSeed) > P.roadRowGate) continue;                   // dark row inside the band
+      const thick = hash(si, y, P.roadSeed + 5) < 0.3 ? 2 : 1;
       const dashes = 1 + Math.floor(hash(si, y, P.roadSeed + 1) * 3);
       for (let k = 0; k < dashes; k++) {
-        const len = 3 + Math.floor(hash(si + 11 * k, y, P.roadSeed + 2) * (6 + reach));
-        const off = (hash(si + 7 * k, y, P.roadSeed + 3) - 0.5) * (reach + 30 * depth);
-        const amp = P.road * c.strength * (1 - 0.55 * depth) * (0.5 + 0.5 * hash(si + 3 * k, y, P.roadSeed + 4));
+        const len = 2 + Math.floor(hash(si + 11 * k, y, P.roadSeed + 2) ** 1.5 * (8 + reach));
+        const off = (hash(si + 7 * k, y, P.roadSeed + 3) - 0.5) * (reach + 36 * depth);
+        const amp = P.road * c.strength * (1 - 0.55 * depth) * (0.3 + 0.7 * hash(si + 3 * k, y, P.roadSeed + 4));
         const x0 = Math.round(c.cx + off - len / 2);
-        for (let x = Math.max(0, x0); x < Math.min(w, x0 + len); x++) {
-          const i = y * w + x;
+        for (let yy = y; yy < Math.min(h, y + thick); yy++) for (let x = Math.max(0, x0); x < Math.min(w, x0 + len); x++) {
+          const i = yy * w + x;
           const tex = 0.6 + 0.8 * lum(src.r[i], src.g[i], src.b[i]);
           const edge = 1 - Math.abs((x - x0) / len - 0.5) * 0.8;
           out.r[i] += amp * tex * edge * c.r; out.g[i] += amp * tex * edge * c.g; out.b[i] += amp * tex * edge * c.b;
         }
       }
+      if (thick === 2) y++;
     }
   }
   return pack(w, h, out.r, out.g, out.b);

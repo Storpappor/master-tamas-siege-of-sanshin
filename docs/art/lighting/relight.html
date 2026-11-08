@@ -13,12 +13,18 @@ const toCanvas = (img) => { const c = document.createElement('canvas'); c.width 
 // Always start from the preserved pre-relight production assets, never from an already lit output.
 const street = toImg(await load('source/street-v1.png'));
 const dojo = toImg(await load('source/dojo-approved.png'));
-// Drainpipes at the building joints that carry neon tubes (measured on street.png), with the colour
-// each takes; the pipe right of the dojo is cyan and the one left of its bay magenta, as in the reference.
+// Neon lives in the shopfront architecture, horizontally: a thin magenta border around the Sanshin
+// sign (short vertical sides only), a magenta strip under the pizzeria awning, a cyan edge under the
+// ETC sign plate and one short cyan strip above a window near the dojo. Everything else is dark
+// architecture that only receives light. Boxes are half-open [x0, y0, x1, y1] in art pixels.
 const STREET_GEOMETRY = {
   floorRow: 244, kerbRow: 300, groundFloorTop: 120, signBox: [1783, 100, 1937, 136], doorBox: [1816, 140, 1904, 244],
-  pipes: [[221, 226], [591, 598], [800, 801], [1097, 1103], [1235, 1236], [1434, 1440], [1579, 1580], [1776, 1776], [1939, 1946]],
-  pipeColours: ['cyan', 'magenta', 'cyan', 'magenta', 'cyan', 'magenta', 'cyan', 'magenta', 'cyan'],
+  pipes: [],
+  neonStrips: [
+    { box: [82, 141, 220, 144], colour: 'magenta' },   // beneath the pizzeria awning
+    { box: [433, 151, 526, 154], colour: 'cyan' },     // lower edge of the ETC sign plate
+    { box: [1636, 125, 1700, 128], colour: 'cyan' },   // above the lit window left of the dojo
+  ],
   coolZones: [[1942, 2000]], // the pale yellow building is not a light source
 };
 // Ceiling tube fixtures measured on dojo.png (bright runs in rows 4-18); the first-screen tube is the

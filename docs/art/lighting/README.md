@@ -13,13 +13,22 @@ renderer constant moves.
 The two treatments are deliberately different: the street is dark and vivid, the dojo is
 restrained. Neither reference's character, score, arrow, caption or border is in the assets.
 
-## How the street light is built (revision 2)
+## How the street light is built (revision 3)
+
+The neon is horizontal and lives in the shopfront architecture: a thin magenta border around
+the Sanshin sign (its short vertical sides included), a magenta strip under the pizzeria
+awning, a cyan edge under the ETC sign plate and one short cyan strip above a window near the
+dojo. No full-height tubes: drainpipes, seams and door sides are dark architecture that only
+receives light. The approved reference's palette and atmosphere are kept; its tall vertical
+tubes are deliberately not reproduced.
 
 Each receiving surface is treated on its own, so no light continues as one band across
 facade, pavement and road:
 
 - **Sign**: the face stays dark, the lettering is kept warm and readable and the red roundel
   keeps its colour; only the magenta tube around the frame emits, with a short spill.
+- **Shopfront strips**: each throws a wider coloured spill over its own shopfront, with dark
+  sections between shops.
 - **Lamps**: only saturated bright lamp glass counts as a core; it keeps its brightness and
   gets a small cone. Pale cream (painted lamp cones, curtains, sills) is ordinary material.
 - **Windows**: ground-floor glass is amber-lit while keeping each pane's own shading, so
@@ -27,8 +36,10 @@ facade, pavement and road:
 - **Facade**: dark night grade that preserves the pixel texture; tubes on the drainpipes add
   a local spill of a few pixels, nothing broad.
 - **Pavement**: a limited pool under each light source, following the slab texture.
-- **Road**: broken, mostly horizontal dashes anchored under each source, rows gated by
-  deterministic noise so there are dark gaps, with varying length, offset and intensity.
+- **Road**: irregular clusters of short horizontal strokes anchored under each source. Bands
+  of rows switch off by noise, rows inside a band are gated again, strokes are one or two
+  rows thick with varying width, offset and intensity, so there are substantial dark gaps
+  and no ladder.
 
 ## Reproducing
 
