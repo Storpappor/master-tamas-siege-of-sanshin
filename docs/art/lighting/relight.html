@@ -10,8 +10,9 @@ const { relightStreet, relightDojo, findPipes, STREET_DEFAULTS, DOJO_DEFAULTS } 
 const load = (u) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('load ' + u)); i.src = u + '?t=' + Date.now(); });
 const toImg = (img) => { const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height); return { w: c.width, h: c.height, data: d.data }; };
 const toCanvas = (img) => { const c = document.createElement('canvas'); c.width = img.w; c.height = img.h; c.getContext('2d').putImageData(new ImageData(img.data, img.w, img.h), 0, 0); return c; };
-const street = toImg(await load('../../../assets/backgrounds/street.png'));
-const dojo = toImg(await load('../../../assets/backgrounds/dojo.png'));
+// Always start from the preserved pre-relight production assets, never from an already lit output.
+const street = toImg(await load('source/street-v1.png'));
+const dojo = toImg(await load('source/dojo-approved.png'));
 // Drainpipes at the building joints that carry neon tubes (measured on street.png), with the colour
 // each takes; the pipe right of the dojo is cyan and the one left of its bay magenta, as in the reference.
 const STREET_GEOMETRY = {

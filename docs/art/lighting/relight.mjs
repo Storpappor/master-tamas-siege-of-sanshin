@@ -97,155 +97,209 @@ export function findPipes(img, { y0 = 20, y1 = 230, minRun = 150, maxWidth = 14 
 }
 
 export const STREET_DEFAULTS = {
-  // Surface grade: L' = base + gain * L^gamma, then tinted toward the night colour.
+  // Unlit surfaces: L' = base + gain * L^gamma, tinted toward the night colour, darker toward the roofline.
   base: 0.02, gain: 0.26, gamma: 2.3,
-  night: [0.30, 0.16, 1.0],      // navy/purple tint of unlit surfaces (normalised internally)
-  keepHue: 0.18,                 // how much of the original hue survives on unlit surfaces
-  skyFade: 0.45,                 // the upper floors fall away into the dark (0 = no falloff)
-  pavementLift: 1.2, pavementTint: [0.62, 0.3, 1.0], // the pavement takes a purple cast
-  roadLevel: 0.75,               // the road is darker than the pavement
-  wash: 0.11, washRadius: 70,    // broad coloured wash each tube throws over its facade
-  warmKeep: 1.05, warmSat: 1.2,  // warm light sources (lamps, door, lit interiors)
-  windowGlass: [1.0, 0.56, 0.22], windowLevel: 0.72, // ground-floor glass becomes amber-lit
-  upperGlass: [0.12, 0.08, 0.36], upperLevel: 0.5,    // upper-floor glass stays dark and cool
+  night: [0.30, 0.16, 1.0], keepHue: 0.2, skyFade: 0.45,
+  pavementLift: 1.2, pavementTint: [0.62, 0.3, 1.0], roadLevel: 0.7,
+  // Sign: dark face, warm readable lettering, the red roundel kept; only the frame emits.
+  signFace: 0.6, signLetter: [1.0, 0.9, 0.72],
+  // Lamp cores stay bright and small; warm materials (door, awning, tables) are lit but do not emit.
+  lampKeep: 1.0, lampBloomRadius: 7, lampBloom: 0.45,
+  warmKeep: 0.78, doorEmit: 0.35,
+  // Window glass: ground floor amber-lit keeping the pane's own shading, upper floor dark and cool.
+  windowGlass: [1.0, 0.58, 0.24], windowBase: 0.14, windowRange: 0.8, windowEmit: 0.22,
+  upperGlass: [0.12, 0.08, 0.36], upperLevel: 0.5,
+  // Neon tubes and their local spill on the facade.
   magenta: [1.0, 0.2, 0.85], cyan: [0.15, 0.95, 1.0],
-  signTube: 1.0, signGlow: 0.45, signGlowRadius: 22,
-  pipeTube: 0.95, pipeGlow: 0.32, pipeGlowRadius: 30, pipeTop: 60,
-  bloomNear: 0.3, bloomFar: 0.08, bloomFarRadius: 36,
-  reflect: 1.6, reflectBlur: 10, reflectRows: [244, 360], reflectPavement: 0.5,
-  wetContrast: 0.9,
+  signTube: 1.0, pipeTube: 0.95, pipeTop: 60,
+  spillRadius: 12, spill: 0.55, signSpillRadius: 9, signSpill: 0.5,
+  // Pavement: limited pools under each light; road: broken horizontal reflections.
+  pool: 0.55, poolRows: 0.9, road: 0.85, roadRowGate: 0.45, roadSeed: 7,
 };
 
-// `geometry`: { floorRow, signBox: [x0, y0, x1, y1] (half-open), doorBox, groundFloorTop, pipes? }
+// Deterministic noise in [0, 1) from integer coordinates, for the broken road reflections.
+function hash(x, y, s = 0) {
+  let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(s, 982451653)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) | 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+// `geometry`: { floorRow, kerbRow, groundFloorTop, signBox, doorBox, pipes, pipeColours, coolZones }
+// (boxes are half-open [x0, y0, x1, y1] in art pixels).
 export function relightStreet(img, geometry, params = {}) {
   const P = { ...STREET_DEFAULTS, ...params };
   const { w, h } = img;
   const src = planes(img);
   const n = src.n;
   const out = { r: new Float32Array(n), g: new Float32Array(n), b: new Float32Array(n) };
-  const warm = new Float32Array(n), lightMask = new Float32Array(n), lightR = new Float32Array(n), lightG = new Float32Array(n), lightB = new Float32Array(n);
+  const floorRow = geometry.floorRow, kerbRow = geometry.kerbRow;
+  const inBox = (x, y, b) => x >= b[0] && x < b[2] && y >= b[1] && y < b[3];
   const nightL = lum(...P.night); const night = P.night.map((c) => c / nightL);
-  const floorRow = geometry.floorRow;
-  const [sx0, sy0, sx1, sy1] = geometry.signBox;
+  const paveL = lum(...P.pavementTint); const pave = P.pavementTint.map((c) => c / paveL);
+  // Emission planes feed the facade spill, the pavement pools and the road reflections; they
+  // hold only true light sources (tubes, lamp cores, the lit door and ground-floor panes).
+  const emit = new Float32Array(n), eR = new Float32Array(n), eG = new Float32Array(n), eB = new Float32Array(n);
+  const lamp = new Float32Array(n), tube = new Float32Array(n);
+  const setEmit = (i, m, c) => { if (m > emit[i]) { emit[i] = m; eR[i] = c[0]; eG[i] = c[1]; eB[i] = c[2]; } };
+  const WARM = [1.0, 0.72, 0.4];
 
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
     const r = src.r[i], g = src.g[i], b = src.b[i];
     const [hue, sat, val] = hsv(r, g, b);
     const L = lum(r, g, b);
-    const inSign = x >= sx0 && x < sx1 && y >= sy0 && y < sy1;
-    const isWhite = val > 0.9 && sat < 0.14;                               // sign letters, lamp cores
-    // Lamps, door timber, lit interiors. Inside a "cool zone" (the pale yellow building) only the
-    // brightest cores count, so a yellow wall does not become a light source.
+    if (inBox(x, y, geometry.signBox)) {
+      // The sign face stays dark; lettering is kept warm and readable; the roundel keeps its red.
+      const isLetter = val > 0.7 && sat < 0.4;
+      const isLogo = (hue >= 335 || hue <= 15) && sat > 0.45 && val > 0.35;
+      if (isLetter) { out.r[i] = r * P.signLetter[0]; out.g[i] = g * P.signLetter[1]; out.b[i] = b * P.signLetter[2]; }
+      else if (isLogo) { out.r[i] = r; out.g[i] = g; out.b[i] = b; }
+      else { out.r[i] = r * P.signFace * 0.9; out.g[i] = g * P.signFace * 0.85; out.b[i] = b * P.signFace; }
+      continue;
+    }
     const inCool = (geometry.coolZones || []).some(([cx0, cx1]) => x >= cx0 && x < cx1);
-    const isWarm = hue >= 8 && hue <= 62 && sat > 0.32 && val > (inCool ? 0.97 : 0.5);
-    const isGlass = hue >= 180 && hue <= 250 && sat > 0.14 && val > 0.33 && y < floorRow; // window glass
-    if (isWhite && inSign) {                                               // keep the lettering crisp
-      out.r[i] = r; out.g[i] = g; out.b[i] = b; lightMask[i] = 1; lightR[i] = r; lightG[i] = g; lightB[i] = b; continue;
-    }
-    if (isWarm) {
-      const k = P.warmKeep; const m = (r + g + b) / 3;
-      out.r[i] = (m + (r - m) * P.warmSat) * k; out.g[i] = (m + (g - m) * P.warmSat) * k; out.b[i] = (m + (b - m) * P.warmSat) * k;
-      warm[i] = clamp01((val - 0.5) * 2.2);
-      lightMask[i] = warm[i] * 0.8; lightR[i] = out.r[i]; lightG[i] = out.g[i]; lightB[i] = out.b[i];
+    // Lamp glass only: saturated yellow and very bright. Pale cream (the painted lamp cones on the
+    // wall, curtains, sills) is ordinary material and goes through the night grade.
+    const isLampCore = !inCool && val > 0.9 && sat >= 0.28 && sat < 0.7 && hue >= 30 && hue <= 58;
+    if (isLampCore) {
+      out.r[i] = r * P.lampKeep; out.g[i] = g * P.lampKeep; out.b[i] = b * P.lampKeep;
+      lamp[i] = 1; setEmit(i, 1, [r, g, b]);
       continue;
     }
+    const isGlass = hue >= 180 && hue <= 250 && sat > 0.14 && val > 0.33 && y < floorRow;
     if (isGlass) {
-      const t = 0.55 + 0.45 * L;                                            // keep the pane's own shading
-      const c = y >= geometry.groundFloorTop ? P.windowGlass : P.upperGlass;
-      const level = y >= geometry.groundFloorTop ? P.windowLevel : P.upperLevel;
-      out.r[i] = c[0] * level * t; out.g[i] = c[1] * level * t; out.b[i] = c[2] * level * t;
-      if (y >= geometry.groundFloorTop) { lightMask[i] = 0.55; lightR[i] = out.r[i]; lightG[i] = out.g[i]; lightB[i] = out.b[i]; }
+      if (y >= geometry.groundFloorTop) {
+        const t = P.windowBase + P.windowRange * L;              // the pane keeps its own shading
+        out.r[i] = P.windowGlass[0] * t; out.g[i] = P.windowGlass[1] * t; out.b[i] = P.windowGlass[2] * t;
+        setEmit(i, P.windowEmit, P.windowGlass);
+      } else {
+        const t = 0.4 + 0.6 * L;
+        out.r[i] = P.upperGlass[0] * P.upperLevel * t; out.g[i] = P.upperGlass[1] * P.upperLevel * t; out.b[i] = P.upperGlass[2] * P.upperLevel * t;
+      }
       continue;
     }
-    // Unlit surface: dark night grade with a trace of the original hue, darker toward the roofline.
-    let Lp = P.base + P.gain * Math.pow(L, P.gamma);
-    if (y < floorRow) { const t = y / floorRow; Lp *= 1 - P.skyFade * (1 - t) * (1 - t); }
-    let tint = night;
-    if (y >= floorRow) {
-      Lp *= P.pavementLift;
-      if (y >= geometry.kerbRow) Lp *= P.roadLevel;
-      const pl = lum(...P.pavementTint); tint = P.pavementTint.map((c) => c / pl);
+    const isRedText = (hue >= 340 || hue <= 8) && sat > 0.5 && val > 0.45;   // PIZZERIA SÖDER lettering
+    const isWarm = !inCool && ((hue >= 8 && hue <= 62 && sat > 0.32 && val > 0.45) || isRedText);
+    if (isWarm) {
+      // Lit warm material: the door, the awning, tables, lamp housings. Lit, but only the door emits.
+      const k = P.warmKeep;
+      out.r[i] = r * k; out.g[i] = g * k; out.b[i] = b * k * 0.9;
+      if (inBox(x, y, geometry.doorBox)) setEmit(i, P.doorEmit, WARM);
+      continue;
     }
+    // Unlit surface: dark night grade that keeps the material's own shading and a trace of its hue.
+    let Lp = P.base + P.gain * Math.pow(L, P.gamma);
+    let tint = night;
+    if (y < floorRow) { const t = y / floorRow; Lp *= 1 - P.skyFade * (1 - t) * (1 - t); }
+    else { Lp *= P.pavementLift; tint = pave; if (y >= kerbRow) Lp *= P.roadLevel; }
     const mx = Math.max(r, g, b) || 1;
-    const hr = r / mx, hg = g / mx, hb = b / mx;                           // original hue, full value
-    const hl = lum(hr, hg, hb) || 1;
+    const hr = r / mx, hg = g / mx, hb = b / mx; const hl = lum(hr, hg, hb) || 1;
     const k = P.keepHue;
     out.r[i] = Lp * ((1 - k) * tint[0] + k * hr / hl);
     out.g[i] = Lp * ((1 - k) * tint[1] + k * hg / hl);
     out.b[i] = Lp * ((1 - k) * tint[2] + k * hb / hl);
   }
 
-  // Neon: a magenta tube around the sign, cyan/magenta tubes on the drainpipes.
-  const tube = new Float32Array(n), tubeR = new Float32Array(n), tubeG = new Float32Array(n), tubeB = new Float32Array(n);
-  const paint = (x0, y0, x1, y1, colour, gain) => {
+  // Neon tubes: a ring just outside the sign box, and the drainpipes at the building joints.
+  const [sx0, sy0, sx1, sy1] = geometry.signBox;
+  const tR = new Float32Array(n), tG = new Float32Array(n), tB = new Float32Array(n);
+  const paintTube = (x0, y0, x1, y1, colour, gain) => {
     for (let y = Math.max(0, y0); y < Math.min(h, y1); y++) for (let x = Math.max(0, x0); x < Math.min(w, x1); x++) {
-      const i = y * w + x; tube[i] = Math.max(tube[i], gain); tubeR[i] = colour[0]; tubeG[i] = colour[1]; tubeB[i] = colour[2];
+      const i = y * w + x; if (gain <= tube[i]) continue; tube[i] = gain; tR[i] = colour[0]; tG[i] = colour[1]; tB[i] = colour[2];
     }
   };
-  paint(sx0 - 3, sy0 - 3, sx1 + 3, sy0 - 1, P.magenta, P.signTube);
-  paint(sx0 - 3, sy1 + 1, sx1 + 3, sy1 + 3, P.magenta, P.signTube);
-  paint(sx0 - 3, sy0 - 3, sx0 - 1, sy1 + 3, P.magenta, P.signTube);
-  paint(sx1 + 1, sy0 - 3, sx1 + 3, sy1 + 3, P.magenta, P.signTube);
-  const pipes = geometry.pipes || findPipes(img);
-  pipes.forEach(([x0, x1], idx) => {
-    const colour = (geometry.pipeColours && geometry.pipeColours[idx]) === 'magenta' ? P.magenta : (geometry.pipeColours && geometry.pipeColours[idx]) === 'cyan' ? P.cyan : (idx % 2 ? P.magenta : P.cyan);
+  paintTube(sx0 - 3, sy0 - 3, sx1 + 3, sy0 - 1, P.magenta, P.signTube);
+  paintTube(sx0 - 3, sy1 + 1, sx1 + 3, sy1 + 3, P.magenta, P.signTube);
+  paintTube(sx0 - 3, sy0 - 3, sx0 - 1, sy1 + 3, P.magenta, P.signTube);
+  paintTube(sx1 + 1, sy0 - 3, sx1 + 3, sy1 + 3, P.magenta, P.signTube);
+  (geometry.pipes || []).forEach(([x0, x1], idx) => {
+    const name = geometry.pipeColours && geometry.pipeColours[idx];
+    const colour = name === 'magenta' ? P.magenta : name === 'cyan' ? P.cyan : (idx % 2 ? P.magenta : P.cyan);
     const cx = Math.round((x0 + x1) / 2);
-    const top = geometry.pipeTop ?? P.pipeTop;
-    for (let y = top; y < floorRow; y++) {                                 // fades in over the first 40 rows
-      const ramp = Math.min(1, (y - top) / 40);
-      paint(cx - 1, y, cx + 2, y + 1, colour, P.pipeTube * ramp);
-    }
+    for (let y = P.pipeTop; y < floorRow; y++) paintTube(cx - 1, y, cx + 2, y + 1, colour, P.pipeTube * Math.min(1, (y - P.pipeTop) / 40));
   });
-  // Tube cores: a saturated bright core, white only at the very centre.
+  const signRing = new Float32Array(n), pipeTubes = new Float32Array(n);
   for (let i = 0; i < n; i++) if (tube[i] > 0) {
-    const t = tube[i];
-    out.r[i] = Math.max(out.r[i], t * (0.12 + 0.8 * tubeR[i])); out.g[i] = Math.max(out.g[i], t * (0.12 + 0.8 * tubeG[i])); out.b[i] = Math.max(out.b[i], t * (0.12 + 0.8 * tubeB[i]));
-    lightMask[i] = Math.max(lightMask[i], t); lightR[i] = tubeR[i]; lightG[i] = tubeG[i]; lightB[i] = tubeB[i];
-  }
-  // Blurred, coloured copy of a light mask. A thin source loses amplitude in proportion to the blur
-  // width, so the result is scaled by (2r+1)/3: a 3 px tube keeps roughly its own brightness at its
-  // centre whatever the radius, and the gains below read as "how bright next to the source".
-  const glowOf = (maskPlane, radius) => {
-    const mr = new Float32Array(n), mg = new Float32Array(n), mb = new Float32Array(n);
-    for (let i = 0; i < n; i++) { const m = maskPlane[i]; mr[i] = m * lightR[i]; mg[i] = m * lightG[i]; mb[i] = m * lightB[i]; }
-    const k = (2 * radius + 1) / 3;
-    const scale = (p) => { for (let i = 0; i < n; i++) p[i] *= k; return p; };
-    return { r: scale(blur(mr, w, h, radius)), g: scale(blur(mg, w, h, radius)), b: scale(blur(mb, w, h, radius)) };
-  };
-  const signGlow = glowOf(tube.map((t, i) => (Math.abs(i % w - (sx0 + sx1) / 2) < (sx1 - sx0) ? t : 0)), P.signGlowRadius);
-  const pipeGlow = glowOf(tube.map((t, i) => (Math.abs(i % w - (sx0 + sx1) / 2) < (sx1 - sx0) ? 0 : t)), P.pipeGlowRadius);
-  const wash = glowOf(tube, P.washRadius);                                  // broad neon wash over the facades
-  const bloomN = glowOf(lightMask, 6), bloomF = glowOf(lightMask, P.bloomFarRadius);
-  for (let i = 0; i < n; i++) {
-    out.r[i] += signGlow.r[i] * P.signGlow + pipeGlow.r[i] * P.pipeGlow + wash.r[i] * P.wash + bloomN.r[i] * P.bloomNear + bloomF.r[i] * P.bloomFar;
-    out.g[i] += signGlow.g[i] * P.signGlow + pipeGlow.g[i] * P.pipeGlow + wash.g[i] * P.wash + bloomN.g[i] * P.bloomNear + bloomF.g[i] * P.bloomFar;
-    out.b[i] += signGlow.b[i] * P.signGlow + pipeGlow.b[i] * P.pipeGlow + wash.b[i] * P.wash + bloomN.b[i] * P.bloomNear + bloomF.b[i] * P.bloomFar;
+    const t = tube[i], x = i % w;
+    out.r[i] = Math.max(out.r[i], t * (0.12 + 0.8 * tR[i])); out.g[i] = Math.max(out.g[i], t * (0.12 + 0.8 * tG[i])); out.b[i] = Math.max(out.b[i], t * (0.12 + 0.8 * tB[i]));
+    setEmit(i, t, [tR[i], tG[i], tB[i]]);
+    if (x >= sx0 - 3 && x < sx1 + 3 && (i / w | 0) >= sy0 - 3 && (i / w | 0) < sy1 + 3) signRing[i] = t; else pipeTubes[i] = t;
   }
 
-  // Wet-street reflections: each column collects the coloured light above the floor and smears it
-  // down the ground, modulated by the ground's own texture so it reads as puddles, not a gradient.
-  const colR = new Float32Array(w), colG = new Float32Array(w), colB = new Float32Array(w);
+  // Local spill on the facade: a short-radius glow from each tube and a tiny bloom from lamp cores,
+  // never onto the sign face and never onto the ground (the ground gets its own treatment below).
+  const glowOf = (mask, colR, colG, colB, radius) => {
+    const mr = new Float32Array(n), mg = new Float32Array(n), mb = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const m = mask[i]; if (m) { mr[i] = m * colR[i]; mg[i] = m * colG[i]; mb[i] = m * colB[i]; } }
+    const k = (2 * radius + 1) / 3;
+    const s = (p) => { for (let i = 0; i < n; i++) p[i] *= k; return p; };
+    return { r: s(blur(mr, w, h, radius)), g: s(blur(mg, w, h, radius)), b: s(blur(mb, w, h, radius)) };
+  };
+  const pipeSpill = glowOf(pipeTubes, tR, tG, tB, P.spillRadius);
+  const signSpill = glowOf(signRing, tR, tG, tB, P.signSpillRadius);
+  const lampBloom = glowOf(lamp, eR, eG, eB, P.lampBloomRadius);
+  for (let y = 0; y < floorRow; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (inBox(x, y, geometry.signBox) || tube[i] > 0) continue;
+    const tex = 0.7 + 0.6 * lum(src.r[i], src.g[i], src.b[i]);      // lighter stone catches more light
+    out.r[i] += (pipeSpill.r[i] * P.spill + signSpill.r[i] * P.signSpill) * tex + lampBloom.r[i] * P.lampBloom;
+    out.g[i] += (pipeSpill.g[i] * P.spill + signSpill.g[i] * P.signSpill) * tex + lampBloom.g[i] * P.lampBloom;
+    out.b[i] += (pipeSpill.b[i] * P.spill + signSpill.b[i] * P.signSpill) * tex + lampBloom.b[i] * P.lampBloom;
+  }
+
+  // Light sources along the street: clusters of emitting columns, each with a colour, a strength
+  // and a width. Low sources (near the ground) count more than high ones.
+  const colS = new Float32Array(w), colR = new Float32Array(w), colG = new Float32Array(w), colB = new Float32Array(w);
   let peak = 0;
   for (let x = 0; x < w; x++) {
-    let r = 0, g = 0, b = 0;
-    for (let y = 40; y < floorRow; y++) { const i = y * w + x; const m = lightMask[i] * (0.4 + 0.6 * y / floorRow); r += m * lightR[i]; g += m * lightG[i]; b += m * lightB[i]; }
-    colR[x] = r; colG[x] = g; colB[x] = b; peak = Math.max(peak, lum(r, g, b));
+    let s = 0, r = 0, g = 0, b = 0;
+    for (let y = 40; y < floorRow; y++) { const i = y * w + x; const m = emit[i]; if (!m) continue; const wgt = m * (0.3 + 0.7 * y / floorRow); s += wgt; r += wgt * eR[i]; g += wgt * eG[i]; b += wgt * eB[i]; }
+    colS[x] = s; if (s > 0) { colR[x] = r / s; colG[x] = g / s; colB[x] = b / s; } peak = Math.max(peak, s);
   }
-  if (peak > 0) for (let x = 0; x < w; x++) { colR[x] /= peak; colG[x] /= peak; colB[x] /= peak; }
-  const smear = (arr, rad) => { const o = new Float32Array(w); for (let x = 0; x < w; x++) { let s = 0, c = 0; for (let k = -rad; k <= rad; k++) { const xx = x + k; if (xx >= 0 && xx < w) { s += arr[xx]; c++; } } o[x] = s / c; } return o; };
-  const sR = smear(colR, P.reflectBlur), sG = smear(colG, P.reflectBlur), sB = smear(colB, P.reflectBlur);
-  const aR = smear(colR, 48), aG = smear(colG, 48), aB = smear(colB, 48);   // broad ambient wash
-  const [ry0, ry1] = P.reflectRows;
-  for (let y = ry0; y < ry1; y++) {
-    const depth = (y - ry0) / (ry1 - ry0);
-    const fall = y < geometry.kerbRow ? P.reflectPavement : (0.5 + 0.5 * depth);
-    for (let x = 0; x < w; x++) {
+  const sources = [];
+  for (let x = 0; x <= w; x++) {
+    const on = x < w && colS[x] > 0.03 * peak;
+    if (on && (sources.length === 0 || sources[sources.length - 1].closed)) sources.push({ x0: x, x1: x, s: 0, r: 0, g: 0, b: 0, closed: false });
+    if (on) { const c = sources[sources.length - 1]; c.x1 = x; c.s += colS[x]; c.r += colS[x] * colR[x]; c.g += colS[x] * colG[x]; c.b += colS[x] * colB[x]; }
+    else if (sources.length && !sources[sources.length - 1].closed) sources[sources.length - 1].closed = true;
+  }
+  for (const c of sources) { c.r /= c.s; c.g /= c.s; c.b /= c.s; c.cx = (c.x0 + c.x1) / 2; c.width = c.x1 - c.x0 + 1; c.strength = Math.min(1, c.s / (peak * 6)); }
+
+  // Pavement: a limited pool under each source, following the slab texture.
+  const poolH = (kerbRow - floorRow) * P.poolRows;
+  for (const c of sources) {
+    const rx = Math.max(16, c.width * 0.7 + 10), ry = poolH, cy = floorRow + 6;
+    for (let y = floorRow; y < kerbRow; y++) for (let x = Math.max(0, c.cx - rx) | 0; x < Math.min(w, c.cx + rx); x++) {
+      const d = ((x - c.cx) / rx) ** 2 + ((y - cy) / ry) ** 2; if (d > 1) continue;
       const i = y * w + x;
-      const tex = lum(src.r[i], src.g[i], src.b[i]);
-      const wet = clamp01(0.3 + P.wetContrast * (tex - 0.42) * 2.2);   // brighter slabs reflect more
-      const m = P.reflect * fall;
-      out.r[i] += (sR[x] * wet + aR[x] * 0.6) * m; out.g[i] += (sG[x] * wet + aG[x] * 0.6) * m; out.b[i] += (sB[x] * wet + aB[x] * 0.6) * m;
+      const tex = clamp01(0.35 + 1.4 * (lum(src.r[i], src.g[i], src.b[i]) - 0.5));
+      const m = P.pool * c.strength * (1 - d) * (1 - d) * tex;
+      out.r[i] += m * c.r; out.g[i] += m * c.g; out.b[i] += m * c.b;
+    }
+  }
+
+  // Road: broken, mostly horizontal pixel reflections anchored under each source. Rows are gated by
+  // deterministic noise so there are dark gaps; dashes vary in length, offset and intensity and
+  // spread a little with depth.
+  for (let si = 0; si < sources.length; si++) {
+    const c = sources[si];
+    const reach = Math.max(10, c.width * 0.6);
+    for (let y = kerbRow; y < h; y++) {
+      const depth = (y - kerbRow) / (h - kerbRow);
+      if (hash(si, y, P.roadSeed) > P.roadRowGate) continue;                    // dark row
+      const dashes = 1 + Math.floor(hash(si, y, P.roadSeed + 1) * 3);
+      for (let k = 0; k < dashes; k++) {
+        const len = 3 + Math.floor(hash(si + 11 * k, y, P.roadSeed + 2) * (6 + reach));
+        const off = (hash(si + 7 * k, y, P.roadSeed + 3) - 0.5) * (reach + 30 * depth);
+        const amp = P.road * c.strength * (1 - 0.55 * depth) * (0.5 + 0.5 * hash(si + 3 * k, y, P.roadSeed + 4));
+        const x0 = Math.round(c.cx + off - len / 2);
+        for (let x = Math.max(0, x0); x < Math.min(w, x0 + len); x++) {
+          const i = y * w + x;
+          const tex = 0.6 + 0.8 * lum(src.r[i], src.g[i], src.b[i]);
+          const edge = 1 - Math.abs((x - x0) / len - 0.5) * 0.8;
+          out.r[i] += amp * tex * edge * c.r; out.g[i] += amp * tex * edge * c.g; out.b[i] += amp * tex * edge * c.b;
+        }
+      }
     }
   }
   return pack(w, h, out.r, out.g, out.b);

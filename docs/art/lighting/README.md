@@ -13,16 +13,35 @@ renderer constant moves.
 The two treatments are deliberately different: the street is dark and vivid, the dojo is
 restrained. Neither reference's character, score, arrow, caption or border is in the assets.
 
+## How the street light is built (revision 2)
+
+Each receiving surface is treated on its own, so no light continues as one band across
+facade, pavement and road:
+
+- **Sign**: the face stays dark, the lettering is kept warm and readable and the red roundel
+  keeps its colour; only the magenta tube around the frame emits, with a short spill.
+- **Lamps**: only saturated bright lamp glass counts as a core; it keeps its brightness and
+  gets a small cone. Pale cream (painted lamp cones, curtains, sills) is ordinary material.
+- **Windows**: ground-floor glass is amber-lit while keeping each pane's own shading, so
+  plants, frames and curtains survive; upper glass stays dark and cool.
+- **Facade**: dark night grade that preserves the pixel texture; tubes on the drainpipes add
+  a local spill of a few pixels, nothing broad.
+- **Pavement**: a limited pool under each light source, following the slab texture.
+- **Road**: broken, mostly horizontal dashes anchored under each source, rows gated by
+  deterministic noise so there are dark gaps, with varying length, offset and intensity.
+
 ## Reproducing
 
-`relight.mjs` is pure pixel code (no DOM). `relight.html` loads the production PNGs, runs it
-and exposes `window.RL` for driving from a console; it needs to be served over http (for
-example `npm start`, then `/docs/art/lighting/relight.html`). The parameters that produced
-the shipped assets are the defaults in `relight.mjs`; the measured geometry (sign box,
-drainpipe columns and their tube colours, the yellow building's cool zone, the dojo tube
-fixtures and emblem box) is in `relight.html`.
+`relight.mjs` is pure pixel code (no DOM). `relight.html` loads the preserved pre-relight
+assets from `source/`, runs the pipeline and exposes `window.RL` for driving from a console;
+it needs to be served over http (for example `npm start`, then
+`/docs/art/lighting/relight.html`). Always regenerate from `source/`, never from an already
+lit output. The parameters that produced the shipped assets are the defaults in
+`relight.mjs`; the measured geometry (sign box, door box, drainpipe columns and their tube
+colours, the yellow building's cool zone, the dojo tube fixtures and emblem box) is in
+`relight.html`.
 
-The inputs were the previous production assets:
+The inputs are the previous production assets, kept byte-identical in `source/`:
 
 | Input | SHA-256 |
 |---|---|

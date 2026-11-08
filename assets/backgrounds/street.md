@@ -7,7 +7,7 @@ Delivered as `street-artwork-v1` on 8 November 2026, built to the measured brief
 |---|---|
 | File | `assets/backgrounds/street.png` |
 | Dimensions | 2000 x 360 px, RGBA, every pixel opaque |
-| SHA-256 | 85b2da8a96f74ffdf5ba4c5f57d46fc877b94439be5b6da1754e6dbee3ab9a33 (lighting pass of 8 November 2026; the street-v1 delivery it was made from is a8dcc7c0…, see `docs/art/lighting/README.md`) |
+| SHA-256 | 548709aa41e305ec1d7b9df6c23f699f28dc5d6e393ae788327d8f6d9db1df11 (lighting pass revision 2 of 8 November 2026; the street-v1 delivery it was made from is a8dcc7c0…, kept in `docs/art/lighting/source/`, see `docs/art/lighting/README.md`) |
 | Placement | world art column 0 (world x 0), row 0, drawn 1:1, never scaled |
 | Wall/pavement boundary | art row 244 (`FLOOR_TOP` 122); walkable feet rows 244-340 |
 | Dojo door leaves | art x 1816-1903, y 140-243 (88 x 104): two 44 px leaves centred on x 1860 (`exit.x` 930) |
