@@ -84,6 +84,7 @@ export function heroFrameIndex(fighter, { victory = false } = {}) {
     case 'hurt': case 'crouch': return 5;
     case 'fallen': return 6;
     case 'jump': case 'throw': return 7;
+    case 'throwDone': return 0;
     default: return 0;
   }
 }

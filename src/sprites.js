@@ -82,22 +82,35 @@ const POSES = {
   crouchPunch: { head: [1, -26], sh: [1, -21], hip: [0, -12], lead: { arm: [[8, -21], [15, -20]], leg: [[6, -7], [6, 0]] }, rear: { arm: [[-4, -18], [-2, -14]], leg: [[-6, -7], [-6, 0]] } },
   crouchKick: { head: [-1, -26], sh: [-1, -21], hip: [0, -12], lead: { arm: [[4, -16], [8, -22]], leg: [[9, -11], [20, -12]] }, rear: { arm: [[-3, -15], [2, -19]], leg: [[-5, -7], [-6, 0]] } },
   block:  { head: [0, -35], sh: [0, -29], hip: [0, -17], lead: { arm: [[5, -23], [5, -33]], leg: [[4, -9], [6, 0]] }, rear: { arm: [[3, -21], [7, -28]], leg: [[-4, -9], [-6, 0]] } },
-  // Grab: both hands reach forward at chest height; throw: the body turns and both arms swing past the hip.
+  // Grab: both hands reach forward at chest height (also the grip during the hold); throw: the body
+  // turns and both arms swing down past the hip (the throw-down); throwDone: settled over the victim.
   grab:   { head: [1, -36], sh: [2, -30], hip: [0, -18], lead: { arm: [[8, -29], [14, -27]], leg: [[5, -10], [8, 0]] }, rear: { arm: [[6, -27], [13, -25]], leg: [[-4, -9], [-7, 0]] } },
   throw:  { head: [3, -34], sh: [3, -28], hip: [0, -18], lead: { arm: [[9, -22], [15, -16]], leg: [[6, -10], [10, 0]] }, rear: { arm: [[7, -21], [13, -15]], leg: [[-4, -9], [-8, 0]] } },
+  throwDone: { head: [1, -35], sh: [1, -29], hip: [0, -18], lead: { arm: [[6, -22], [9, -17]], leg: [[5, -10], [8, 0]] }, rear: { arm: [[-3, -23], [-2, -17]], leg: [[-4, -9], [-7, 0]] } },
+  // The victim of a throw: held upright in the grip, pulled onto the toes; turned over backwards
+  // with the legs coming up (hips rising, then nearly flat); kneeling up again after the floor.
+  held:   { head: [2, -35], sh: [1, -29], hip: [0, -18], lead: { arm: [[6, -26], [9, -31]], leg: [[4, -9], [6, -1]] }, rear: { arm: [[-2, -24], [2, -29]], leg: [[-3, -9], [-5, 0]] } },
+  thrownDown1: { head: [-7, -28], sh: [-5, -24], hip: [2, -16], lead: { arm: [[-2, -30], [1, -35]], leg: [[7, -14], [12, -12]] }, rear: { arm: [[-11, -22], [-14, -26]], leg: [[5, -12], [9, -6]] } },
+  thrownDown2: { lying: true, head: [-15, -15], sh: [-9, -14], hip: [3, -12], lead: { arm: [[-4, -20], [-2, -26]], leg: [[10, -16], [16, -12]] }, rear: { arm: [[-12, -10], [-16, -6]], leg: [[9, -14], [14, -9]] } },
+  getUp:  { head: [3, -25], sh: [2, -20], hip: [-3, -10], lead: { arm: [[6, -13], [8, -8]], leg: [[6, -8], [8, 0]] }, rear: { arm: [[-6, -12], [-10, -3]], leg: [[-7, -4], [-11, 0]] } },
   hurt:   { head: [-3, -36], sh: [-2, -30], hip: [0, -18], lead: { arm: [[4, -27], [7, -23]], leg: [[4, -10], [6, 0]] }, rear: { arm: [[-5, -28], [-9, -25]], leg: [[-3, -9], [-6, 0]] } },
   fallen: { lying: true, head: [-14, -4], sh: [-8, -5], hip: [2, -5], lead: { arm: [[-6, -9], [-10, -11]], leg: [[7, -7], [13, -5]] }, rear: { arm: [[-4, -3], [-8, -2]], leg: [[6, -3], [12, -2]] } },
 };
 
 const WALK_FRAMES = ['walk1', 'walk2', 'walk3', 'walk4'];
+// A fighter on the floor kneels up for the last part of its floor time (drawing only).
+export const GET_UP_TIME = 0.25;
 
 // Map a fighter's current state to a pose name.
 export function poseFor(f) {
-  if (f.dead) return f.deadTimer < 0.25 ? 'hurt' : 'fallen';
-  if (f.state === 'hurt') return f.down ? 'fallen' : 'hurt';
+  if (f.held) return 'held';
+  if (f.thrown) return f.vy < 0 ? 'thrownDown1' : 'thrownDown2';
+  if (f.dead) return f.down || f.deadTimer >= 0.25 ? 'fallen' : 'hurt';
+  if (f.state === 'hurt') return f.down ? (f.hurtTimer < GET_UP_TIME ? 'getUp' : 'fallen') : 'hurt';
   if (f.attack) {
     const name = f.attack.name;
-    if (name === 'grab' || name === 'throw') return name;
+    if (name === 'grab') return 'grab';
+    if (name === 'throw') return f.attackPhase === 'startup' ? 'grab' : f.attackPhase === 'active' ? 'throw' : 'throwDone';
     const isKick = /kick/i.test(name);
     const isCrouch = name.startsWith('crouch') || LOW_ATTACKS.has(name);
     if (f.attackPhase === 'startup') {

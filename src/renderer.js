@@ -422,8 +422,9 @@ export class Renderer {
       g.fillRect(Math.round(f.x - w / 2), Math.round(screenY(GROUND_Y, f.z)) - 1, w, 2);
     }
 
-    // Whoever stands nearer the viewer is drawn last, on top.
-    fighters.sort((a, b) => a.z - b.z);
+    // Whoever stands nearer the viewer is drawn last, on top; a fighter in Tamas's grip is drawn
+    // over him so the grab stays readable.
+    fighters.sort((a, b) => a.z - b.z || (a.held ? 1 : 0) - (b.held ? 1 : 0));
     for (const f of fighters) this.drawOne(g, f, time, f === game.player && game.ending === 'victory');
 
     // Shuriken in flight, with a floor shadow that shows which depth lane they fly along.

@@ -37,12 +37,13 @@ export const SPRINT = {
   speedMultiplier: 1.75,
 };
 
-// Punch and kick together grab the fighter in front and throw them forward.
+// Punch and kick together grab the fighter in front. Tamas holds them for the throw's start-up,
+// then turns them down onto the floor just in front of him (the throw's active phase).
 export const GRAB = {
   damage: 20,
-  holdDistance: 10,       // where the grabbed fighter is pulled to before the throw
-  launchVy: -150,         // upward speed of the throw
-  throwSpeed: 150,        // forward speed while flying
+  holdDistance: 12,       // grip distance: the held fighter stands chest to chest (hurtboxes touching)
+  launchVy: -56,          // the small hop that lets the victim leave the grip and come down
+  throwSpeed: 60,         // forward speed while coming down: 0.2 s in the air covers 12 units
   downTime: 0.9,          // seconds spent on the floor after landing
 };
 

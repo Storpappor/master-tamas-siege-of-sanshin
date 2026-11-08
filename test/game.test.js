@@ -276,20 +276,41 @@ function duel(type, gap = 12) {
   return { game, enemy: e };
 }
 
-test('punch and kick together grab the enemy in front and throw them forward', () => {
+test('punch and kick together grab the enemy in front, hold them and throw them down', () => {
   const { game, enemy } = duel('striker');
+  const p = game.player;
   const hp = enemy.hp;
-  const startX = enemy.x;
   game.step(STEP, { ...idle, punch: true, kick: true });
-  assert.equal(game.player.attack.name, 'grab');
-  for (let i = 0; i < 20 && !enemy.thrown; i++) game.step(STEP, idle);
-  assert.equal(enemy.thrown, true, 'the grab connected');
-  assert.equal(game.player.attack.name, 'throw');
-  assert.equal(enemy.hp, hp - GRAB.damage);
+  assert.equal(p.attack.name, 'grab');
+  let frames = 0;
+  for (; frames < 20 && !enemy.held; frames++) game.step(STEP, idle);
+  assert.equal(enemy.held, true, 'the grab connected');
+  assert.equal(p.attack.name, 'throw');
+  assert.equal(p.attackPhase, 'startup', 'the hold is the throw start-up');
+  assert.equal(enemy.hp, hp, 'no damage yet while held');
+  // The hold: the victim stands in the grip, in front of Tamas, facing him.
+  let heldFrames = 0;
+  while (enemy.held) {
+    assert.equal(enemy.x, p.x + p.facing * GRAB.holdDistance);
+    assert.equal(enemy.z, p.z);
+    assert.equal(enemy.facing, -p.facing);
+    assert.equal(enemy.grounded, true);
+    game.step(STEP, idle);
+    heldFrames++;
+  }
+  assert.ok(heldFrames >= 11 && heldFrames <= 13, `held for the start-up (${heldFrames} frames)`);
+  assert.equal(enemy.thrown, true, 'thrown the moment the throw turns active');
+  assert.equal(p.attackPhase, 'active');
+  assert.equal(enemy.hp, hp - GRAB.damage, 'damage at the throw');
   assert.equal(game.combo, 1);
   assert.ok(game.texts.some((t) => t.text === 'THROW!'));
-  for (let i = 0; i < 120 && !enemy.grounded; i++) game.step(STEP, idle);
-  assert.ok(enemy.x > startX + 40, `landed well ahead (${enemy.x - startX})`);
+  let air = 0;
+  for (; air < 120 && !enemy.grounded; air++) game.step(STEP, idle);
+  assert.ok(air >= 11 && air <= 13, `comes down during the active phase (${air} frames)`);
+  assert.ok(game.shake > 0.15, `the impact shakes the screen (${game.shake})`);
+  assert.equal(p.attackPhase, 'recovery', 'Tamas stands over the victim while recovering');
+  const ahead = (enemy.x - p.x) * p.facing;
+  assert.ok(ahead >= 18 && ahead <= 30, `lands just in front (${ahead})`);
   assert.equal(enemy.down, true);
   // Strikes pass over a fighter on the floor.
   game.player.x = enemy.x - 12;
@@ -305,10 +326,29 @@ test('a grab goes through a guard, so it beats Master Kage blocking', () => {
   enemy.blocking = true;
   const hp = enemy.hp;
   game.step(STEP, { ...idle, punch: true, kick: true });
-  for (let i = 0; i < 20 && !enemy.thrown; i++) game.step(STEP, idle);
+  for (let i = 0; i < 40 && !enemy.thrown; i++) game.step(STEP, idle);
   assert.equal(enemy.thrown, true);
   assert.equal(enemy.hp, hp - GRAB.damage);
   assert.ok(!game.texts.some((t) => t.text === 'BLOCK'));
+});
+
+test('a hit on Tamas during the hold lets the victim go unharmed', () => {
+  const { game, enemy } = duel('striker');
+  const p = game.player;
+  game.step(STEP, { ...idle, punch: true, kick: true });
+  for (let i = 0; i < 20 && !enemy.held; i++) game.step(STEP, idle);
+  assert.equal(enemy.held, true);
+  const where = enemy.x;
+  p.takeHit({ damage: 5, blocked: false, direction: -1, knockback: 0 });
+  game.step(STEP, idle);
+  assert.equal(enemy.held, false, 'released');
+  assert.equal(enemy.thrown, false);
+  assert.equal(enemy.state, 'hurt', 'staggers where it stood');
+  assert.equal(enemy.x, where);
+  assert.equal(enemy.hp, enemy.maxHp);
+  for (let i = 0; i < 30; i++) game.step(STEP, idle);
+  assert.equal(enemy.state, 'idle');
+  assert.equal(game.combo, 0, 'no throw was credited');
 });
 
 test('a grab with nobody in reach just whiffs', () => {
