@@ -41,23 +41,33 @@ facade, pavement and road:
   rows thick with varying width, offset and intensity, so there are substantial dark gaps
   and no ladder.
 
-## How the dojo light is built (revision 2)
+## How the dojo is built (revision 3)
 
-The dojo is lit as materials under light rather than graded: every pixel is classified into a
-material with its own albedo (indigo-leaning plaster for the walls, deep burgundy for the
-padded pillars and mat borders, muted ivory for the pillar bands, warm wood, sage-grey-green
-mats, cream banner cloth), shaded by the original painting, and then multiplied by the light:
-a dark indigo ambient that falls off toward the wall/floor junction and the ceiling, plus each
-ceiling fixture's cone down the wall and its soft pool on the floor. The fixture above TEAM
-SANSHIN is amber and stronger; the others are near neutral. The painted peach halo behind
-the emblem is replaced by plain wall so the pool is real light, and the lettering keeps its
-own dark navy. Floor pools cross mat borders instead of stopping at them. Contact shadows sit
-at the pillar bases, on the wall beside each pillar foot and under the banner; the plaster
-gets a faint noise and the mats a faint weave. Tube faces and the exit sign stay emissive.
-No neon and no wet reflections indoors.
+Target: `ref-dojo-approved-direction.webp` (approved 8 November 2026). The dojo is drawn as
+materials under light, from the preserved approved asset, keeping every object position:
+
+- **Wall**: continuous indigo plaster from a smooth vertical gradient with low-frequency
+  mottling and fine grain, independent of the source's flat colour bands. Plaster is
+  recognised by the source's own wall palette (the few exact colours that cover most of the
+  wall band), so wall objects of any colour survive. The painted peach halo behind TEAM
+  SANSHIN and the pale glow behind the exit sign become plain plaster; the lettering keeps its
+  dark navy and the red brush stroke its colour.
+- **Floor**: drawn from the mat grid, not graded. Sage-grey-green mats with an embossed
+  cross-hatch, low-frequency wear, grain and a tone of their own per mat; a dark rim and a
+  light bevel at each mat edge, panel seams and a mid seam inside each mat, and a lighter
+  compressed edge on some mats. Deep burgundy bands with a darker seam where they meet a
+  mat. Dry and matte.
+- **Light**: dark indigo ambient falling off toward the ceiling and the wall/floor junction;
+  each ceiling fixture casts a cone down the wall and a wide soft pool on the floor that
+  crosses mats and bands alike; only the fixture above TEAM SANSHIN is amber, the rest are
+  near neutral. The floor darkens toward the viewer.
+- **Materials**: cylindrical shading and a dark edge on the padded pillars, muted ivory
+  bands, warm wood, cream banner cloth. Tube faces and the exit sign stay emissive.
+- **Shadows**: a cool shadow along the wall base on the floor, contact shadows at the pillar
+  bases and beside each pillar foot, and drop shadows under every wall object.
 
 The in-game frame was verified pixel-identical to the loaded `dojo.png` outside the fighters,
-so the previous washed-out look was entirely in the asset, not a runtime tint.
+so the earlier washed-out look was entirely in the asset, not a runtime tint.
 
 ## Reproducing
 
