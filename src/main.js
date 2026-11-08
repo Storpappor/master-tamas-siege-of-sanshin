@@ -40,11 +40,18 @@ export function boot(root) {
   const hero = new HeroSprite({ artScale: ART_SCALE });
   const heroSheet = new SpriteSheet();
   const renderer = new Renderer(canvas, { reducedMotion, hero, heroSheet });
-  // The hand-drawn dojo is optional: until it loads, and if it fails or is the wrong size, the
-  // renderer keeps the procedural room. Installing it only rebuilds the pre-rendered world once.
-  loadBackground(new URL(BACKGROUNDS.dojo, import.meta.url).href)
-    .then((img) => { if (renderer.setBackgrounds({ dojo: img })) root.karateBackgrounds = { dojo: img }; })
-    .catch((err) => console.warn(`${err.message}; keeping the procedural dojo.`));
+  // The hand-drawn backgrounds are optional: until one loads, and if it fails or is the wrong size,
+  // the renderer keeps that zone's procedural painter. Each image that arrives rebuilds the
+  // pre-rendered world once, with every image accepted so far.
+  const loadedBackgrounds = {};
+  for (const [art, path] of Object.entries(BACKGROUNDS)) {
+    loadBackground(new URL(path, import.meta.url).href)
+      .then((img) => {
+        loadedBackgrounds[art] = img;
+        if (renderer.setBackgrounds(loadedBackgrounds)) root.karateBackgrounds = { ...renderer.backgrounds };
+      })
+      .catch((err) => console.warn(`${err.message}; keeping the procedural ${art}.`));
+  }
   // The production sheet is optional: any state it lacks is drawn from the fallback sheet.
   heroSheet.load(HERO_SHEET_URL).catch((err) => console.warn('Production hero sheet not loaded; using fallback art.', err));
   const game = new Game({ input, audio, ui, reducedMotion });
