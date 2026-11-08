@@ -93,7 +93,26 @@ test('holding away from an incoming strike blocks instead of walking', () => {
   assert.equal(near.blocking, false);
 });
 
-test('a thrown fighter flies, lands, stays down for a moment and then gets up', () => {
+test('a held fighter waits in the grip and staggers when let go', () => {
+  const e = new Enemy('striker', 120, -1, () => 0.5);
+  const p = new Player(100);
+  e.startAttack('enemyPunch');
+  e.hold();
+  assert.equal(e.held, true);
+  assert.equal(e.attack, null, 'the grip cancels whatever it was doing');
+  run(e, 1, () => e.update(STEP, p));
+  assert.equal(e.held, true, 'nothing ends the hold on its own');
+  assert.equal(e.state, 'hurt');
+  assert.equal(e.x, 120, 'does not move');
+  e.release();
+  assert.equal(e.held, false);
+  run(e, 0.2, () => e.update(STEP, p));
+  assert.equal(e.state, 'hurt', 'still staggering');
+  run(e, 0.3, () => e.update(STEP, p));
+  assert.notEqual(e.state, 'hurt', 'back in the fight after the usual hurt time');
+});
+
+test('a thrown fighter comes down just ahead, stays down for a moment and then gets up', () => {
   const e = new Enemy('striker', 120, -1, () => 0.5);
   const p = new Player(100);
   assert.equal(e.takeThrow({ damage: GRAB.damage, direction: 1 }), true);
@@ -101,17 +120,19 @@ test('a thrown fighter flies, lands, stays down for a moment and then gets up', 
   assert.equal(e.thrown, true);
   assert.equal(e.grounded, false);
   assert.equal(e.facing, -1);
-  let landedAt = null, peak = GROUND_Y;
+  let landedAt = null, landedAfter = 0, peak = GROUND_Y, t = 0;
   run(e, 2, () => {
     e.update(STEP, p);
+    t += STEP;
     peak = Math.min(peak, e.y);
-    if (landedAt === null && e.grounded) landedAt = e.x;
+    if (landedAt === null && e.grounded) { landedAt = e.x; landedAfter = t; assert.equal(e.lastEvent, 'slam'); }
   });
-  assert.ok(GROUND_Y - peak > 8, `flew up (${GROUND_Y - peak})`);
-  assert.ok(landedAt > 160, `flew forward (${landedAt})`);
+  assert.ok(GROUND_Y - peak > 1 && GROUND_Y - peak < 6, `a low hop, not a flight (${GROUND_Y - peak})`);
+  assert.ok(landedAt - 120 > 8 && landedAt - 120 < 16, `comes down just ahead (${landedAt - 120})`);
+  assert.ok(landedAfter > 0.15 && landedAfter < 0.25, `on the floor after about 0.2 s (${landedAfter})`);
   assert.equal(e.thrown, false);
   assert.equal(e.down, false, 'back on its feet after the floor time');
-  assert.equal(e.state, 'idle');
+  assert.notEqual(e.state, 'hurt', `back in the fight (${e.state})`);
   const d = new Enemy('striker', 120, -1, () => 0.5);
   d.takeThrow({ damage: GRAB.damage, direction: 1 });
   run(d, 0.6, () => d.update(STEP, p));

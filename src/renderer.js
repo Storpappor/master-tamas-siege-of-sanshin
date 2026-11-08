@@ -3,7 +3,7 @@
 import { VIEW_W, VIEW_H, GROUND_Y, FLOOR_TOP, WORLD_WIDTH, COLORS, screenY } from './constants.js';
 import { LEVEL_1 } from './level.js';
 import { drawFighter, drawShuriken, drawText } from './sprites.js';
-import { heroFrameIndex, heroState } from './heroSprite.js';
+import { heroFrameIndex, heroState, resolveFrame } from './heroSprite.js';
 import { ART_SCALE } from './artScale.js';
 import { validateBackground } from './background.js';
 
@@ -422,8 +422,9 @@ export class Renderer {
       g.fillRect(Math.round(f.x - w / 2), Math.round(screenY(GROUND_Y, f.z)) - 1, w, 2);
     }
 
-    // Whoever stands nearer the viewer is drawn last, on top.
-    fighters.sort((a, b) => a.z - b.z);
+    // Whoever stands nearer the viewer is drawn last, on top; a fighter in Tamas's grip is drawn
+    // over him so the grab stays readable.
+    fighters.sort((a, b) => a.z - b.z || (a.held ? 1 : 0) - (b.held ? 1 : 0));
     for (const f of fighters) this.drawOne(g, f, time, f === game.player && game.ending === 'victory');
 
     // Shuriken in flight, with a floor shadow that shows which depth lane they fly along.
@@ -516,7 +517,7 @@ export class Renderer {
     const y = screenY(f.y, f.z);
     if (f.kind === 'player' && this.heroSheet && this.heroSheet.ready) {
       const hs = heroState(f, { victory });
-      const index = this.heroSheet.frameFor(hs.state, hs);
+      const index = resolveFrame(this.heroSheet, hs);
       if (index !== null) {
         g.save();
         g.setTransform(1, 0, 0, 1, 0, 0);

@@ -33,6 +33,7 @@ export class Fighter {
     this.remove = false;
     this.walkCycle = 0;
     this.flashTimer = 0;
+    this.held = false;      // gripped for a throw: kept where the thrower puts it until released or thrown
     this.thrown = false;    // flying through the air after a throw
     this.down = false;      // lying on the floor after a throw, until hurtTimer runs out
     this.downTime = 0;
@@ -74,7 +75,28 @@ export class Fighter {
     return true;
   }
 
-  // Grabbed and thrown: fly forward in `direction`, land, and stay down for a moment.
+  // Gripped for a throw: cannot act or move on its own until released or thrown.
+  hold() {
+    this.attack = null;
+    this.blocking = false;
+    this.crouching = false;
+    this.knockVx = 0;
+    this.vx = 0;
+    this.vz = 0;
+    this.held = true;
+    this.state = 'hurt';
+    this.stateTime = 0;
+    this.hurtTimer = PHYSICS.hurtTime;
+  }
+
+  // Let go without a throw (the thrower was hit): staggers for the usual hurt time.
+  release() {
+    this.held = false;
+    this.state = 'hurt';
+    this.hurtTimer = PHYSICS.hurtTime;
+  }
+
+  // Thrown down: a short hop forward in `direction`, then the floor for a moment.
   takeThrow({ damage, direction, launchVy = GRAB.launchVy, throwSpeed = GRAB.throwSpeed, downTime = GRAB.downTime }) {
     if (this.dead) return false;
     this.hp = Math.max(0, this.hp - damage);
@@ -88,6 +110,7 @@ export class Fighter {
     this.y -= 1;
     this.grounded = false;
     this.facing = -direction;   // lands looking back at the thrower
+    this.held = false;
     this.thrown = true;
     this.down = false;
     this.downTime = downTime;
@@ -124,8 +147,8 @@ export class Fighter {
         if (!this.dead) this.state = this.grounded ? 'idle' : 'jump';
       }
     }
-    // A thrown fighter stays hurt until it has landed; the floor time starts then.
-    if (this.state === 'hurt' && !this.thrown) {
+    // A thrown fighter stays hurt until it has landed; the floor time starts then. A held one waits.
+    if (this.state === 'hurt' && !this.thrown && !this.held) {
       this.hurtTimer -= dt;
       if (this.hurtTimer <= 0) { this.state = 'idle'; this.down = false; }
     }
@@ -148,12 +171,16 @@ export class Fighter {
       this.vy = 0;
       this.grounded = true;
       if (wasAirborne) {
-        this.lastEvent = this.lastEvent || 'land';
         if (this.state === 'jump') this.state = 'idle';
         if (this.thrown) {
+          // Ground impact: the floor time starts now (a dead fighter just stays down).
           this.thrown = false;
           this.vx = 0;
-          if (!this.dead) { this.down = true; this.hurtTimer = this.downTime; }
+          this.down = true;
+          this.lastEvent = 'slam';
+          if (!this.dead) this.hurtTimer = this.downTime;
+        } else {
+          this.lastEvent = this.lastEvent || 'land';
         }
       }
     } else {
@@ -470,7 +497,7 @@ export class Enemy extends Fighter {
 // Gently push fighters apart so they do not stand inside each other.
 // Fighters on different parts of the floor can pass each other freely.
 export function separate(a, b, minDist) {
-  if (a.dead || b.dead || !a.grounded || !b.grounded) return;
+  if (a.dead || b.dead || !a.grounded || !b.grounded || a.held || b.held) return;
   if (Math.abs(a.z - b.z) > DEPTH_REACH) return;
   const dx = b.x - a.x;
   const overlap = minDist - Math.abs(dx);

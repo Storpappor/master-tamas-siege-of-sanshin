@@ -169,6 +169,7 @@ export class Game {
     }
     p.x = Math.min(p.maxX, Math.max(p.minX, p.x));
 
+    this.updateThrow();
     this.resolveCombat();
     this.updateProjectiles(dt);
 
@@ -192,7 +193,7 @@ export class Game {
     const inFront = (x) => Math.sign(x - p.x) === p.facing;
     let nearDir = 0, threatDir = 0;
     for (const e of this.enemies) {
-      if (e.dead || e.thrown || e.down || !inFront(e.x) || Math.abs(e.z - p.z) > DEPTH_REACH) continue;
+      if (e.dead || e.held || e.thrown || e.down || !inFront(e.x) || Math.abs(e.z - p.z) > DEPTH_REACH) continue;
       if (Math.abs(e.x - p.x) >= AUTO_BLOCK.strikeRange) continue;
       nearDir = p.facing;
       if (e.attack && e.attackPhase !== 'recovery' && !ATTACKS[e.attack.name].ranged) threatDir = p.facing;
@@ -325,16 +326,16 @@ export class Game {
     if (p.attack && p.attackPhase === 'active' && ATTACKS[p.attack.name].grab) {
       // A grab takes the first fighter it reaches; a fighter already in the air or on the floor cannot be grabbed.
       for (const e of this.enemies) {
-        if (e.dead || !e.grounded || e.down) continue;
+        if (e.dead || e.held || !e.grounded || e.down) continue;
         if (!resolveHit(p, e, p.attack.name).hit) continue;
-        this.onPlayerThrows(e);
+        this.onPlayerGrabs(e);
         break;
       }
     } else if (p.attack && p.attackPhase === 'active' && !ATTACKS[p.attack.name].ranged) {
       const atk = ATTACKS[p.attack.name];
       for (const e of this.enemies) {
-        // Fighters flying from a throw or lying on the floor are out of reach of strikes.
-        if (e.dead || e.thrown || e.down || p.attack.hits.has(e.id)) continue;
+        // Fighters in a grip, flying from a throw or lying on the floor are out of reach of strikes.
+        if (e.dead || e.held || e.thrown || e.down || p.attack.hits.has(e.id)) continue;
         const r = resolveHit(p, e, p.attack.name);
         if (!r.hit) continue;
         p.attack.hits.add(e.id);
@@ -374,23 +375,48 @@ export class Game {
     this.burst(enemy.x + r.direction * 4, feet(enemy) - 28, kiai ? '#ffb347' : '#fff3c4', kiai ? 10 : 6);
   }
 
-  // The grab reached an enemy: pull them in and throw them the way the player faces.
+  // The grab reached an enemy: take the grip. The throw's start-up is the hold.
+  onPlayerGrabs(enemy) {
+    const p = this.player;
+    p.startAttack('throw');
+    p.lastEvent = null;
+    p.attack.victim = enemy;
+    enemy.hold();
+    enemy.lastEvent = null;
+    this.placeHeld(enemy);
+  }
+
+  placeHeld(enemy) {
+    const p = this.player;
+    enemy.x = p.x + p.facing * GRAB.holdDistance;
+    enemy.z = p.z;
+    enemy.facing = -p.facing;
+  }
+
+  // The held fighter stays in the grip, is let go if the hold is broken (Tamas was hit), and is
+  // turned down the moment the throw turns active.
+  updateThrow() {
+    const p = this.player;
+    const held = this.enemies.find((e) => e.held);
+    if (!held) return;
+    if (!p.attack || p.attack.name !== 'throw' || p.attack.victim !== held) { held.release(); return; }
+    if (p.attackPhase === 'startup') { this.placeHeld(held); return; }
+    if (!p.attack.released) {
+      p.attack.released = true;
+      this.onPlayerThrows(held);
+    }
+  }
+
+  // Throw down: the victim leaves the grip and comes down just in front of the player.
   onPlayerThrows(enemy) {
     const p = this.player;
     const kiai = p.kiaiActive;
-    p.startAttack('throw');
-    p.lastEvent = null;
-    enemy.x = p.x + p.facing * GRAB.holdDistance;
-    enemy.z = p.z;
     const damage = Math.round(GRAB.damage * (kiai ? KIAI.damageMultiplier : 1));
     enemy.takeThrow({ damage, direction: p.facing, throwSpeed: GRAB.throwSpeed * (kiai ? KIAI.knockbackMultiplier : 1) });
     enemy.lastEvent = null;
     this.addText('THROW!', p.x + p.facing * 6, feet(p) - 50, '#ffb347');
     const mult = this.creditHit(enemy);
     this.score += Math.round(SCORE.hit * 2 * mult);
-    this.shake = 0.2;
-    this.audio.play(enemy.dead ? 'enemyDown' : 'hitHeavy');
-    this.burst(enemy.x, feet(enemy) - 20, kiai ? '#ffb347' : '#fff3c4', 8);
   }
 
   // Combo, multiplier text and the points for a beaten enemy; returns the multiplier in force.
@@ -444,6 +470,12 @@ export class Game {
     if (!ev) return;
     if (ev === 'jump' && f === this.player) this.audio.play('jump');
     if (ev === 'sprint') this.burst(f.x, screenY(GROUND_Y, f.z) - 1, '#d9b27c', 5, 0.6);
+    // Ground impact of a thrown fighter.
+    if (ev === 'slam') {
+      this.shake = 0.2;
+      this.audio.play(f.dead ? 'enemyDown' : 'hitHeavy');
+      this.burst(f.x, screenY(GROUND_Y, f.z) - 1, '#fff3c4', 8, 0.8);
+    }
     if (ev === 'throw') {
       this.projectiles.push({ x: f.x + f.facing * 10, y: f.y, z: f.z, facing: f.facing });
       this.audio.play('shuriken');

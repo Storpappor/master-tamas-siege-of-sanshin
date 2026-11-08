@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { SpriteSheet, heroState } from '../src/heroSprite.js';
+import { SpriteSheet, heroState, resolveFrame, SPRINT_CELL_RATE } from '../src/heroSprite.js';
 import { Player } from '../src/entities.js';
-import { STEP } from '../src/constants.js';
+import { STEP, SPRINT } from '../src/constants.js';
 
 const idle = { left: false, right: false, up: false, down: false, duck: false, block: false, jump: false, punch: false, kick: false, kiai: false };
 const run = (seconds, fn) => { for (let t = 0; t < seconds; t += STEP) fn(); };
@@ -27,6 +27,10 @@ test('the shipped tamas.json map is valid and follows the spec cell and anchor',
   assert.deepEqual(sheet.states.jump, [36, 37]);
   assert.deepEqual(sheet.states.knockdown, [40, 41, 42]);
   assert.deepEqual(sheet.states.victory, [44]);
+  // Controls artwork appended below the original rows 0-11: sprint rows 12-13, grab row 14, throw row 15.
+  assert.deepEqual(sheet.states.sprint, [48, 49, 50, 51, 52, 53]);
+  assert.deepEqual(sheet.states.grab, [56, 57, 58]);
+  assert.deepEqual(sheet.states.throw, [60, 61, 62]);
   assert.equal(sheet.frameFor('kick', { phase: 'active' }), 13, 'a 3-cell state shows its middle cell while active');
   assert.equal(sheet.frameFor('block', { progress: 0 }), 16, 'block is a single held cell');
   assert.equal(sheet.frameFor('hurt', { progress: 0.2 }), 20, 'hurt impact for the first half');
@@ -42,7 +46,14 @@ test('the shipped tamas.json map is valid and follows the spec cell and anchor',
   assert.equal(sheet.frameFor('knockdown', { progress: 0.5 }), 41, 'then hits the floor');
   assert.equal(sheet.frameFor('knockdown', { progress: 1 }), 42, 'and holds the lying cell');
   assert.equal(sheet.frameFor('victory', { progress: 0 }), 44, 'victory is a single held cell');
-  const SPEC_STATES = ['idle', 'walk', 'punch', 'kick', 'block', 'hurt', 'crouch', 'crouchPunch', 'crouchKick', 'jump', 'knockdown', 'victory'];
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 6].map((l) => sheet.frameFor('sprint', { loop: l })), [48, 49, 50, 51, 52, 53, 48], 'the sprint loops over six cells');
+  assert.equal(sheet.frameFor('grab', { phase: 'startup' }), 56, 'grab reach');
+  assert.equal(sheet.frameFor('grab', { phase: 'active' }), 57, 'grab extended');
+  assert.equal(sheet.frameFor('grab', { phase: 'recovery' }), 58, 'grab miss recovery');
+  assert.equal(sheet.frameFor('throw', { phase: 'startup' }), 60, 'the hold shows the GRAB cell');
+  assert.equal(sheet.frameFor('throw', { phase: 'active' }), 61, 'the throw-down shows the THROW DOWN cell');
+  assert.equal(sheet.frameFor('throw', { phase: 'recovery' }), 62, 'landing and after show the GROUND IMPACT cell');
+  const SPEC_STATES = ['idle', 'walk', 'punch', 'kick', 'block', 'hurt', 'crouch', 'crouchPunch', 'crouchKick', 'jump', 'knockdown', 'victory', 'sprint', 'grab', 'throw'];
   for (const state of SPEC_STATES) {
     assert.notEqual(sheet.frameFor(state, { phase: 'active', progress: 0.5, loop: 1 }), null, `${state} resolves on the shipped sheet`);
   }
@@ -70,6 +81,7 @@ test('heroState mirrors the player state machine', () => {
   assert.deepEqual(heroState(p), { state: 'idle', progress: 0 });
   run(0.2, () => p.update(STEP, { ...idle, right: true }));
   assert.equal(heroState(p).state, 'walk');
+  assert.equal(heroState(p).fallback, undefined, 'a plain walk has no fallback to resolve');
   p.update(STEP, { ...idle, punch: true });
   assert.deepEqual(heroState(p), { state: 'punch', phase: 'startup', progress: 0 });
   run(0.1, () => p.update(STEP, idle));
@@ -94,4 +106,29 @@ test('heroState mirrors the player state machine', () => {
   d.deadTimer = 1;
   assert.equal(heroState(d).state, 'knockdown');
   assert.equal(heroState(d, { victory: true }).state, 'knockdown', 'a beaten fighter never celebrates');
+});
+
+test('a sprinting player resolves to the sprint cells at 12 cells per second, or to walk on a sheet without them', () => {
+  const p = new Player(100);
+  p.update(STEP, { ...idle, right: true });
+  p.update(STEP, idle);
+  p.update(STEP, { ...idle, right: true });
+  assert.equal(p.sprinting, true);
+  const hs = heroState(p);
+  assert.equal(hs.state, 'sprint');
+  assert.equal(hs.fallback, 'walk');
+  assert.ok(Math.abs(hs.loop - p.walkCycle * SPRINT_CELL_RATE) < 1e-9, 'the walk counter is scaled to the sprint cell rate');
+  assert.ok(Math.abs(9 * SPRINT.speedMultiplier * SPRINT_CELL_RATE - 12) < 1e-9, '15.75 counts per second become 12 cells per second');
+  // Five simulation frames per cell: the loop counter gains 0.2 per 60 Hz step while sprinting.
+  const before = heroState(p).loop;
+  run(1, () => p.update(STEP, { ...idle, right: true }));
+  assert.ok(Math.abs(heroState(p).loop - before - 12) < 1e-6, 'one second of sprinting advances twelve cells');
+  const full = new SpriteSheet({ map: { cell: { w: 96, h: 96 }, anchor: { x: 48, y: 95 }, columns: 4, states: { walk: [4, 5, 6, 7], sprint: [48, 49, 50, 51, 52, 53] } } });
+  const walkOnly = new SpriteSheet({ map: { cell: { w: 96, h: 96 }, anchor: { x: 48, y: 95 }, columns: 4, states: { walk: [4, 5, 6, 7] } } });
+  const bare = new SpriteSheet({ map: { cell: { w: 96, h: 96 }, anchor: { x: 48, y: 95 }, columns: 4, states: { idle: [0] } } });
+  const sprinting = { state: 'sprint', loop: 2, fallback: 'walk' };
+  assert.equal(resolveFrame(full, sprinting), 50, 'the sprint cells when the sheet has them');
+  assert.equal(resolveFrame(walkOnly, sprinting), 6, 'the walk cells on a sheet without a sprint state');
+  assert.equal(resolveFrame(bare, sprinting), null, 'nothing mapped: fall through to the legacy sheet');
+  assert.equal(resolveFrame(walkOnly, { state: 'walk', loop: 2 }), 6, 'a plain walk is unchanged');
 });
