@@ -9,10 +9,12 @@
 // Everything about the track in one place. Swap `src` to try another version of the track
 // (the path is resolved relative to this file, so it also works under the GitHub Pages path).
 export const MUSIC = {
-  src: '../assets/audio/triumph-in-the-ring.mp3',
+  // The 92 % tempo render (121.4 BPM) of "Triumph in the Ring"; the source tempo file sits next to
+  // it. The loop points belong to this file: see docs/music/README.md before switching.
+  src: '../assets/audio/triumph-in-the-ring-92.mp3',
   volume: 0.15,         // music gain; the effects keep their own master gain in audio.js
-  loopStart: 1.17877,   // seconds: the band's entry (a downbeat); the quiet intro plays once
-  loopEnd: 115.742,     // seconds: the downbeat where the ending begins, 63 bars later (0 = end of track)
+  loopStart: 1.28667,   // seconds: the band's entry (a downbeat); the quiet intro plays once
+  loopEnd: 125.84646,   // seconds: the downbeat where the ending begins, 63 bars later (0 = end of track)
   fadeOut: 0.5,         // seconds; used when a run ends
 };
 
