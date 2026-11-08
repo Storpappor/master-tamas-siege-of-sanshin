@@ -33,9 +33,11 @@ const STREET_GEOMETRY = {
 // halo behind it (which becomes plain wall and gets a real amber pool instead), the cloth banner,
 // and the red mat grid. Pillars are detected from their red columns.
 const DOJO_GEOMETRY = {
-  floorRow: 244, lettersBox: [280, 40, 560, 180], haloBox: [262, 29, 580, 200], bannerBox: [576, 46, 735, 134],
+  floorRow: 244, lettersBox: [280, 40, 560, 180], haloBox: [262, 29, 580, 200], bannerBox: [574, 66, 737, 138],
   matBorderRows: [[244, 255], [293, 308], [355, 359]],
   mirrorBoxes: [[982, 62, 1139, 151]], // the dark wall mirror, measured on the source (shares a colour with the plaster)
+  scrollBox: [1636, 44, 1704, 154],      // the hanging calligraphy scroll on the boss screen (cream cloth, wooden rods)
+  bannerHaloBox: [540, 18, 758, 145],    // painted glow around the SANSHIN KAN banner, flattened to plaster
   matBorderCols: [[6, 34], [279, 298], [549, 579], [814, 842], [1084, 1112], [1354, 1382], [1624, 1652]],
   tubes: [
     { x0: 153, x1: 216, y0: 4, y1: 18, warm: false }, { x0: 419, x1: 489, y0: 4, y1: 18, warm: true },

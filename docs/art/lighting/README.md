@@ -52,11 +52,14 @@ materials under light, from the preserved approved asset, keeping every object p
   wall band), so wall objects of any colour survive. The painted peach halo behind TEAM
   SANSHIN and the pale glow behind the exit sign become plain plaster; the lettering keeps its
   dark navy and the red brush stroke its colour.
-- **Floor**: drawn from the mat grid, not graded. Sage-grey-green mats with an embossed
-  cross-hatch, low-frequency wear, grain and a tone of their own per mat; a dark rim and a
-  light bevel at each mat edge, panel seams and a mid seam inside each mat, and a lighter
-  compressed edge on some mats. Deep burgundy bands with a darker seam where they meet a
-  mat. Dry and matte.
+- **Floor**: the source's projected geometry is kept exactly: every red pixel of the
+  approved asset is band (the angled mat edges included), everything else is mat, and the
+  band runs under each pillar's foot. Within those shapes the material is drawn: sage-grey-
+  green mats with an embossed cross-hatch, stitched rows, low-frequency wear, grain and a
+  tone of their own per mat; a dark rim and a light bevel at each edge (from distances to
+  the bands), panel and mid seams, a lighter compressed edge on some mats and sparse training
+  scuffs of varying length and direction. Deep burgundy bands with a seam shadow against the
+  mats. Dry and matte.
 - **Light**: dark indigo ambient falling off toward the ceiling and the wall/floor junction;
   each ceiling fixture casts a cone down the wall and a wide soft pool on the floor that
   crosses mats and bands alike; only the fixture above TEAM SANSHIN is amber, the rest are
@@ -64,7 +67,9 @@ materials under light, from the preserved approved asset, keeping every object p
 - **Materials**: cylindrical shading and a dark edge on the padded pillars, muted ivory
   bands, warm wood, cream banner cloth, and the wall mirror as dark glass with a light frame
   and a soft sheen (it shares a colour with the plaster, so it is placed by a measured box).
-  Tube faces and the exit sign stay emissive.
+  The hanging calligraphy scroll on the boss screen is protected by a measured box (its cream
+  cloth is otherwise read as plaster), and the painted glow around the SANSHIN KAN banner is
+  flattened to plaster by another. Tube faces and the exit sign stay emissive.
 - **Shadows**: a cool shadow along the wall base on the floor, contact shadows at the pillar
   bases and beside each pillar foot, and drop shadows under every wall object.
 

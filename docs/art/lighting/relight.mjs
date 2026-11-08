@@ -333,11 +333,11 @@ export const DOJO_DEFAULTS = {
   // Albedo per material under white light, 0..1.
   wall: [0.52, 0.46, 0.66], wallTop: 1.0, wallBottom: 0.68, wallMottle: 0.1, wallGrain: 0.045,
   letters: 0.85, brush: [0.72, 0.12, 0.17],
-  pillar: [0.86, 0.26, 0.36], ivory: [0.84, 0.78, 0.66], pillarRound: 0.42, pillarEdge: 0.6,
+  pillar: [0.86, 0.26, 0.36], ivory: [0.84, 0.78, 0.66], pillarRound: 0.42, pillarEdge: 0.6, footRows: 10, footShade: 0.45,
   mat: [0.41, 0.49, 0.37], band: [0.44, 0.14, 0.2],
-  matEmboss: 0.06, matBlotch: 0.11, matGrain: 0.05, matCellVary: 0.07, seamDark: 0.8, seamLight: 1.08, seamPeriod: 64, wearChance: 0.45, wear: 1.16,
+  matEmboss: 0.09, matBlotch: 0.16, matGrain: 0.05, matCellVary: 0.09, seamDark: 0.76, seamLight: 1.1, seamPeriod: 64, wearChance: 0.5, wear: 1.18, stitch: 0.05,
   wallPaletteShare: 0.012,
-  bandGrain: 0.04, bandEdge: 0.8,
+  bandGrain: 0.05, bandEdge: 0.78, scuffMax: 7,
   wood: [0.68, 0.43, 0.22], woodShadeRef: 0.5, banner: [0.84, 0.76, 0.6], other: 0.9,
   mirror: [0.24, 0.25, 0.4], mirrorFrame: [0.56, 0.56, 0.7], mirrorSheen: 0.3,
   // Light.
@@ -403,6 +403,37 @@ export function relightDojo(img, geometry, params = {}) {
   for (let y = 24; y < floorRow; y++) for (let x = 0; x < w; x++) { const i = y * w + x; const [hh, ss, vv] = hsv(src.r[i], src.g[i], src.b[i]); if (hh >= 165 && hh <= 200 && ss > 0.5 && vv > 0.4) { ex0 = Math.min(ex0, x); ey0 = Math.min(ey0, y); ex1 = Math.max(ex1, x); ey1 = Math.max(ey1, y); } }
   const exitBox = ex1 < 0 ? null : [ex0 - 1, ey0 - 1, ex1 + 2, ey1 + 2];
   const exitGlow = ex1 < 0 ? null : [ex0 - 16, ey0 - 14, ex1 + 17, ey1 + 15];
+  // Floor geometry from the source: band mask, city-block distances between band and mat,
+  // connected mat cells with their boxes, and a sparse plane of training scuffs.
+  const band = new Uint8Array(n), dMat = new Int32Array(n), dBand = new Int32Array(n), cellId = new Int32Array(n).fill(-1), scuff = new Float32Array(n);
+  for (let y = floorRow; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; const [hh, ss, vv] = hsv(src.r[i], src.g[i], src.b[i]); band[i] = ((hh <= 20 || hh >= 345) && ss > 0.5 && vv > 0.35) ? 1 : 0; }
+  const BIG = 1 << 20;
+  for (let y = floorRow; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; dMat[i] = band[i] ? BIG : 0; dBand[i] = band[i] ? 0 : BIG; }
+  const chamfer = (d) => {
+    for (let y = floorRow; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; if (x > 0) d[i] = Math.min(d[i], d[i - 1] + 1); if (y > floorRow) d[i] = Math.min(d[i], d[i - w] + 1); }
+    for (let y = h - 1; y >= floorRow; y--) for (let x = w - 1; x >= 0; x--) { const i = y * w + x; if (x < w - 1) d[i] = Math.min(d[i], d[i + 1] + 1); if (y < h - 1) d[i] = Math.min(d[i], d[i + w] + 1); }
+  };
+  chamfer(dMat); chamfer(dBand);
+  const cells = [];
+  for (let y = floorRow; y < h; y++) for (let x = 0; x < w; x++) {
+    const i0 = y * w + x; if (band[i0] || cellId[i0] >= 0) continue;
+    const id = cells.length; const c = { x0: x, y0: y, x1: x, y1: y, n: 0 }; cells.push(c);
+    const stack = [i0]; cellId[i0] = id;
+    while (stack.length) { const i = stack.pop(); const cx = i % w, cy = (i / w) | 0; c.n++; c.x0 = Math.min(c.x0, cx); c.x1 = Math.max(c.x1, cx); c.y0 = Math.min(c.y0, cy); c.y1 = Math.max(c.y1, cy);
+      for (const j of [i - 1, i + 1, i - w, i + w]) { const jx = j % w, jy = (j / w) | 0; if (j < 0 || j >= n || jy < floorRow || Math.abs(jx - cx) > 1 || band[j] || cellId[j] >= 0) continue; cellId[j] = id; stack.push(j); } }
+  }
+  cells.forEach((c, id) => {
+    if (c.n < 400) return;
+    const count = Math.floor(hashf(id, 11, P.seed + 12) * (P.scuffMax + 1));
+    for (let k = 0; k < count; k++) {
+      let x = c.x0 + 4 + Math.floor(hashf(id, 20 + k, P.seed + 13) * Math.max(1, c.x1 - c.x0 - 8));
+      let y = c.y0 + 3 + Math.floor(hashf(id, 40 + k, P.seed + 14) * Math.max(1, c.y1 - c.y0 - 6));
+      const len = 3 + Math.floor(hashf(id, 60 + k, P.seed + 15) * 7);
+      const amp = (hashf(id, 80 + k, P.seed + 16) < 0.6 ? -1 : 1) * (0.14 + 0.16 * hashf(id, 100 + k, P.seed + 17));
+      const dir = hashf(id, 120 + k, P.seed + 18) < 0.75 ? 0 : (hashf(id, 140 + k, P.seed + 19) < 0.5 ? -1 : 1);
+      for (let s = 0; s < len; s++) { const i = y * w + x; if (x >= 0 && x < w && y >= floorRow && y < h && !band[i] && dBand[i] > 1) scuff[i] = amp * (1 - 0.5 * Math.abs(s - len / 2) / (len / 2)); x += 1; if (dir && hashf(x, y, P.seed + 21) < 0.45) y += dir; }
+    }
+  });
   // 1. Albedo, emissive and object masks.
   const aR = new Float32Array(n), aG = new Float32Array(n), aB = new Float32Array(n), emis = new Uint8Array(n), obj = new Uint8Array(n), isWall = new Uint8Array(n);
   const wallShade = (y) => { const t = Math.min(1, Math.max(0, (y - 120) / (floorRow - 120))); return P.wallTop + (P.wallBottom - P.wallTop) * t * t; };
@@ -411,6 +442,7 @@ export function relightDojo(img, geometry, params = {}) {
     const r = src.r[i], g = src.g[i], b = src.b[i];
     const [hue, sat, val] = hsv(r, g, b);
     const L = lum(r, g, b);
+    const key = (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
     const set = (c, shade = 1) => { aR[i] = c[0] * shade; aG[i] = c[1] * shade; aB[i] = c[2] * shade; };
     const shadeOf = (ref) => Math.min(1.35, Math.max(0.55, L / ref));
     const isTube = y < 24 && val > 0.86 && sat < 0.3;
@@ -419,37 +451,42 @@ export function relightDojo(img, geometry, params = {}) {
     if (inBox(x, y, exitGlow) && y >= 24) { const s = wallShade(y) * (1 + P.wallMottle * mottle[i] + P.wallGrain * (hashf(x, y, P.seed + 1) - 0.5) * 2); set(P.wall, s); isWall[i] = 1; continue; }
     const red = (hue <= 20 || hue >= 345) && sat > 0.5 && val > 0.35;
     if (y >= floorRow) {
-      // The floor is drawn from the grid, not from the source: mats, bands, seams and wear.
-      const onBand = inBorderRow(y) || inBorderCol(x);
-      if (onBand) {
+      // The floor keeps the source's projected geometry: every red pixel of the source is band
+      // (the angled mat edges included), everything else is mat. Seams, bevels, wear and scuffs
+      // are drawn from distances to the bands and from the connected mat cells.
+      if (band[i]) {
         let s = 1 + P.bandGrain * (hashf(x, y, P.seed + 2) - 0.5) * 2;
-        const nearMat = (!inBorderRow(y - 1) && !inBorderCol(x) && y > floorRow) || (!inBorderRow(y + 1) && !inBorderCol(x)) || (!inBorderCol(x - 1) && !inBorderRow(y)) || (!inBorderCol(x + 1) && !inBorderRow(y));
-        if (nearMat) s *= P.bandEdge;
+        if (dMat[i] === 1) s *= P.bandEdge;                                                   // seam shadow against the mat
         set(P.band, s); continue;
       }
-      const cell = cellOf(x, y);
+      // The source's pale plinth at a pillar's foot breaks the top band; the band runs under the
+      // pillar instead and the contact shadow does the rest.
+      if (y < floorRow + 12 && pillars.some(([a, b]) => x >= a - 6 && x <= b + 6)) { set(P.band, 1 + P.bandGrain * (hashf(x, y, P.seed + 2) - 0.5) * 2); continue; }
       let s = 1;
       const d1 = (x + y) & 3, d2 = (x - y) & 3;                                                // embossed cross-hatch
       s += P.matEmboss * ((d1 === 0 ? 1 : d1 === 2 ? -0.7 : 0) + (d2 === 0 ? 0.6 : d2 === 2 ? -0.4 : 0));
       s += P.matBlotch * mottle[i];                                                            // worn variation
       s += P.matGrain * (hashf(x, y, P.seed + 3) - 0.5) * 2;
+      if (((y + (cellId[i] * 3)) % 7) === 0) s -= P.stitch; else if (((y + (cellId[i] * 3)) % 7) === 1) s += P.stitch * 0.6;   // stitched rows
+      const cid = cellId[i]; const cell = cid >= 0 ? cells[cid] : null;
+      if (cell) s *= 1 + P.matCellVary * (hashf(cid * 31, cid * 17 + 5, P.seed + 9) - 0.5) * 2;   // each mat its own tone
+      const db = dBand[i];
+      if (db === 1) s *= P.seamDark; else if (db === 2) s *= P.seamLight;                      // rim shadow and bevel highlight
       if (cell) {
-        s *= 1 + P.matCellVary * (hashf(cell.r * 31, cell.c * 17, P.seed + 9) - 0.5) * 2;        // each mat its own tone
         const dL = x - cell.x0, dR = cell.x1 - x, dT = y - cell.y0, dB = cell.y1 - y;
-        const edge = Math.min(dL, dR, dT, dB);
-        if (edge === 0) s *= P.seamDark; else if (edge === 1) s *= P.seamLight;                 // rim and bevel
-        const period = P.seamPeriod + Math.floor(hashf(cell.r, cell.c, P.seed + 4) * 24);
-        const off = Math.floor(hashf(cell.c, cell.r, P.seed + 5) * period);
-        if (dL > 4 && dR > 4 && ((dL + off) % period) === 0) s *= 0.9;                           // panel seam
-        if (dL > 4 && dR > 4 && ((dL + off) % period) === 1) s *= 1.04;
+        const period = P.seamPeriod + Math.floor(hashf(cid, 3, P.seed + 4) * 24);
+        const off = Math.floor(hashf(cid, 7, P.seed + 5) * period);
+        if (db > 3 && ((dL + off) % period) === 0) s *= 0.9;                                    // panel seam
+        if (db > 3 && ((dL + off) % period) === 1) s *= 1.04;
         const mid = Math.floor((cell.y0 + cell.y1) / 2);
-        if (y === mid && dL > 2 && dR > 2) s *= 0.9; else if (y === mid + 1 && dL > 2 && dR > 2) s *= 1.04;
-        const wearSide = hashf(cell.r * 7, cell.c * 13, P.seed + 6);
+        if (y === mid && db > 2) s *= 0.9; else if (y === mid + 1 && db > 2) s *= 1.04;
+        const wearSide = hashf(cid * 7, cid * 13 + 1, P.seed + 6);
         if (wearSide < P.wearChance) {                                                           // compressed, lighter edge on one side
           const side = Math.floor(wearSide / P.wearChance * 4); const d = [dT, dB, dL, dR][side];
-          if (d >= 1 && d <= 3 && hashf(x, y, P.seed + 8) < 0.55 - d * 0.12) s *= P.wear;
+          if (db >= 1 && d <= 3 && hashf(x, y, P.seed + 8) < 0.55 - d * 0.12) s *= P.wear;
         }
       }
+      s *= 1 + scuff[i];
       set(P.mat, s); continue;
     }
     const pil = y >= 30 ? pillarOf(x) : null;
@@ -457,8 +494,9 @@ export function relightDojo(img, geometry, params = {}) {
       const [a, b] = pil; const half = (b - a) / 2 || 1; const t = Math.max(-1, Math.min(1, (x - (a + half * 0.8)) / (half * 1.15)));
       const round = (1 - P.pillarRound) + P.pillarRound * Math.sqrt(Math.max(0, 1 - t * t));
       const edge = (x <= a || x >= b) ? P.pillarEdge : 1;
-      if (sat < 0.3 && val > 0.65) { set(P.ivory, round * edge * shadeOf(0.72) ** 0.4); obj[i] = 0; continue; }
-      if (red) { set(P.pillar, round * edge); continue; }
+      const foot = y > floorRow - P.footRows ? P.footShade + (1 - P.footShade) * (floorRow - y) / P.footRows : 1;
+      if (sat < 0.3 && val > 0.65) { set(P.ivory, round * edge * foot * shadeOf(0.72) ** 0.4); obj[i] = 0; continue; }
+      if (red) { set(P.pillar, round * edge * foot); continue; }
     }
     // Wall mirror: a dark glass panel with a light frame and a soft diagonal sheen, so it reads
     // as an object instead of dissolving into the plaster it shares a colour with.
@@ -478,11 +516,20 @@ export function relightDojo(img, geometry, params = {}) {
       set(P.wall, s); isWall[i] = 1; continue;
     }
     const peach = hue >= 12 && hue <= 48 && sat > 0.22 && val > 0.7;
+    // The hanging calligraphy scroll: everything in its box that is not plaster is the object.
+    if (inBox(x, y, geometry.scrollBox) && !palette.has(key)) {
+      obj[i] = 1;
+      if (sat < 0.35 && val > 0.6) { set(P.banner, shadeOf(0.72)); continue; }                       // cream cloth
+      if (hue >= 18 && hue <= 45 && sat > 0.45) { set(P.wood, shadeOf(P.woodShadeRef)); continue; }   // rods
+      set([r * P.other, g * P.other, b * P.other]); continue;                                         // calligraphy
+    }
+    // The painted halo around the banner becomes plaster; the banner itself is handled below.
+    // (wood-coloured halo pixels are in the frequency palette, so the test is by colour family.)
+    if (inBox(x, y, geometry.bannerHaloBox) && !inBox(x, y, geometry.bannerBox)) { const s = wallShade(y) * (1 + P.wallMottle * mottle[i] + P.wallGrain * (hashf(x, y, P.seed + 1) - 0.5) * 2); set(P.wall, s); isWall[i] = 1; continue; }
     if (inBox(x, y, geometry.bannerBox) && (peach || (sat < 0.3 && val > 0.6))) { set(P.banner, shadeOf(0.72)); obj[i] = 1; continue; }
     const wood = hue >= 18 && hue <= 45 && sat > 0.45 && val > 0.3 && val < 0.85;
     if (wood) { set(P.wood, shadeOf(P.woodShadeRef)); obj[i] = 1; continue; }
     if (red) { set(P.pillar, shadeOf(0.5)); obj[i] = 1; continue; }
-    const key = (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
     const wallLike = palette.has(key) || peach;      // painted light pools on the wall are plaster too
     if (wallLike && y >= 24) {
       // Continuous plaster: a smooth vertical gradient plus mottling and grain, independent of the
