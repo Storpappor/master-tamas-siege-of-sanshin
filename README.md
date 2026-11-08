@@ -54,6 +54,7 @@ src/
   combat.js        attack timings, hit boxes, block rules (pure functions)
   level.js         zones and position-triggered waves (Spawner)
   heroSprite.js    hero sprite sheet: frame detection, scaling, drawing
+  enemySprite.js   optional enemy sprite sheets: file per type, state resolver
   sprites.js       procedurally drawn enemies + 3x5 bitmap font
   renderer.js      zone backgrounds, depth sorting, GO prompt, pixel-perfect scaling
   audio.js         synthesized sound effects (Web Audio)
@@ -72,4 +73,4 @@ scripts/           zero-dependency dev server, lint and build helpers
 - Fighters have x (along the level), z (depth on the floor) and y (height). `y` is not a screen position: draw with `screenY(y, z)`. Attacks connect only within `DEPTH_REACH` in z.
 - The camera only moves forward. Reaching a wave locks it until the wave is beaten, and everyone stays on screen so a fight can always be finished.
 - Zones are separate scenes in one world strip. A zone's `exit` door opens when its waves are won; walking up to it fades to the next zone.
-- Enemies are drawn procedurally; to give them sprite sheets, follow the pattern in `heroSprite.js`.
+- Enemies are drawn procedurally until a JSON-mapped sheet exists for their type (`ENEMY_SHEETS` in `enemySprite.js`, same format as `assets/sprites/tamas.json`); a missing sheet or an unmapped state keeps the procedural art.

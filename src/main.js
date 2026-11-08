@@ -7,6 +7,7 @@ import { Renderer } from './renderer.js';
 import { Game } from './game.js';
 import { createUi } from './ui.js';
 import { HeroSprite, SpriteSheet } from './heroSprite.js';
+import { ENEMY_SHEETS } from './enemySprite.js';
 import { ART_SCALE } from './artScale.js';
 import { BACKGROUNDS, loadBackground } from './background.js';
 
@@ -44,7 +45,8 @@ export function boot(root) {
   const ui = createUi(root);
   const hero = new HeroSprite({ artScale: ART_SCALE });
   const heroSheet = new SpriteSheet();
-  const renderer = new Renderer(canvas, { reducedMotion, hero, heroSheet });
+  const enemySheets = {};
+  const renderer = new Renderer(canvas, { reducedMotion, hero, heroSheet, enemySheets });
   // The hand-drawn backgrounds are optional: until one loads, and if it fails or is the wrong size,
   // the renderer keeps that zone's procedural painter. Each image that arrives rebuilds the
   // pre-rendered world once, with every image accepted so far.
@@ -59,6 +61,15 @@ export function boot(root) {
   }
   // The production sheet is optional: any state it lacks is drawn from the fallback sheet.
   heroSheet.load(HERO_SHEET_URL).catch((err) => console.warn('Production hero sheet not loaded; using fallback art.', err));
+  // Enemy sheets are optional, one per type: a type whose sheet is missing or does not load keeps its
+  // procedural art, which is the normal state until that type's artwork is staged. The renderer picks
+  // a sheet up the moment it is installed here, so a sheet that arrives mid-fight simply takes over.
+  for (const [kind, path] of Object.entries(ENEMY_SHEETS)) {
+    const sheet = new SpriteSheet();
+    sheet.load(new URL(path, import.meta.url).href)
+      .then(() => { enemySheets[kind] = sheet; })
+      .catch(() => { /* no sheet for this type yet: procedural art */ });
+  }
   const game = new Game({ input, audio, ui, reducedMotion });
 
   // The hero artwork must be present: the game cannot start without it.
@@ -179,6 +190,7 @@ export function boot(root) {
   root.karateRenderer = renderer;
   root.karateMusic = music;
   root.karateHeroSheet = heroSheet;
+  root.karateEnemySheets = enemySheets;
   return game;
 }
 
