@@ -66,8 +66,10 @@ const liveSources = (ctx) => ctx.sources.filter((s) => s.live).length;
 test('boss with no boss track: the stage track carries on, unrestarted, under the entrance cue', async () => {
   const { ctx, music, game, sound, director, stageSource } = await playingStage();
   game.boss = { dead: false };
+  game.state = 'dialogue';
   sound.play('bossAppear');
   director.update();
+  game.state = 'playing';
   director.update();
   assert.deepEqual(sound.cues, ['bossEnter']);
   assert.equal(music.current, 'stage');
@@ -123,13 +125,16 @@ test('pause, a hidden tab and the global mute silence the music whatever the fal
 
   music.setPageActive(false);
   director.update();
-  game.boss = { dead: false };            // a boss appears while the tab is hidden
+  game.boss = { dead: false };            // Kage's dialogue opens while the tab is hidden
+  game.state = 'dialogue';
   sound.play('bossAppear');
   director.update();
   assert.equal(liveSources(ctx), 0, 'hidden tab: the boss track is wanted but held');
   assert.equal(music.current, 'boss');
   music.setPageActive(true);
   assert.equal(liveSources(ctx), 1, 'back: the boss track plays');
+  game.state = 'playing';
+  director.update();
 
   music.setEnabled(false);
   director.update();

@@ -13,7 +13,7 @@
 //   hit          the last strike was a kick         kickHit / punchHit
 //   hitHeavy     a thrown fighter just landed       throwLand / kiaiHit
 //   enemyDown    a thrown fighter just landed       throwLand / enemyKo
-//   bossAppear                                      bossEnter (and the boss track)
+//   bossAppear                                      bossEnter (the boss track waits for Kage's dialogue)
 //   hurt, block, jump, land, shuriken, kiaiStart, victory, gameOver: one cue each
 //
 // Moments the game raises no event for are read from state changes instead: the grip taking
@@ -34,6 +34,7 @@ export function createAudioDirector({ game, sound, music }) {
     ending: game.ending,
     transition: game.transition,
     bossAlive: Boolean(game.boss && !game.boss.dead),
+    encounter: false,        // the boss theme has started this run
     attackName: null,
     released: false,
     lastStrike: 'punch',
@@ -42,7 +43,6 @@ export function createAudioDirector({ game, sound, music }) {
   };
 
   const bossAlive = () => Boolean(game.boss && !game.boss.dead);
-  const runTrack = () => (bossAlive() && music.available('boss') ? 'boss' : 'stage');
 
   // Which track the current moment wants, or null when it wants silence.
   function followMusic() {
@@ -51,14 +51,21 @@ export function createAudioDirector({ game, sound, music }) {
     else if (state !== seen.state) {
       if (inRun(state) && !inRun(seen.state)) {
         if (seen.state === 'paused') { music.resume(); sound.cue('resumeCue'); }
-        else music.play(runTrack(), { fromStart: true });                // a new run starts from the top
+        else { seen.encounter = false; music.play('stage', { fromStart: true }); }  // a new run starts from the top
       } else if (state === 'paused') music.pause();
       else if (!inRun(state) && !ending) music.fadeOut();
-    } else if (inRun(state) && !ending) {
-      // Master Kage appears: hand over to the boss track; if play went on after him, back to the stage.
+    }
+    if (inRun(state) && !ending) {
+      // The encounter begins, musically, when Master Kage's introductory dialogue opens: not when
+      // the dojo is entered or when he is spawned (both happen with the stage track running), and
+      // not on another dialogue. Once per run; the dialogue closing and the fight leave it alone.
       const alive = bossAlive();
-      if (alive && !seen.bossAlive && music.available('boss')) music.play('boss', { fromStart: true });
-      else if (!alive && seen.bossAlive && music.current === 'boss') music.play('stage');
+      if (alive && state === 'dialogue' && !seen.encounter) {
+        seen.encounter = true;
+        music.play('boss', { fromStart: true });
+      } else if (!alive && seen.bossAlive && music.current === 'boss') {
+        music.play('stage');                                             // play went on after him
+      }
     }
     // The menu theme runs across the intro, the title and the result screens without restarting.
     if (isMenu(state)) music.play('menu');

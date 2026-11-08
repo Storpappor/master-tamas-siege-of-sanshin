@@ -4,6 +4,7 @@ import { createAudioDirector } from '../src/audioDirector.js';
 import { Game } from '../src/game.js';
 import { Enemy } from '../src/entities.js';
 import { STEP, GRAB } from '../src/constants.js';
+import { LEVEL_1 } from '../src/level.js';
 
 // Records what the director asks for; the real Sound and MusicMixer are tested on their own.
 function fakeSound() {
@@ -106,24 +107,74 @@ test('dialogue keeps the current track running', () => {
   assert.deepEqual(music.log, []);
 });
 
-test('the boss entrance cues once and hands over to the boss track when it exists', () => {
+test('the boss theme starts when Kage\'s dialogue opens, once per run, not when he is spawned', () => {
   const { game, sound, music, director } = setup({ state: 'playing' }, { tracks: ['stage', 'boss'] });
   director.update();
   game.boss = { dead: false };
   sound.play('bossAppear');
   director.update();
-  director.update();
   assert.deepEqual(sound.cues, ['bossEnter']);
+  assert.deepEqual(music.log, [], 'spawning him changes nothing');
+  game.state = 'dialogue';                  // Kage's introduction opens (same frame as the spawn in the real game)
+  director.update();
   assert.deepEqual(music.log, ['play:boss:top']);
+  director.update();
+  game.state = 'playing';                   // the dialogue closes, the fight begins
+  director.update();
+  game.state = 'dialogue';                  // any later exchange
+  director.update();
+  game.state = 'playing';
+  director.update();
+  assert.deepEqual(music.log, ['play:boss:top'], 'started exactly once');
   game.boss.dead = true;
   director.update();
   assert.deepEqual(music.log.slice(1), ['play:stage'], 'back to the stage if play goes on');
 });
 
-test('without a boss track the stage music carries on through the boss', () => {
-  const { game, sound, music, director } = setup({ state: 'playing' }, { tracks: ['stage'] });
+test('the boss theme starts even when the spawn and the dialogue land in the same frame', () => {
+  const { game, sound, music, director } = setup({ state: 'playing' }, { tracks: ['stage', 'boss'] });
   director.update();
   game.boss = { dead: false };
+  game.state = 'dialogue';
+  sound.play('bossAppear');
+  director.update();
+  assert.deepEqual(sound.cues, ['bossEnter']);
+  assert.deepEqual(music.log, ['play:boss:top']);
+});
+
+test('a dialogue without Kage, or entering a zone, leaves the stage track alone', () => {
+  const { game, music, director } = setup({ state: 'playing' }, { tracks: ['stage', 'boss'] });
+  director.update();
+  game.transition = { phase: 'enter', t: 0 };
+  director.update();
+  game.transition = null;
+  game.state = 'dialogue';                  // the zone card on arriving in the dojo
+  director.update();
+  game.state = 'playing';
+  director.update();
+  assert.deepEqual(music.log, []);
+});
+
+test('a new run resets the encounter so the next Kage dialogue starts the boss theme again', () => {
+  const { game, sound, music, director } = setup({ state: 'playing' }, { tracks: ['stage', 'boss'] });
+  director.update();
+  game.boss = { dead: false }; game.state = 'dialogue';
+  director.update();
+  game.ending = 'gameover'; sound.play('gameOver');
+  director.update();
+  game.state = 'gameover';
+  director.update();
+  game.state = 'playing'; game.ending = null; game.boss = null; sound.play('start');
+  director.update();
+  game.boss = { dead: false }; game.state = 'dialogue';
+  director.update();
+  assert.deepEqual(music.log, ['play:boss:top', 'fadeOut', 'play:stage:top', 'play:boss:top']);
+});
+
+test('without a boss track the stage music carries on through Kage', () => {
+  const { game, sound, music, director } = setup({ state: 'playing' }, { tracks: ['stage'] });
+  director.update();
+  game.boss = { dead: false }; game.state = 'dialogue';
   sound.play('bossAppear');
   director.update();
   assert.deepEqual(sound.cues, ['bossEnter']);
@@ -274,4 +325,44 @@ test('with the real game: start, a landed punch, a throw and a pause resolve as 
   assert.deepEqual(sound.cues, ['pauseCue', 'resumeCue']);
   assert.equal(music.intent, 'playing');
   assert.ok(GRAB.damage > 0);
+});
+
+test('with the real game: the stage track plays into the dojo and up to Kage, and the boss theme starts as his dialogue opens', () => {
+  const sound = fakeSound();
+  // A page-like UI: a dialogue stays open until the player closes it.
+  const ui = { showOverlay() {}, setHud() {}, close: null, showDialogue(lines, done) { ui.close = done; } };
+  const game = new Game({ input: null, rng: () => 0.5, audio: sound, ui });
+  const music = fakeMusic({ tracks: ['stage', 'boss'] });
+  const director = createAudioDirector({ game, sound, music });
+  director.update();
+  game.start();
+  director.update();
+  // Walk through the door into the dojo (the zone card dialogue opens on arrival).
+  game.zoneIndex = 0;
+  game.spawner.waveIndex = LEVEL_1.waves.findIndex((w) => w.x >= LEVEL_1.zones[0].to);
+  game.player.x = LEVEL_1.zones[0].exit.x; game.player.z = 0;
+  game.camX = game.player.x - 200;        // the camera has followed him to the door
+  for (let t = 0; t < 4 && game.state === 'playing'; t += STEP) { game.step(STEP, idle); director.update(); }
+  assert.equal(game.zone.art, 'dojo');
+  assert.equal(game.state, 'dialogue', 'the dojo card is open');
+  assert.deepEqual(music.log, ['play:stage:top'], 'no music change on entering the dojo');
+  ui.close();                               // the card closes
+  director.update();
+  // Walk up to Kage: his wave triggers at its x, he arrives 1.6 s later.
+  game.spawner.waveIndex = LEVEL_1.waves.length - 1;
+  game.player.x = LEVEL_1.waves.at(-1).x;
+  let bossSpawnedAt = null;
+  for (let t = 0; t < 4 && game.state === 'playing'; t += STEP) {
+    game.step(STEP, idle);
+    if (game.boss && bossSpawnedAt === null) bossSpawnedAt = music.log.length;
+    director.update();
+  }
+  assert.ok(game.boss, 'Kage has arrived');
+  assert.equal(game.state, 'dialogue', 'his introduction is open');
+  assert.deepEqual(music.log, ['play:stage:top', 'play:boss:top'], 'the boss theme starts as the dialogue opens');
+  assert.ok(sound.cues.includes('bossEnter'));
+  ui.close();                               // the dialogue closes, combat begins
+  assert.equal(game.state, 'playing');
+  for (let t = 0; t < 1; t += STEP) { game.step(STEP, idle); director.update(); }
+  assert.deepEqual(music.log, ['play:stage:top', 'play:boss:top'], 'the same playback continues into combat');
 });
