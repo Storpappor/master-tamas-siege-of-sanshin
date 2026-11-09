@@ -1,0 +1,489 @@
+{
+  "status": "native artwork candidate for visual review (first package, 18 cells)",
+  "sheet": {
+    "width": 512,
+    "height": 1232,
+    "cell": {
+      "w": 128,
+      "h": 112
+    },
+    "anchor": {
+      "x": 64,
+      "y": 111
+    },
+    "columns": 4
+  },
+  "colours": 21,
+  "pngSha256": "b2c0e4ef1ea5cba937f269bfe6d2061c9d5bde13c4228babf433440056fcfb32",
+  "jsonSha256": "9b86e9f99bf34d1d807e34dca98bfd4c8189fac68aab18bdb786b2b84de7e4e4",
+  "cells": [
+    {
+      "cell": 0,
+      "state": "idle",
+      "pose": "idle",
+      "bounds": {
+        "cols": [
+          41,
+          90
+        ],
+        "rows": [
+          16,
+          111
+        ],
+        "w": 50,
+        "h": 96,
+        "dx": [
+          -23,
+          26
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "pixels": 2511
+      }
+    },
+    {
+      "cell": 4,
+      "state": "walk",
+      "pose": "walk1",
+      "bounds": {
+        "cols": [
+          43,
+          88
+        ],
+        "rows": [
+          16,
+          111
+        ],
+        "w": 46,
+        "h": 96,
+        "dx": [
+          -21,
+          24
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "pixels": 2453
+      }
+    },
+    {
+      "cell": 5,
+      "state": "walk",
+      "pose": "walk2",
+      "bounds": {
+        "cols": [
+          51,
+          88
+        ],
+        "rows": [
+          14,
+          111
+        ],
+        "w": 38,
+        "h": 98,
+        "dx": [
+          -13,
+          24
+        ],
+        "up": [
+          0,
+          97
+        ],
+        "pixels": 2229
+      }
+    },
+    {
+      "cell": 6,
+      "state": "walk",
+      "pose": "walk3",
+      "bounds": {
+        "cols": [
+          45,
+          89
+        ],
+        "rows": [
+          16,
+          111
+        ],
+        "w": 45,
+        "h": 96,
+        "dx": [
+          -19,
+          25
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "pixels": 2333
+      }
+    },
+    {
+      "cell": 7,
+      "state": "walk",
+      "pose": "walk4",
+      "bounds": {
+        "cols": [
+          51,
+          88
+        ],
+        "rows": [
+          14,
+          111
+        ],
+        "w": 38,
+        "h": 98,
+        "dx": [
+          -13,
+          24
+        ],
+        "up": [
+          0,
+          97
+        ],
+        "pixels": 2154
+      }
+    },
+    {
+      "cell": 8,
+      "state": "enemyHighKick/startup",
+      "pose": "kickWind",
+      "bounds": {
+        "cols": [
+          41,
+          83
+        ],
+        "rows": [
+          16,
+          111
+        ],
+        "w": 43,
+        "h": 96,
+        "dx": [
+          -23,
+          19
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "pixels": 2292
+      }
+    },
+    {
+      "cell": 9,
+      "state": "enemyHighKick/active",
+      "pose": "highKick",
+      "bounds": {
+        "cols": [
+          35,
+          118
+        ],
+        "rows": [
+          19,
+          111
+        ],
+        "w": 84,
+        "h": 93,
+        "dx": [
+          -29,
+          54
+        ],
+        "up": [
+          0,
+          92
+        ],
+        "pixels": 2540
+      }
+    },
+    {
+      "cell": 10,
+      "state": "enemyHighKick/recovery",
+      "pose": "kickDown",
+      "bounds": {
+        "cols": [
+          46,
+          94
+        ],
+        "rows": [
+          16,
+          111
+        ],
+        "w": 49,
+        "h": 96,
+        "dx": [
+          -18,
+          30
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "pixels": 2389
+      }
+    },
+    {
+      "cell": 12,
+      "state": "enemyLowSweep/startup",
+      "pose": "sweepWind",
+      "bounds": {
+        "cols": [
+          40,
+          90
+        ],
+        "rows": [
+          40,
+          111
+        ],
+        "w": 51,
+        "h": 72,
+        "dx": [
+          -24,
+          26
+        ],
+        "up": [
+          0,
+          71
+        ],
+        "pixels": 2111
+      }
+    },
+    {
+      "cell": 13,
+      "state": "enemyLowSweep/active",
+      "pose": "sweep",
+      "bounds": {
+        "cols": [
+          38,
+          117
+        ],
+        "rows": [
+          46,
+          111
+        ],
+        "w": 80,
+        "h": 66,
+        "dx": [
+          -26,
+          53
+        ],
+        "up": [
+          0,
+          65
+        ],
+        "pixels": 2383
+      }
+    },
+    {
+      "cell": 14,
+      "state": "enemyLowSweep/recovery",
+      "pose": "sweepDown",
+      "bounds": {
+        "cols": [
+          40,
+          96
+        ],
+        "rows": [
+          40,
+          111
+        ],
+        "w": 57,
+        "h": 72,
+        "dx": [
+          -24,
+          32
+        ],
+        "up": [
+          0,
+          71
+        ],
+        "pixels": 2124
+      }
+    },
+    {
+      "cell": 16,
+      "state": "hurt",
+      "pose": "hurtImpact",
+      "bounds": {
+        "cols": [
+          35,
+          90
+        ],
+        "rows": [
+          17,
+          111
+        ],
+        "w": 56,
+        "h": 95,
+        "dx": [
+          -29,
+          26
+        ],
+        "up": [
+          0,
+          94
+        ],
+        "pixels": 2592
+      }
+    },
+    {
+      "cell": 17,
+      "state": "hurt",
+      "pose": "hurtStagger",
+      "bounds": {
+        "cols": [
+          46,
+          88
+        ],
+        "rows": [
+          22,
+          111
+        ],
+        "w": 43,
+        "h": 90,
+        "dx": [
+          -18,
+          24
+        ],
+        "up": [
+          0,
+          89
+        ],
+        "pixels": 2325
+      }
+    },
+    {
+      "cell": 20,
+      "state": "knockdown",
+      "pose": "topple",
+      "bounds": {
+        "cols": [
+          19,
+          95
+        ],
+        "rows": [
+          40,
+          111
+        ],
+        "w": 77,
+        "h": 72,
+        "dx": [
+          -45,
+          31
+        ],
+        "up": [
+          0,
+          71
+        ],
+        "pixels": 2346
+      }
+    },
+    {
+      "cell": 21,
+      "state": "knockdown",
+      "pose": "floorHit",
+      "bounds": {
+        "cols": [
+          11,
+          106
+        ],
+        "rows": [
+          62,
+          111
+        ],
+        "w": 96,
+        "h": 50,
+        "dx": [
+          -53,
+          42
+        ],
+        "up": [
+          0,
+          49
+        ],
+        "pixels": 2272
+      }
+    },
+    {
+      "cell": 22,
+      "state": "knockdown",
+      "pose": "lying",
+      "bounds": {
+        "cols": [
+          11,
+          102
+        ],
+        "rows": [
+          92,
+          111
+        ],
+        "w": 92,
+        "h": 20,
+        "dx": [
+          -53,
+          38
+        ],
+        "up": [
+          0,
+          19
+        ],
+        "pixels": 1507
+      }
+    },
+    {
+      "cell": 36,
+      "state": "fallen",
+      "pose": "fallen",
+      "bounds": {
+        "cols": [
+          9,
+          102
+        ],
+        "rows": [
+          76,
+          111
+        ],
+        "w": 94,
+        "h": 36,
+        "dx": [
+          -55,
+          38
+        ],
+        "up": [
+          0,
+          35
+        ],
+        "pixels": 1875
+      }
+    },
+    {
+      "cell": 40,
+      "state": "getUp",
+      "pose": "getUp",
+      "bounds": {
+        "cols": [
+          28,
+          91
+        ],
+        "rows": [
+          42,
+          111
+        ],
+        "w": 64,
+        "h": 70,
+        "dx": [
+          -36,
+          27
+        ],
+        "up": [
+          0,
+          69
+        ],
+        "pixels": 2150
+      }
+    }
+  ]
+}
