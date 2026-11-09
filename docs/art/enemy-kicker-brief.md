@@ -330,11 +330,11 @@ artwork (`assets/sprites/striker.png`, pull request #11) is the **approved basel
 victim's `held`, `thrownDown1` and `thrownDown2` cells sit against Tamas's cells 60-62: the grip
 partly obscured by the held victim is an accepted minor limitation, and the foreground-hand pass
 of the Striker brief's section 8 **remains deferred**; this brief needs no renderer feature for it.
-A separate proposal exists to revise the Striker's cells 20, 24 and 28 with a **"controlled arm"
-treatment** (the victim's near arm extended toward Tamas's grips during the hold and the
-throw-down): the **Striker R1 candidate**. It is **under paired visual review in the hero-art
-session and has not been approved**: it is not adopted here as a requirement, and the Striker
-sheet on `main` stays as it is. The detailed
+The Striker's cells 20, 24 and 28 carry a **"controlled arm"** treatment (the victim's near arm
+directed toward Tamas's grips during the hold and the throw-down, the complete hand clearing him
+before touchdown): the **approved v1c revision, `striker.png` `118459f1…`** (founder's decision of
+9 November 2026, paired with Tamas `a427c431…`; see the Striker brief's status table). It is the
+reference for the equivalent Kicker treatment, which is not yet briefed in detail here. The detailed
 arm treatment of the Kicker's `held`, `thrownDown1` and `thrownDown2` cells (24, 28 and 32 in the
 map of section 8) is therefore marked **PENDING that separate paired review**. Everything else
 about those three cells (size, anchor, orientation, the grip region, the head and feet directions)
