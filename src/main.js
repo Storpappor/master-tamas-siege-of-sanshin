@@ -1,5 +1,5 @@
 // Entry point: wires the DOM, input, audio, renderer and game loop together.
-import { STEP } from './constants.js';
+import { STEP, VIEW_W, VIEW_H } from './constants.js';
 import { Input } from './input.js';
 import { Sound } from './sound.js';
 import { MusicMixer, MUSIC } from './music.js';
@@ -103,18 +103,19 @@ export function boot(root) {
 
   ui.setSound(soundOn);
   input.attachKeyboard(window);
+  // Movement is one pad element (slide, no lifting); the actions are buttons. DUCK and BLOCK exist
+  // only as alternatives under evaluation: ?controls=duck,block shows them.
+  const params = new URLSearchParams(window.location.search);
   input.attachTouch({
-    left: root.querySelector('[data-btn="left"]'),
-    right: root.querySelector('[data-btn="right"]'),
-    up: root.querySelector('[data-btn="up"]'),
-    down: root.querySelector('[data-btn="down"]'),
-    duck: root.querySelector('[data-btn="duck"]'),
     jump: root.querySelector('[data-btn="jump"]'),
     punch: root.querySelector('[data-btn="punch"]'),
     kick: root.querySelector('[data-btn="kick"]'),
-    block: root.querySelector('[data-btn="block"]'),
+    throw: root.querySelector('[data-btn="throw"]'),
     kiai: root.querySelector('[data-btn="kiai"]'),
-  });
+    duck: root.querySelector('[data-btn="duck"]'),
+    block: root.querySelector('[data-btn="block"]'),
+  }, root.querySelector('[data-pad]'));
+  ui.showTouchAlternatives((params.get('controls') || '').split(',').map((s) => s.trim()).filter(Boolean));
 
   const unlockAudio = () => { audio.unlock(); music.unlock(); };
   // The first key press or tap anywhere in the game unlocks audio, so the menu theme can start
@@ -229,8 +230,12 @@ export function boot(root) {
     lastFocused = b;
   });
 
-  // Responsive, pixel-perfect scaling.
-  const resize = () => renderer.resize(stage.clientWidth, window.devicePixelRatio || 1);
+  // Responsive, pixel-perfect scaling. The stage is normally as wide as the page and 16:9; in
+  // phone landscape its height is what is limited, so the picture is sized by whichever is tighter.
+  const resize = () => {
+    const byHeight = stage.clientHeight ? (stage.clientHeight * VIEW_W) / VIEW_H : Infinity;
+    renderer.resize(Math.min(stage.clientWidth, byHeight), window.devicePixelRatio || 1);
+  };
   if ('ResizeObserver' in window) new ResizeObserver(resize).observe(stage);
   window.addEventListener('resize', resize);
   resize();
@@ -238,6 +243,7 @@ export function boot(root) {
   // Fixed-step game loop; rendering runs every animation frame.
   let last = null;
   let acc = 0;
+  let wasPlaying = false;
   const frame = (now) => {
     if (last !== null && game.state === 'playing') {
       acc += Math.min(0.1, (now - last) / 1000);
@@ -257,6 +263,8 @@ export function boot(root) {
     if (input.active !== playing) input.active = playing;
     root.classList.toggle('kg-root--title', game.state === 'start');
     syncPauseStatus();
+    // While playing, the whole game area is a touch surface (no scroll or zoom gestures).
+    if (playing !== wasPlaying) { root.classList.toggle('kg-root--playing', playing); wasPlaying = playing; }
     // Music and sound cues follow the state the steps just produced.
     director.update();
     renderer.render(game, now / 1000);
@@ -293,8 +301,35 @@ export function boot(root) {
       box.textContent = lines.join('\n');
     }, 500);
   }
+  // Touch diagnostics for phones (no console): open the game with ?touchlog=1. Shows the last
+  // pointer and key events as the input layer saw them, which actions are held and by how many
+  // sources, and the pointers the browser reports, so a dropped or stuck input can be read off.
+  if (params.has('touchlog')) {
+    const box = document.createElement('pre');
+    box.className = 'kg-touchlog';
+    box.style.cssText = 'position:fixed;right:4px;top:4px;z-index:9999;margin:0;padding:6px 8px;max-width:46vw;max-height:60vh;overflow:hidden;font:10px/1.3 monospace;color:#fff;background:rgba(0,0,0,.72);white-space:pre-wrap;pointer-events:none;';
+    document.body.appendChild(box);
+    const log = [];
+    const t0 = performance.now();
+    const stamp = () => ((performance.now() - t0) / 1000).toFixed(2).padStart(6);
+    input.onEvent = (ev) => { log.push(`${stamp()} ${ev.type.padEnd(7)} ${String(ev.action).padEnd(5)} by ${ev.source} (${ev.held} src)`); if (log.length > 14) log.shift(); };
+    const raw = [];
+    for (const type of ['pointerdown', 'pointerup', 'pointercancel']) {
+      window.addEventListener(type, (e) => {
+        const target = e.target && e.target.closest ? e.target.closest('[data-btn],[data-pad]') : null;
+        const name = target ? (target.dataset.btn || 'pad') : (e.target && e.target.className ? String(e.target.className).slice(0, 18) : '?');
+        raw.push(`${stamp()} ${type.padEnd(13)} id=${e.pointerId} ${e.pointerType} on ${name}`);
+        if (raw.length > 8) raw.shift();
+      }, true);
+    }
+    setInterval(() => {
+      const held = Object.entries(input.sources).filter(([, s]) => s.size).map(([a, s]) => `${a}:${s.size}`).join(' ') || 'nothing';
+      box.textContent = [`held ${held}`, `game=${game.state} ${window.innerWidth}x${window.innerHeight} ${screen.orientation ? screen.orientation.type : ''}`, '--- input layer ---', ...log, '--- browser ---', ...raw].join('\n');
+    }, 100);
+  }
   root.karateHeroSheet = heroSheet;
   root.karateEnemySheets = enemySheets;
+  root.karateInput = input;
   return game;
 }
 

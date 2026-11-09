@@ -9,14 +9,15 @@ Södermalm, drive the Shadow League out of the Sanshin Kan dojo and face Master 
 
 | Action | Keyboard | Phone |
 |---|---|---|
-| Move (also into and out of the floor) | ← → ↑ ↓ or W A S D | ◀ ▶ ▲ ▼ buttons |
-| Duck | C | Duck |
+| Move (also into and out of the floor) | ← → ↑ ↓ or W A S D | Slide your thumb on the pad |
+| Duck | C | Not in the default layout (`?controls=duck` shows a Duck button for evaluation) |
 | Jump | Space | Jump |
-| Punch / Kick / Block | J / K / L | Punch / Kick / Block |
-| Grab and throw (goes through a guard) | J + K together | Punch + Kick together |
-| Sprint | Double-tap a direction | Double-tap a direction |
-| Block without the block key | Hold the direction away from an incoming strike or star | Same, with the arrows |
-| Ajsich, his kiai (double damage, breaks guards) | I | Ajsich |
+| Punch / Kick | J / K | Punch / Kick (also in the air: tap Jump, then Punch or Kick) |
+| Block | L | Not in the default layout: hold away from the strike (`?controls=block` shows a Block button for evaluation) |
+| Grab and throw (goes through a guard) | J + K together | Throw |
+| Sprint | Double-tap a direction | Double-tap a direction on the pad |
+| Block without the block key | Hold the direction away from an incoming strike or star | Same, on the pad |
+| Ajsich, his kiai (double damage, breaks guards) | I | Tap the Ajsich meter when it is full |
 | Pause | P or Esc | Pause button |
 
 Tips: duck under high kicks, jump over low sweeps, hold block (or hold away from the strike) to absorb it,
