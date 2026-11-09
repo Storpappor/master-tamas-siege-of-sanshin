@@ -1,6 +1,27 @@
 // DOM side of the game: HUD values, overlays and the sound/touch toggles.
 // Values are cached so the DOM is only touched when something changes.
+import { drawText, textWidth } from './sprites.js';
+
+// Menu headings are drawn with the game's own 3x5 bitmap font (the same one the canvas uses for
+// banners), so the menus share the picture's pixel typography without any web font. Each
+// <canvas data-pixel-text> gets its text at data-scale pixels per glyph pixel, with a one-pixel
+// dark shadow; the glow and sizing are CSS.
+function paintPixelText(canvas) {
+  const text = canvas.dataset.pixelText || '';
+  const scale = Math.max(1, Number(canvas.dataset.scale) || 4);
+  const color = canvas.dataset.color || '#ffffff';
+  const pad = scale;
+  const w = textWidth(text.toUpperCase(), scale) + pad * 2;
+  const h = 5 * scale + pad * 2;
+  canvas.width = w; canvas.height = h;
+  canvas.style.width = `${w}px`;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+  drawText(ctx, text, pad, pad, { color, scale, shadow: '#0a0614' });
+}
+
 export function createUi(root) {
+  for (const c of root.querySelectorAll('canvas[data-pixel-text]')) paintPixelText(c);
   const q = (sel) => root.querySelector(sel);
   const overlays = [...root.querySelectorAll('[data-overlay]')];
   const hud = {

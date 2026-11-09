@@ -236,6 +236,16 @@
 .kg-menu__panel--narrow { width: min(360px, 100%); }
 .kg-menu__panel--wide { width: min(800px, 100%); }
 .kg-menu .kg-title { color: #fff; text-shadow: 0 0 14px rgba(63, 211, 255, 0.55), 0 0 2px #000; }
+/* Pixel headings: the bitmap-font canvas, with the cyan glow the reference gives the title. */
+.kg-title--pixel, .kg-title__sub--pixel { line-height: 0; text-shadow: none; }
+.kg-pixel-text { display: block; margin: 0 auto; max-width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges; }
+.kg-pixel-text--title { filter: drop-shadow(0 0 10px rgba(63, 211, 255, 0.6)); }
+.kg-pixel-text--sub { filter: drop-shadow(0 0 8px rgba(255, 79, 163, 0.55)); margin-top: 8px; }
+.kg-pixel-text--heading { filter: drop-shadow(0 0 8px rgba(63, 211, 255, 0.5)); }
+.kg-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.kg-menu__panel--title { width: min(560px, 100%); padding: 26px 24px 22px; gap: 8px; }
+.kg-menu__panel--title .kg-quote { margin-top: 6px; margin-bottom: 8px; }
+.kg-menu__panel--title .kg-btn--primary { margin-top: 2px; }
 .kg-menu .kg-title__sub { color: var(--kg-magenta); text-shadow: 0 0 10px rgba(255, 79, 163, 0.5); margin-bottom: 6px; }
 .kg-menu .kg-quote { max-width: 44ch; }
 .kg-menu .kg-btn { background: var(--kg-menu-surface-2); border-color: var(--kg-menu-line-2); border-bottom-color: #2a2240; }
