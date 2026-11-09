@@ -1,0 +1,401 @@
+{
+ "sheet": "assets/sprites/tamas.png",
+ "cellSize": 96,
+ "columns": 4,
+ "rows": 16,
+ "expectedSheetSha256": "a427c4317420c2e77c3deac3e97900c4c080b8f64a23002b26762fb99f150666",
+ "cells": {
+  "0": {
+   "sha256": "38b60e44cab64ab340553ab3c5a3687c27c317aa45e08f4205c3f29fa65255cb",
+   "source": "tamas-idle-h1.png",
+   "sourceSha256": "ec3f6fcd40c73fd0d050c77fd3bf48afef6fbb840b47222231d9ae35c9fe3bd0",
+   "sourceCell": 0
+  },
+  "1": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 1
+  },
+  "2": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 2
+  },
+  "3": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 3
+  },
+  "4": {
+   "sha256": "ba9a32895a3c3422a2c0447761fa666fdb298573ef7a2bdc47c6804501fdf222",
+   "source": "tamas-walk-w1.png",
+   "sourceSha256": "c6451879d2fadbc9bd8e2b907bd63615b149958a6bca628e2351f43a1fd4a67c",
+   "sourceCell": 0
+  },
+  "5": {
+   "sha256": "2d9bfcce910ed970ad2c8d74075bf3e5174880b841da2003dc22f835c9180aa0",
+   "source": "tamas-walk-w1.png",
+   "sourceSha256": "c6451879d2fadbc9bd8e2b907bd63615b149958a6bca628e2351f43a1fd4a67c",
+   "sourceCell": 1
+  },
+  "6": {
+   "sha256": "383229a272146bcbcac3a765b8d1b1c8a8c77cc74a0f766944bb284907ade5e2",
+   "source": "tamas-walk-w1.png",
+   "sourceSha256": "c6451879d2fadbc9bd8e2b907bd63615b149958a6bca628e2351f43a1fd4a67c",
+   "sourceCell": 2
+  },
+  "7": {
+   "sha256": "f64d782984d799b606899d3b141349440e82f3aae5c34a9879942f2bc27068d6",
+   "source": "tamas-walk-w1.png",
+   "sourceSha256": "c6451879d2fadbc9bd8e2b907bd63615b149958a6bca628e2351f43a1fd4a67c",
+   "sourceCell": 3
+  },
+  "8": {
+   "sha256": "c57b83be616f9b2cb14f2deb60ae5f3a131cce66eec1cd17482915509af1a15f",
+   "source": "tamas-punch-p2.png",
+   "sourceSha256": "d82b726e1e10537c38f2730d40bf5f507cbe4be6463b5aa70132167e56217bfc",
+   "sourceCell": 0
+  },
+  "9": {
+   "sha256": "e20043d03c6636947a36f6ca424e5ccd43eb24e1cd324e688e2df13a82f49797",
+   "source": "tamas-punch-p2.png",
+   "sourceSha256": "d82b726e1e10537c38f2730d40bf5f507cbe4be6463b5aa70132167e56217bfc",
+   "sourceCell": 1
+  },
+  "10": {
+   "sha256": "1ce1571f8539e36a4f434db4753f9a4dfe4ecfc0e3cb9db599e996f390a8214b",
+   "source": "tamas-punch-p2.png",
+   "sourceSha256": "d82b726e1e10537c38f2730d40bf5f507cbe4be6463b5aa70132167e56217bfc",
+   "sourceCell": 2
+  },
+  "11": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 11
+  },
+  "12": {
+   "sha256": "ea732d2d506af56b22669d0f60cba94ce63cefc972c1e579d4eb1dddd05c15ff",
+   "source": "tamas-kick-k2-1.png",
+   "sourceSha256": "95b22601e4c6d335605cbe6dc0ff7411d70fb7084576ad6604efc70cfa40c61b",
+   "sourceCell": 0
+  },
+  "13": {
+   "sha256": "54ec991df589e879e30fa0f365e232ad66e7fecbc69eee771016839a778ccb08",
+   "source": "tamas-kick-k2-1.png",
+   "sourceSha256": "95b22601e4c6d335605cbe6dc0ff7411d70fb7084576ad6604efc70cfa40c61b",
+   "sourceCell": 1
+  },
+  "14": {
+   "sha256": "247ae952f6a6f408a02b32a30f0a9b618dfd4912b12231d8402f7c9c8fb8119d",
+   "source": "tamas-kick-k2-1.png",
+   "sourceSha256": "95b22601e4c6d335605cbe6dc0ff7411d70fb7084576ad6604efc70cfa40c61b",
+   "sourceCell": 2
+  },
+  "15": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 15
+  },
+  "16": {
+   "sha256": "d450b89a8a8b7c0bc907f4c0cc054ff7cd2975406ef01026a4377d53679f5544",
+   "source": "tamas-blockhurt-bh2.png",
+   "sourceSha256": "ecceb5022ae3e682ac4c25e8dad5d4257d50a7e6118a241815c8aaf0954907dd",
+   "sourceCell": 0
+  },
+  "17": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 17
+  },
+  "18": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 18
+  },
+  "19": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 19
+  },
+  "20": {
+   "sha256": "d14faa6c6075103b01afa8c72e222610f24791ce3d74417efb40397364b09b6f",
+   "source": "tamas-blockhurt-bh2.png",
+   "sourceSha256": "ecceb5022ae3e682ac4c25e8dad5d4257d50a7e6118a241815c8aaf0954907dd",
+   "sourceCell": 1
+  },
+  "21": {
+   "sha256": "272bef546ed783ebc188ef19b32415bb072c0c4e14c7d2cf663ab95dd32da8d4",
+   "source": "tamas-blockhurt-bh2.png",
+   "sourceSha256": "ecceb5022ae3e682ac4c25e8dad5d4257d50a7e6118a241815c8aaf0954907dd",
+   "sourceCell": 2
+  },
+  "22": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 22
+  },
+  "23": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 23
+  },
+  "24": {
+   "sha256": "0adcd03c88cacda28efed20eb3696956740dbafae2bec7cef8bcae9bacbf689c",
+   "source": "tamas-crouch-cl2.png",
+   "sourceSha256": "55d3c39b35eef6263cd759c4dcff37247da3697ae660b8e6d3fa193008ca92a6",
+   "sourceCell": 0
+  },
+  "25": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 25
+  },
+  "26": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 26
+  },
+  "27": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 27
+  },
+  "28": {
+   "sha256": "d7716f819d23e67c3aa0ca4ce4574a627c564bda5cbf2dc115526c5015ccf55a",
+   "source": "tamas-crouch-cl2.png",
+   "sourceSha256": "55d3c39b35eef6263cd759c4dcff37247da3697ae660b8e6d3fa193008ca92a6",
+   "sourceCell": 1
+  },
+  "29": {
+   "sha256": "5dfab7c4263153271f4a96ead3f2d2befe0e7e450751ed036617c128956370ad",
+   "source": "tamas-crouch-cl2.png",
+   "sourceSha256": "55d3c39b35eef6263cd759c4dcff37247da3697ae660b8e6d3fa193008ca92a6",
+   "sourceCell": 2
+  },
+  "30": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 30
+  },
+  "31": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 31
+  },
+  "32": {
+   "sha256": "0691c1731dbb5a76f68b037a1665acf2a22e5ccf5cb7b81bc0a31f73e0590b51",
+   "source": "tamas-crouch-cl2.png",
+   "sourceSha256": "55d3c39b35eef6263cd759c4dcff37247da3697ae660b8e6d3fa193008ca92a6",
+   "sourceCell": 3
+  },
+  "33": {
+   "sha256": "8aae86b0d4c073554a25b8d12c15d829f0a444a8c8833f2fb8e1475eda6682ed",
+   "source": "tamas-crouch-cl2.png",
+   "sourceSha256": "55d3c39b35eef6263cd759c4dcff37247da3697ae660b8e6d3fa193008ca92a6",
+   "sourceCell": 4
+  },
+  "34": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 34
+  },
+  "35": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 35
+  },
+  "36": {
+   "sha256": "4d6d81c89f30a3cfae88fe97f96c1b6ceced48aa9925f17f96da27046da755a1",
+   "source": "tamas-jump-j2.png",
+   "sourceSha256": "65671a3183c8037e847d5c36fcf4bc5c8f2e34efa7698295d57f1ac4fe9f45a0",
+   "sourceCell": 0
+  },
+  "37": {
+   "sha256": "7a26898f61cbba491497f3fd5e351acb6e80cf0fa32633b798462e72fded240e",
+   "source": "tamas-jump-j2.png",
+   "sourceSha256": "65671a3183c8037e847d5c36fcf4bc5c8f2e34efa7698295d57f1ac4fe9f45a0",
+   "sourceCell": 1
+  },
+  "38": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 38
+  },
+  "39": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 39
+  },
+  "40": {
+   "sha256": "0fe234da12f1b3041d205748a14cfa756769cfa6fc586eff32871a6f3c918569",
+   "source": "tamas-knockdown-kd2.png",
+   "sourceSha256": "759bd054a8b5af7b584b05b61a4826cec6aed8b2ef222242ce0b160ed46790f6",
+   "sourceCell": 0
+  },
+  "41": {
+   "sha256": "7edd3a585604d388ae849d49b0437f8fe6d29f930e34a09359e55190064c0cd4",
+   "source": "tamas-knockdown-kd2.png",
+   "sourceSha256": "759bd054a8b5af7b584b05b61a4826cec6aed8b2ef222242ce0b160ed46790f6",
+   "sourceCell": 1
+  },
+  "42": {
+   "sha256": "48efde6e099efa3fba951b966a4deed5d6c6112296e46de90126ceab5319822a",
+   "source": "tamas-knockdown-kd2.png",
+   "sourceSha256": "759bd054a8b5af7b584b05b61a4826cec6aed8b2ef222242ce0b160ed46790f6",
+   "sourceCell": 2
+  },
+  "43": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 43
+  },
+  "44": {
+   "sha256": "28c27a2ed42141bc8a03163476c93fb136b6f9d2e4253544142e36bc85dfd06c",
+   "source": "tamas-victory-vic2.png",
+   "sourceSha256": "1e2369a8565d3169a2d64f3ae18efd0a65d138848cb951cb24b8305da2cf28af",
+   "sourceCell": 0
+  },
+  "45": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 45
+  },
+  "46": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 46
+  },
+  "47": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 47
+  },
+  "48": {
+   "sha256": "e881e08bd10af43dceabd3ce8852a76745bf1386e1ba5f225bbf89f65a754276",
+   "source": "tamas-sprint-sf1.png",
+   "sourceSha256": "3613eb498ec48dc84f290e506a06e779394ff4863e6b2362943471e4c5d06d15",
+   "sourceCell": 0,
+   "note": "Approved 8 Nov 2026: main sprint cell 48 with the clothing-only collar correction (rows 26-35; head rows 6-23, skin, legs, belt, anchor unchanged). Frozen as tamas-sprint-sf1.png cell 0."
+  },
+  "49": {
+   "sha256": "da31f6ce2e063ef8be9c22f2531988e12b35f4da28c69b1ba28bd6327a6efb33",
+   "source": "tamas-sprint-sf1.png",
+   "sourceSha256": "3613eb498ec48dc84f290e506a06e779394ff4863e6b2362943471e4c5d06d15",
+   "sourceCell": 1,
+   "note": "Approved 8 Nov 2026: main sprint cell 49 with the clothing-only collar correction (rows 26-35; head rows 6-23, skin, legs, belt, anchor unchanged). Frozen as tamas-sprint-sf1.png cell 1."
+  },
+  "50": {
+   "sha256": "74d4db708be295f8d08ab73f823d54794948d79683c96674a7a2ada7792619bf",
+   "source": "tamas-sprint-sf1.png",
+   "sourceSha256": "3613eb498ec48dc84f290e506a06e779394ff4863e6b2362943471e4c5d06d15",
+   "sourceCell": 2,
+   "note": "Approved 8 Nov 2026: main sprint cell 50 with the clothing-only collar correction (rows 26-35; head rows 6-23, skin, legs, belt, anchor unchanged). Frozen as tamas-sprint-sf1.png cell 2."
+  },
+  "51": {
+   "sha256": "b1e499283895ed8321a3983c68db7ab5c7dbfe4ebbedf373a905faf1a26892a8",
+   "source": "tamas-sprint-sf1.png",
+   "sourceSha256": "3613eb498ec48dc84f290e506a06e779394ff4863e6b2362943471e4c5d06d15",
+   "sourceCell": 3,
+   "note": "Approved 8 Nov 2026: main sprint cell 51 with the clothing-only collar correction (rows 26-35; head rows 6-23, skin, legs, belt, anchor unchanged). Frozen as tamas-sprint-sf1.png cell 3."
+  },
+  "52": {
+   "sha256": "3da4eb59f3f44429d3b298d7d22c16bf8c312806701b5151e5f5089212f06e8e",
+   "source": "tamas-sprint-sf1.png",
+   "sourceSha256": "3613eb498ec48dc84f290e506a06e779394ff4863e6b2362943471e4c5d06d15",
+   "sourceCell": 4,
+   "note": "Approved 8 Nov 2026: main sprint cell 52 with the clothing-only collar correction (rows 26-35; head rows 6-23, skin, legs, belt, anchor unchanged). Frozen as tamas-sprint-sf1.png cell 4."
+  },
+  "53": {
+   "sha256": "73d7c1bea365b0e39fcba132252d2108804d5dfd6eeb8ce07da2da66ea116a25",
+   "source": "tamas-sprint-sf1.png",
+   "sourceSha256": "3613eb498ec48dc84f290e506a06e779394ff4863e6b2362943471e4c5d06d15",
+   "sourceCell": 5,
+   "note": "Approved 8 Nov 2026: main sprint cell 53 with the clothing-only collar correction (rows 26-35; head rows 6-23, skin, legs, belt, anchor unchanged). Frozen as tamas-sprint-sf1.png cell 5."
+  },
+  "54": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 54
+  },
+  "55": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 55
+  },
+  "56": {
+   "sha256": "c7e95add25c0e9f11789a1705e32082d2f870e87e5658b7875fa61086a34249b",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 56
+  },
+  "57": {
+   "sha256": "203530d684fa2989d985c9c74fbc6f8dbe461cd00ba4d9a2031c23d7465730ed",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 57
+  },
+  "58": {
+   "sha256": "80322f48ff4f4d1a3b1ad33a7981ecdf13809d51cc90150e4aa5cb1b09536308",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 58
+  },
+  "59": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 59
+  },
+  "60": {
+   "sha256": "07b67e9d6840d86d4a0dc78b6b7201b77df45a22beb56e15c925da27b58ce461",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 60
+  },
+  "61": {
+   "sha256": "64ffe6e6fb61cb9a38934e2fd5a6e43f0a8c0bab82e8e17bbde86bb18aeecc95",
+   "source": "tamas-throw-tf1.png",
+   "sourceSha256": "f4230edd677dbad39782adea437db1365c717926e2b5f0409ac69dd1ede4c007",
+   "sourceCell": 0,
+   "note": "Approved 9 Nov 2026 (ground-throw paired review): throw-down / ground-impact re-posed from main cell 61 with the H1 head carried, hip bend and extended arms; legs rows 68-95 unchanged. Frozen as tamas-throw-tf1.png cell 0."
+  },
+  "62": {
+   "sha256": "a335a9d4fdbf40605b44f52df59fdb8147761e1256ae98137cb9c0dc4c0d8518",
+   "source": "tamas-throw-tf1.png",
+   "sourceSha256": "f4230edd677dbad39782adea437db1365c717926e2b5f0409ac69dd1ede4c007",
+   "sourceCell": 1,
+   "note": "Approved 9 Nov 2026 (ground-throw paired review): throw-down / ground-impact re-posed from main cell 61 with the H1 head carried, hip bend and extended arms; legs rows 68-95 unchanged. Frozen as tamas-throw-tf1.png cell 1."
+  },
+  "63": {
+   "sha256": "1c0273095382988333e2f2b5ae487cea460737ed9be65cbad9c5de537f95bf75",
+   "source": "main tamas.png",
+   "sourceSha256": "194eeb8f5dfc543f2096bda9cc28bc81dee2ec27bc332ad0dc10db33fad32e09",
+   "sourceCell": 63
+  }
+ }
+}
