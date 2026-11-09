@@ -42,10 +42,14 @@ export function boot(root) {
   const audio = new Sound({ enabled: soundOn, onError: (err) => console.warn('Sound effect failed.', err) });
   audio.onDuck = () => music.duck();
   // The music is optional: a track that fails to load, or is not supplied yet, is simply skipped.
+  const musicErrors = {};
   const music = new MusicMixer({
     tracks: MUSIC.tracks, enabled: soundOn, createContext: () => audio.ctx,
     resolveUrl: (src) => new URL(src, import.meta.url).href,
-    onError: (name, err) => console.warn(`Music track "${name}" unavailable; playing without it.`, err),
+    onError: (name, err) => {
+      musicErrors[name] = (err && (err.message || err.name)) || String(err);
+      console.warn(`Music track "${name}" unavailable; playing without it.`, err);
+    },
   });
   music.load();
   const input = new Input();
@@ -199,6 +203,22 @@ export function boot(root) {
   root.karateRenderer = renderer;
   root.karateMusic = music;
   root.karateSound = audio;
+  // Audio diagnostics for devices without a console: open the game with ?audiodebug=1.
+  if (new URLSearchParams(window.location.search).has('audiodebug')) {
+    const box = document.createElement('pre');
+    box.className = 'kg-audiodebug';
+    box.style.cssText = 'position:fixed;left:4px;bottom:4px;z-index:9999;margin:0;padding:6px 8px;max-width:95vw;font:11px/1.35 monospace;color:#fff;background:rgba(0,0,0,.75);white-space:pre-wrap;pointer-events:none;';
+    document.body.appendChild(box);
+    const fmt = (v) => (typeof v === 'number' ? v.toFixed(2) : String(v));
+    setInterval(() => {
+      const ctx = audio.ctx;
+      const lines = [`audio ${ctx ? `${ctx.state} @${ctx.sampleRate}Hz t=${fmt(ctx.currentTime)}` : 'no context yet (tap or press a key)'} sound=${audio.enabled ? 'on' : 'off'} game=${game.state} current=${music.current}`];
+      for (const [name, t] of Object.entries(music.tracks)) {
+        lines.push(`${name.padEnd(5)} bytes=${t.bytes ? Math.round(t.bytes.byteLength / 1024) + 'k' : '-'} decoding=${t.decoding} ready=${t.ready} failed=${t.failed} intent=${t.intent} playing=${t.playing} pos=${fmt(t.playing ? t.currentPosition() : t.position)} gain=${t.gain ? fmt(t.gain.gain.value) : '-'}${musicErrors[name] ? ` error=${musicErrors[name]}` : ''}`);
+      }
+      box.textContent = lines.join('\n');
+    }, 500);
+  }
   root.karateHeroSheet = heroSheet;
   root.karateEnemySheets = enemySheets;
   return game;
