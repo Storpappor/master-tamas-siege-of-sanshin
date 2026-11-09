@@ -12,17 +12,29 @@ request #3). So this document starts from the code, not from an earlier proposal
 Every number in a section called *experiment* is a starting point for testing. None of them
 is approved; they are there so the prototype has something concrete to measure against.
 
+**Revision, 9 November 2026 (founder's clarifications after the first version):** the default
+mobile layout is the four buttons PUNCH, KICK, JUMP and THROW plus the tappable Ajsich meter,
+and nothing else. The earlier claim that DUCK is *required* on mobile is withdrawn: every enemy
+attack has a defence with those four buttons plus the hold-back guard (section 5.1). DUCK and
+a fallback BLOCK are alternatives to evaluate in encounters, not approved additions. The power
+prototype directions in section 6.5 (no Kiai and power stacking, guard clears the run-up,
+depth movement never charges, landing recovery after an attempted powered aerial attack) come
+from the founder and are binding for the prototype; they still approve no final numbers or
+artwork. Phase 1 is being built on its own branch (`mobile-controls-phase1`); this pull request
+stays documentation only.
+
 ---
 
 ## 1. Summary
 
 - **Layout.** The right thumb gets exactly four action buttons in a diamond: JUMP at the top,
   PUNCH and KICK side by side, THROW at the bottom. The Ajsich (Kiai) meter becomes a tappable
-  bar in a fixed place above the diamond. DUCK moves to the left side under the movement pad,
-  because ducking and walking already exclude each other in the code. The separate BLOCK button
-  goes away; holding away from a strike keeps blocking exactly as it does today. In landscape
-  the controls sit over the bottom corners of the picture, because today they are placed below a
-  16:9 stage and fall off the bottom of a phone held sideways.
+  bar in a fixed place above the diamond. The DUCK and BLOCK buttons leave the default layout;
+  holding away from a strike keeps blocking exactly as it does today, and that guard covers every
+  attack that ducking covers. DUCK (under the movement pad, where ducking and walking already
+  exclude each other) and a small BLOCK are alternatives to evaluate if an encounter shows a
+  concrete problem. In landscape the controls sit over the bottom corners of the picture, because
+  today they are placed below a 16:9 stage and fall off the bottom of a phone held sideways.
 - **Multitouch.** The touch code is sound for two thumbs on two different buttons; I confirmed
   that headlessly against the real `Input` class. What it cannot do is survive a thumb sliding
   from one direction button to another (the first button keeps the pointer), and it drops a held
@@ -31,10 +43,12 @@ is approved; they are there so the prototype has something concrete to measure a
   than by a single true/false. Because the fault has not been reproduced on a desktop browser,
   the first prototype step is a touch diagnostic on the phones that showed it.
 - **Jump and crouch.** The kicker's high kick and the thrower's stars are answered by ducking
-  (a jump never clears them: the jump tops out at 37.5 units and the kick's box starts at 42).
-  The low sweep is answered by jumping (airborne for 0.73 s, clear of the sweep for 0.60 s of
-  that). Punches hit both standing and crouching players. So DUCK and JUMP are both needed on
-  mobile, and they can live on different thumbs.
+  or blocking (a jump never clears them: the jump tops out at 37.5 units and the kick's box
+  starts at 42). The low sweep is answered by jumping or blocking (airborne for 0.73 s, clear of
+  the sweep for 0.60 s of that). Punches hit standing and crouching players alike and are
+  answered by blocking or a depth step. So every threat has a defence in the four-button layout
+  with the hold-back guard; what ducking adds is a defence that also works against attacks from
+  behind, plus the two low attacks. Whether that is worth a button is for the encounter tests.
 - **Aerial attacks.** Tap JUMP, then PUNCH or KICK in the air already works today, with the
   grounded attack numbers and the grounded punch/kick artwork. The hit boxes sit so high that an
   attack at the top of the jump passes over a standing enemy's head; only the first 0.10 to
@@ -159,12 +173,16 @@ Kage 180 (`ENEMY_TYPES`, `src/entities.js:343-350`).
  │        ◀   ●   ▶        movement pad (one element,                       │
  │            ▼            thumb position = direction)  ( PUNCH ) ( KICK )  │
  │                                                                          │
- │         [ DUCK ]        held button, under the            ( THROW )      │
- │                         same thumb as movement                           │
+ │                                                           ( THROW )      │
+ │                                                                          │
  └──────────────────────────────────────────────────────────────────────────┘
-      left thumb: move, sprint (double-tap), duck,        right thumb: four taps,
+      left thumb: move, sprint (double-tap),              right thumb: four taps,
       hold away = block                                   one short roll up for jump
 ```
+
+Alternatives to evaluate, not in the default: a held DUCK button under the pad (same thumb as
+movement, since crouching stops movement), and a small held BLOCK beside it. Either joins the
+layout only if an encounter shows a concrete problem the four buttons cannot solve.
 
 Both clusters are drawn **over** the picture (semi-transparent, about 60 to 70 % opaque),
 anchored to the bottom corners, inside the safe area (`viewport-fit=cover` is already set in
@@ -182,22 +200,27 @@ button set and the meter.
 | Button | Thumb | Kind | What it does | Why here |
 |---|---|---|---|---|
 | Movement pad | left | held (four directions, diagonals allowed) | walk, step in depth, double-tap to sprint, hold away to block | one element so a thumb can slide between directions without lifting (see section 4) |
-| DUCK | left | held | crouch; PUNCH / KICK while held give the low attacks | crouching stops movement in the code (`src/entities.js:304-305`), so the left thumb never needs both at once |
+| DUCK (alternative only) | left | held | crouch; PUNCH / KICK while held give the low attacks | if ever added: crouching stops movement in the code (`src/entities.js:304-305`), so the left thumb never needs both at once |
 | JUMP | right, top of the diamond | tap | jump; a second tap in the air does nothing | closest to the strike buttons so "jump, then strike" is one roll of the thumb |
 | PUNCH | right, left of centre | tap | punch, low punch when ducking, running punch when charged, aerial punch in the air | the thumb's resting position |
 | KICK | right, right of centre | tap | kick, low kick, running kick, aerial kick | resting position |
 | THROW | right, bottom | tap | grab, becoming a throw on contact | dedicated button so no two-button chord is needed; bottom because it is the most deliberate choice |
 | AJSICH meter | right, fixed above the diamond (or at the right end of the HUD strip in landscape) | tap when full | start Kiai | always in the same place; the fill shows the charge; it glows when ready and is dimmed while charging |
 
-What goes away on mobile: the separate BLOCK button. Holding away from a strike or a star blocks
-it today (`Game.guardContext`), and that stays. What a BLOCK button gives that holding away
-does not is a *pre-emptive* guard with no enemy attacking yet, and a guard while facing an
-enemy who is not within 40 units. Experiment: ship the four-button layout without BLOCK first;
-if testers miss the pre-emptive guard, a small BLOCK can join DUCK under the left thumb (held,
-same row) without touching the right diamond.
+What goes away on mobile: the DUCK and BLOCK buttons. Holding away from a strike or a star
+blocks it today (`Game.guardContext`), and that stays. What a BLOCK button gives that holding
+away does not is a *pre-emptive* guard with no enemy attacking yet, and a guard while facing an
+enemy who is not within 40 units. What DUCK gives is a defence against high attacks and stars
+coming from behind (the crouch hurt box does not depend on facing, a block does), and the two
+low attacks. The four-button layout is tested first; DUCK and BLOCK are evaluated as
+alternatives against real encounters (several enemies, both facings), and an encounter that
+shows a concrete problem is written up before the default grows.
 
-Desktop keys do not change. The THROW action is added to the input set and mapped to the grab;
-J+K together keep working on the keyboard.
+Desktop keys do not change. The THROW button is translated in the input layer into punch and
+kick on the same step, which is exactly the grab chord the game already reads
+(`src/entities.js:330`), so no gameplay file changes for it. J+K together keep working on the
+keyboard, and THROW behaves like the chord in every state (a punch in the air, a low punch while
+crouching).
 
 ### 3.4 Sizes (experiment)
 
@@ -312,11 +335,18 @@ beat them to it.
 
 ### 5.2 Consequences for a four-button layout
 
-- DUCK is needed as much as JUMP: two of the four threats are answered only by ducking or
-  blocking, one only by jumping or blocking.
-- DUCK is a held action and stops movement; JUMP is a tap. Putting DUCK under the left thumb and
-  JUMP in the right diamond matches that: the left thumb chooses "move or duck", the right thumb
-  chooses "jump or strike". A player ducking a high kick can still tap PUNCH for the low punch.
+- Every threat from the front has a defence with the four buttons: the hold-back guard covers
+  the high kick, the stars, the sweep and the punches; JUMP covers the sweep as well. DUCK is
+  therefore not required; it is an alternative that adds a facing-independent defence (a crouch
+  dodges a high kick or a star from behind, a block does not, since `resolveHit` blocks only
+  attackers in front, `src/combat.js:80-81`) and the two low attacks.
+- Where this matters: with an enemy near in front, pressing away from it does not turn Tamas
+  (`src/entities.js:313`, "stepping away keeps the eyes on them"), so an attack from behind
+  cannot be blocked in that moment. A depth step (▲ or ▼ for more than 7 units) still escapes
+  it, and the kick's 0.52 s wind-up leaves time. Phase 1 tests this encounter headlessly and on
+  the phone before any button is added.
+- If DUCK is ever added, it is a held action that stops movement, so it belongs under the left
+  thumb; JUMP is a tap and belongs in the right diamond.
 - Nothing in the code lets Tamas jump out of a crouch or duck in the air; both would be new
   behaviour and neither is proposed.
 - Jump has no cancel: once airborne, the only choices are attack or drift. Air control is full
@@ -364,10 +394,10 @@ boxes (angled downward so the apex is usable), a "first aerial attack" rule, a l
 | Founder's principle | Rule in the prototype | Where it would live |
 |---|---|---|
 | Qualification uses actual forward travel, not the sprint flag or a tiny tap | The player keeps a `runDistance`. Each step while grounded, `sprinting`, with the sprint direction along the level (`left` or `right`, not `up`/`down`) and equal to the facing, add the distance moved along x. The attack is powered when `runDistance >= POWER.runUp`. | `Player.update`, new field; `POWER` in `src/constants.js` |
-| Stopping, reversing or being interrupted resets the run-up | `runDistance` goes to 0 when: `sprinting` turns false, the movement direction is 0 or opposite to the facing, the fighter is blocking or crouching, `takeHit` lands, or the hold-back guard engages. | `Player.update`, `Fighter.takeHit` |
+| Stopping, reversing or being interrupted resets the run-up | `runDistance` goes to 0 when: `sprinting` turns false, the movement direction is 0 or opposite to the facing, the fighter enters a guard (hold-back or block key) or crouches, or `takeHit` lands. Only travel along the level in the facing direction counts; a diagonal sprint adds its forward component and depth movement adds nothing. | `Player.update`, `Fighter.takeHit` |
 | One power attack consumes the run-up, including a miss or a blocked attack | Power is decided when the attack **starts**, not when it hits: `startAttack` sets `attack.powered = true` and `runDistance = 0`. A whiff or a BLOCK still spends it. | `Player.startAttack` |
-| An aerial power opportunity applies to the first aerial attack and expires on landing | Jumping with `runDistance >= POWER.runUp` sets `airPower = true` and clears `runDistance`. The first attack started in the air takes `airPower` (and clears it); a second attack in the same jump is a plain aerial attack. Landing sets `airPower = false` whatever happened. | `Player.update` (jump branch), `Fighter.integrate` (landing) |
-| Power attacks remain blockable, preserving the throw's role against guarding | Powered attacks are ordinary strikes in `resolveHit`: `grab` stays false, so a guard stops them and gives knockback x0.3 as today. Kiai still breaks guards. The throw is still the only non-Kiai answer to Master Kage's guard. | no change in `resolveHit` |
+| An aerial power opportunity applies to the first aerial attack and expires on landing | Jumping with `runDistance >= POWER.runUp` sets `airPower = true` and clears `runDistance`. The first attack started in the air takes `airPower` (and clears it); a second attack in the same jump is a plain aerial attack. Landing sets `airPower = false` whatever happened, and if a powered aerial attack was attempted in that jump (hit, miss or blocked) the landing carries the short recovery of 6.5 point 4. | `Player.update` (jump branch), `Fighter.integrate` (landing) |
+| Power attacks remain blockable, preserving the throw's role against guarding | Powered attacks are ordinary strikes in `resolveHit`: `grab` stays false, so a guard stops them and gives knockback x0.3 as today. Kiai still breaks guards. The throw is still the only non-Kiai answer to Master Kage's guard. Under Kiai the higher of the two damage modifiers applies, never both (6.5). | no change in `resolveHit`; `onPlayerHits` picks the modifier |
 | Modest additional damage and knockback, clear impact feedback, balanced by recovery | New table rows for the grounded running attacks with a longer recovery; a multiplier block for aerial power; a heavier hit cue, a bigger burst, a stronger shake and a floating word on a powered hit. | `ATTACKS`, `POWER`, `Game.onPlayerHits`, `src/audioDirector.js` |
 | No extra button or meter | The only inputs are the existing double-tap sprint, PUNCH, KICK and JUMP. The run-up is shown on Tamas (the sprint animation plus a small dust trail once charged), not on a meter. | renderer and effects only |
 | Shared mechanics, desktop mappings unchanged | Everything above reads the normalised action set, so keyboard and touch get the same behaviour. | nothing to do |
@@ -400,18 +430,42 @@ form is the same row with multipliers from `POWER.air`, since the jump gives the
 - Blocked powered hit: the normal BLOCK word; the attacker also takes a longer recovery, so a
   guarding enemy punishes a careless rush. That is the balance against the throw being ignored.
 
-### 6.4 Open design questions for the founder
+### 6.4 Questions raised in the first version, now answered
 
-1. **Kiai stacking.** Kiai doubles damage; a power attack adds its own factor. A running kick
-   under Kiai with the experimental numbers does 48 damage, almost a kicker's health. Options:
-   let them stack (rewarding), or cap combined damage at the Kiai value (power adds only
-   knockback and reach under Kiai). Proposed experiment: stack, then watch the boss fight.
-2. **Does the hold-back guard eat the run-up?** Holding away is "reversing", so yes by the rule
-   above. A player sprinting at a striker who starts a punch will stop to block and lose the
-   charge; that feels right, but needs testing.
-3. **Depth sprints.** Sprinting up or down the floor never charges. Keeps the rule readable:
-   power comes from running *at* someone.
-4. **Landing recovery after a powered aerial attack:** a short freeze (experiment 0.15 s) or none.
+These were open questions in the first version; the founder's directions in 6.5 settle them.
+
+1. **Kiai stacking.** Kiai doubles damage; a power attack adds its own factor. Stacked, a
+   running kick under Kiai with the experimental numbers would do 48 damage, almost a kicker's
+   health. Decision: no stacking, see 6.5.
+2. **Does the hold-back guard eat the run-up?** Yes, see 6.5.
+3. **Depth sprints.** Never charge; the forward component of a diagonal counts, see 6.5.
+4. **Landing recovery after a powered aerial attack:** yes, short and tunable, after every
+   attempt, see 6.5.
+
+### 6.5 Founder's directions for the power prototype (binding for the prototype, no values approved)
+
+**Kiai today.** `Player.activateKiai` (`src/entities.js:221-227`) starts a 4 s window when the
+meter is ready, then a 14 s cooldown (`KIAI`, `src/constants.js:61-66`). While it lasts,
+`Game.onPlayerHits` (`src/game.js:355-376`) multiplies the damage of every player strike by 2
+and the knockback by 1.4, turns a blocked strike into a guard break (`BREAK!`), plays the heavy
+hit cue and a bigger burst; `Game.onPlayerThrows` (`src/game.js:411-420`) doubles the throw's
+20 damage and multiplies the throw speed by 1.4. Kiai is a per-hit modifier applied at hit
+time; it does not change the attack table.
+
+1. **No multiplicative stacking of Kiai and power.** Both modify the same attack's damage, so
+   the prototype applies the **higher** of the two modifiers, not their product: under Kiai a
+   powered running kick does the Kiai damage (2 x 16 = 32), not 2 x 1.5 x 16 = 48. Knockback
+   the same way (higher of 1.4 and the power factor). Guard breaking stays a Kiai effect only;
+   a powered strike without Kiai is blocked like any strike.
+2. **Entering guard clears the run-up.** The moment `blocking` becomes true, whether from the
+   hold-back guard or the block key, `runDistance` goes to 0.
+3. **Pure depth movement does not charge.** The run-up counts the actual travel along the level
+   (the attack axis) in the facing direction. A diagonal sprint contributes its forward
+   component (the x distance moved), nothing for the depth part.
+4. **Landing recovery after an attempted powered aerial attack.** A short, tunable recovery on
+   landing (`POWER.air.landingRecovery`, experiment 0.15 s) applies whenever a powered aerial
+   attack was *started* in that jump: hit, miss or blocked. Ordinary jumps, and jumps with an
+   unpowered aerial attack, land as they do today.
 
 ---
 
@@ -429,7 +483,7 @@ existing row.
 | `jumpPunch` (new baseline aerial) | startup 0.07, active 0.12, recovery 0.14, damage 10, knockback 40, box 4, -22, 16, 14 | the box reaches 17 units lower than the grounded punch, so it connects with a standing enemy for all but 0.23 s around the apex (today: 0.08 s after take-off and 0.08 s before landing); longer active, shorter recovery so it is usable before landing. Checked by simulation. |
 | `jumpKick` (new baseline aerial) | startup 0.12, active 0.14, recovery 0.20, damage 16, knockback 75, box 4, -18, 20, 16 | the leg angled down reaches to 2 units above the feet, so it connects through the whole jump (today: 0.13 s after take-off and 0.13 s before landing). If that proves too easy, raise the box's bottom. Checked by simulation. |
 | `POWER.air.damage`, `POWER.air.knockback` | x1.4, x1.5 | a shade below the grounded power factor since the jump already gives reach and safety |
-| `POWER.air.landingRecovery` | 0.15 s | the committed-attack cost for an aerial power hit |
+| `POWER.air.landingRecovery` | 0.15 s | the committed-attack cost after any attempted powered aerial attack (hit, miss or blocked); ordinary jumps unaffected |
 | Feedback | shake 0.18, burst 10, `hitHeavy` | the Kiai hit values, already known to read as "heavy" |
 
 For comparison, the hits needed to beat each enemy with these numbers (no Kiai): striker 30 hp
@@ -451,22 +505,30 @@ those branches by design; `npm run lint`, `npm test` and `npm run build` must pa
 1a. **Touch diagnostic** (`?touchlog=1`): the overlay from section 4.2, no behaviour change.
     Run on the phones that showed the fault; record the event sequence; decide between
     hypotheses 1 to 4 before fixing.
-1b. **New panel**: the movement pad element, DUCK under it, the four-button diamond, the tappable
-    Ajsich meter, landscape overlay placement, portrait panel placement; BLOCK button removed.
-    `Input` holds actions by pointer id, gets a `throw` edge action, and the game maps `throw`
-    to the grab (`NO_INPUT` in `src/game.js:9` and the `idle` snapshots in the tests gain
-    `throw: false`). This is the one place where phase 1 touches a guarded file
-    (`src/entities.js:330`: `input.throw || (input.punch && input.kick)`).
+1b. **New panel**: the movement pad element, the four-button diamond, the tappable Ajsich meter,
+    landscape overlay placement, portrait panel placement; DUCK and BLOCK buttons removed from
+    the default (kept available as alternatives behind a switch for the encounter tests).
+    `Input` holds actions by their active sources (pointer ids, the keyboard), and THROW is
+    translated into the punch+kick chord inside `Input.snapshot`, so `src/entities.js`,
+    `src/game.js` and the test snapshots do not change. Combat values and desktop mappings are
+    untouched. The only guarded file that changes is `src/input.js`.
 1c. **Verification**: on two phones (one iOS, one Android) in landscape and portrait: walk while
     tapping PUNCH twenty times without a dropped step; slide the thumb around the pad through all
     eight directions without lifting; double-tap to sprint from the pad; tap JUMP then KICK and
     land a late jump kick on a striker; throw a blocking Master Kage with THROW; start Kiai from
-    the meter only when it is full. Desktop: every key in the help list still works, J+K still
-    throws. Tests: the `Input` class gets its first unit test (fake elements, two pointers, the
-    double-finger case, slide across the pad).
+    the meter only when it is full; defend with the hold-back guard against the kicker and the
+    thrower with enemies on both sides. Desktop: every key in the help list still works, J+K
+    still throws. Tests: the `Input` class gets its first unit test (fake elements, two
+    pointers, the double-finger case, slide across the pad). Headless pointer tests and
+    real-device results are reported separately; a headless pass is not device validation.
+1d. **Aerial attacks in phase 1** are only the input: JUMP then PUNCH or KICK registers and
+    starts the grounded attack in the air, as today. The limitations in section 5.3 (narrow hit
+    windows, no landing rule, two attacks per jump, grounded artwork) remain and are documented
+    with the prototype so that a registered input is not mistaken for a finished aerial system.
 
 Done when the founder can play through the street on a phone with one thumb per cluster and
-reports no stuck or missed inputs.
+reports no stuck or missed inputs, and the DUCK and BLOCK alternatives have an encounter-based
+verdict.
 
 ### Phase 2: grounded running punch and kick (combat)
 
@@ -504,16 +566,18 @@ existing punch and kick cells via the fallback, which is what the game shows tod
 ### 9.1 Input changes (browser side: `index.html`, `karate-game.css`, `src/input.js`, `src/main.js`, `src/ui.js`)
 
 - Replace the four movement buttons with one pad element that tracks pointer position.
-- Add DUCK under the pad; remove the BLOCK button; four-button diamond JUMP / PUNCH / KICK /
-  THROW; make the Ajsich meter the tappable element in a fixed position.
-- Hold actions by pointer id; add the `throw` edge action; keep the keyboard map as is.
+- Remove the DUCK and BLOCK buttons from the default (alternatives behind a switch); four-button
+  diamond JUMP / PUNCH / KICK / THROW; make the Ajsich meter the tappable element in a fixed
+  position.
+- Hold actions by their active sources (pointer ids, keyboard); translate THROW into the
+  punch+kick chord in the input layer; keep the keyboard map as is.
 - Panel overlays the stage in landscape; `touch-action: none` on the whole game root while
   playing; panel visible from the start on coarse pointers.
 - Touch diagnostic overlay behind a query parameter (prototype only).
-- Help text and README: THROW button, DUCK position, Ajsich meter; the keyboard list is
-  unchanged (and already says L block, I Ajsich).
-- One guarded line: `input.throw` accepted as a grab in `Player.update`; `NO_INPUT` in
-  `src/game.js` and test snapshots gain the field.
+- Help text and README: THROW button, Ajsich meter; the keyboard list is unchanged (and already
+  says L block, I Ajsich).
+- No gameplay file changes: `src/entities.js`, `src/game.js` and the test snapshots stay as they
+  are. `src/input.js` is the only guarded file touched.
 
 ### 9.2 Combat changes (guarded files: `src/constants.js`, `src/combat.js`, `src/entities.js`, `src/game.js`; plus `src/heroSprite.js`, `src/sprites.js`, `src/audioDirector.js`, tests)
 
