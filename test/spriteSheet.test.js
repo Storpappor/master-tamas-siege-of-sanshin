@@ -132,3 +132,29 @@ test('a sprinting player resolves to the sprint cells at 12 cells per second, or
   assert.equal(resolveFrame(bare, sprinting), null, 'nothing mapped: fall through to the legacy sheet');
   assert.equal(resolveFrame(walkOnly, { state: 'walk', loop: 2 }), 6, 'a plain walk is unchanged');
 });
+
+// The shipped hero sheet is checked cell by cell against the expectations recorded when the
+// approved H1-family artwork was assembled: every 96 x 96 cell's RGBA bytes must hash to the
+// value derived from its frozen source (or from the preserved main baseline for sprint, grab,
+// throw and the empty cells), so a stale or wrongly assembled sheet fails here instead of
+// shipping silently.
+test('the shipped tamas.png matches the recorded per-cell artwork expectations', async () => {
+  const { createHash } = await import('node:crypto');
+  const { decodePng } = await import('../scripts/append-sheet.mjs');
+  const expected = JSON.parse(readFileSync(new URL('./fixtures/hero-cells.json', import.meta.url), 'utf8'));
+  const png = readFileSync(new URL('../assets/sprites/tamas.png', import.meta.url));
+  const image = decodePng(png);
+  assert.equal(image.width, expected.columns * expected.cellSize, 'sheet width');
+  assert.equal(image.height, expected.rows * expected.cellSize, 'sheet height');
+  const size = expected.cellSize, columns = expected.columns;
+  for (let k = 0; k < expected.columns * expected.rows; k++) {
+    const hash = createHash('sha256');
+    const x0 = (k % columns) * size, y0 = Math.floor(k / columns) * size;
+    for (let y = 0; y < size; y++) {
+      const start = ((y0 + y) * image.width + x0) * 4;
+      hash.update(image.rgba.subarray(start, start + size * 4));
+    }
+    assert.equal(hash.digest('hex'), expected.cells[String(k)].sha256, `cell ${k} (${expected.cells[String(k)].source})`);
+  }
+  for (let i = 3; i < image.rgba.length; i += 4) assert.ok(image.rgba[i] === 0 || image.rgba[i] === 255, 'binary alpha');
+});
