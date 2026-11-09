@@ -1,0 +1,99 @@
+{
+  "status": "revised native idle cell, UNAPPROVED candidate for visual review",
+  "method": "block-mode sampling of the idle look study at one shared scale, palette from the study, binary alpha, edge pixels kept dark",
+  "study": {
+    "path": "kicker-idle-look-study.png",
+    "sha256": "c750ab0f2fa94e5282b0213e03c4b8fd1b6def956d7c4cb91422d77c5def8fcd",
+    "size": [
+      1312,
+      1199
+    ],
+    "figureBounds": {
+      "x": [
+        283,
+        968
+      ],
+      "y": [
+        34,
+        1164
+      ],
+      "w": 686,
+      "h": 1131
+    }
+  },
+  "sampling": {
+    "scale": 0.08488063660477453,
+    "nativePxPerSourcePx": 0.08488063660477453,
+    "sourcePxPerNativePx": 11.78125,
+    "anchorSrcX": 626,
+    "groundBottom": 1165,
+    "alphaThreshold": 128,
+    "coverage": 0.5,
+    "lightEdgePixelsDarkened": 27
+  },
+  "palette": [
+    "#1e1321",
+    "#483958",
+    "#2f233b",
+    "#f9a664",
+    "#634e72",
+    "#cd7644",
+    "#f8dbb2",
+    "#3e5fd3",
+    "#533228",
+    "#a95b34",
+    "#cdab86",
+    "#967864",
+    "#1d0403",
+    "#e18e55",
+    "#ebc295",
+    "#2b3c99",
+    "#fdbc7b",
+    "#764834",
+    "#401a0f",
+    "#b08f74",
+    "#3b51b0",
+    "#f4ad26",
+    "#222b70",
+    "#8b553c",
+    "#7a6253",
+    "#5073e2",
+    "#0d1149",
+    "#b07b4f"
+  ],
+  "coloursUsed": 25,
+  "cell": {
+    "bounds": {
+      "cols": [
+        35,
+        92
+      ],
+      "rows": [
+        16,
+        111
+      ],
+      "w": 58,
+      "h": 96,
+      "dx": [
+        -29,
+        28
+      ],
+      "up": [
+        0,
+        95
+      ]
+    }
+  },
+  "output": {
+    "png": {
+      "file": "kicker-idle-r2.png",
+      "width": 128,
+      "height": 112,
+      "sha256": "9ea1446a850e6c7222b2326a5c4ff9ea4937030b0d689f8e703938f05edb0ee0"
+    },
+    "map": {
+      "file": "kicker-idle-r2.json",
+      "sha256": "27f49c64a5b684920c13265731c20611da10c234f566b83c27dec3979c0f5301"
+    }
+  }
+}

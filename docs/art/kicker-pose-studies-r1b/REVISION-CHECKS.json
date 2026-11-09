@@ -1,0 +1,11 @@
+{
+  "failures": [],
+  "passed": true,
+  "changedNativeCells": [
+    9
+  ],
+  "otherCellsIdentical": 43,
+  "mapUnchanged": true,
+  "sourceDriftOutsideFoot": 275068,
+  "nativeDriftOutsideFoot": 627
+}

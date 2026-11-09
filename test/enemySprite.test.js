@@ -211,12 +211,12 @@ test('the Kicker map of its brief resolves both attacks by phase and the walk fo
   assert.equal(resolveFrame(partial, { state: 'getUp', progress: 0.5 }), 40);
 });
 
-// The staged Kicker candidate (kicker-native-v1 revision b, UNAPPROVED, for the visual checkpoint):
+// The staged Kicker first package (approved idle r2 in cell 0 plus the 17 approved r1b pose cells):
 // the brief's partial-delivery map, its own cell and anchor, 18 populated slots each its own drawing,
 // the three pending victim states left unmapped so the procedural fallback draws them.
 const KICKER_FIRST_PACKAGE = { idle: [0], walk: [4, 5, 6, 7], enemyHighKick: [8, 9, 10], enemyLowSweep: [12, 13, 14], hurt: [16, 17], knockdown: [20, 21, 22], fallen: [36], getUp: [40] };
 
-test('the staged kicker.json and kicker.png follow the brief\'s partial-delivery contract', () => {
+test('the staged kicker.json and kicker.png follow the brief\'s partial-delivery contract (approved first package)', () => {
   const map = JSON.parse(readFileSync(new URL('../assets/sprites/kicker.json', import.meta.url), 'utf8'));
   const sheet = new SpriteSheet({ map });
   assert.deepEqual(sheet.cell, { w: 128, h: 112 });

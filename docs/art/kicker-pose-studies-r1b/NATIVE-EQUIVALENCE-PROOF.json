@@ -1,0 +1,234 @@
+{
+  "status": "Unapproved r1b foot-correction candidate; local file/sampling checks only, not a game capture or artwork approval",
+  "dimensions": [
+    512,
+    1232
+  ],
+  "nativeAtlasSha256": "14adc7d39b79d6169b23500a8c0155ad9c4dd168f4f8b70bbd3dd0003e091555",
+  "rawInputNativeAtlasSha256": "14adc7d39b79d6169b23500a8c0155ad9c4dd168f4f8b70bbd3dd0003e091555",
+  "nativeRgbaSha256": "ce778b5e4b2da9bfa5ad1ae4dfdd2d160d88c1f82f2330684bfdcb586cccee07",
+  "rawAndNormalizedAtlasEncodedBytesEqual": true,
+  "rawAndNormalizedAtlasRgbaBytesCompared": 2523136,
+  "rawAndNormalizedAtlasDifferingRgbaBytes": 0,
+  "approvedIdleSha256": "9ea1446a850e6c7222b2326a5c4ff9ea4937030b0d689f8e703938f05edb0ee0",
+  "approvedIdleRgbaBytesCompared": 57344,
+  "approvedIdleDifferingRgbaBytes": 0,
+  "populatedCells": [
+    0,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    12,
+    13,
+    14,
+    16,
+    17,
+    20,
+    21,
+    22,
+    36,
+    40
+  ],
+  "distinctDrawings": 18,
+  "emptyCells": [
+    1,
+    2,
+    3,
+    11,
+    15,
+    18,
+    19,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    37,
+    38,
+    39,
+    41,
+    42,
+    43
+  ],
+  "alphaValues": [
+    0,
+    255
+  ],
+  "paletteColorsUsed": 27,
+  "allOpaqueColorsInApprovedPalette": true,
+  "perCellRgbaSha256": {
+    "0": "d9f9c84439488a4dc92d13a0337714cc192a105b21a6dfad5d83d10d68e2e713",
+    "1": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "2": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "3": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "4": "1766a8b542624dadb5d65f3e1ac011ef34173cf7b7ee247358338309762f5ab0",
+    "5": "237ec55d48836ca02fc70750cf768fe6dc952b53f1fbd91f5dc256fe26866522",
+    "6": "806856e2ebd2ebb8b5713b4fedd39ee27858824d74b932a5db69cf557db50aef",
+    "7": "8c9b08e43602d6ac2227e4ace401c009ce3e271b445d8628acf8e5ed69a2d083",
+    "8": "08846cb88b22be5af63750ab815c74d309d788e9cd0012b5de95aa9d51d419a4",
+    "9": "0e14cfc3462ddfac84d3f7e350d7b1a16886af3aae208920062b332ee6f28276",
+    "10": "311f974a13f7b4912a8bd4d8968f13a621ab7faab783574e0553cde381e3b41f",
+    "11": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "12": "5cef1a7e3d920bd6dafaef2e97a935b24696a6f081252415cdc48de091146724",
+    "13": "64776f094c83d9d7d481e16bf2f4ceb9af7bd142cc7c54a374539010d4616930",
+    "14": "3bb97b164f0b736112124af9bb3375179e7712985c92521cd4de5828142de9e3",
+    "15": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "16": "e27efe619d98ad2589b2875743b49966f93835e15ff3cdf4d688b2a14744808e",
+    "17": "5a0ef46237069067b32f5e68e54e017e02ab2ee360e1232019b8711ab844770a",
+    "18": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "19": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "20": "14b8eb25bc52e9bbda89b2cfad6dfe4e18b7be31e8f90245632cdb57310833b3",
+    "21": "de7b0eac1ec1cc1cc15ecb5c590e7e3d5801550abac67bc1e513a9c650dbc78f",
+    "22": "f1958731d1c4b287105ecb55dc577ab67009ba1d27917f3494bd709cf8835a2a",
+    "23": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "24": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "25": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "26": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "27": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "28": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "29": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "30": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "31": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "32": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "33": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "34": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "35": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "36": "1cc28601e55cb2c3d8d9ebc04bff89ffd9d61419db821b30962672cf6deeb621",
+    "37": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "38": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "39": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "40": "b1d2a0def5946df4b9bdd3c76cb124c64b2f4a1370f718022391ed3530ec7822",
+    "41": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "42": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6",
+    "43": "4f81904a9b06c58572a0e5769b3b4ffb99e7bd4be88ee8c2b64a804f483d9dc6"
+  },
+  "farAttackFootExtents": {
+    "9": {
+      "x": [
+        36,
+        49
+      ],
+      "up": [
+        65,
+        74
+      ],
+      "count": 97
+    },
+    "13": {
+      "x": [
+        30,
+        46
+      ],
+      "up": [
+        8,
+        15
+      ],
+      "count": 92
+    }
+  },
+  "priorAtlasSha256": "e231120c82a5d7ee0117cd0ca21c0fa1cf0ae6bb459fced0d173cd726d16c2f1",
+  "changedNativeCellsFromR1": [
+    9
+  ],
+  "otherNativeCellsIdentical": 43,
+  "mapByteIdenticalToR1": true,
+  "sourceIntegrityExceptCell9": [
+    {
+      "cell": 0,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 4,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 5,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 6,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 7,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 8,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 10,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 12,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 13,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 14,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 16,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 17,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 20,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 21,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 22,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 36,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    },
+    {
+      "cell": 40,
+      "normalizedUnchanged": true,
+      "rawUnchanged": true
+    }
+  ]
+}

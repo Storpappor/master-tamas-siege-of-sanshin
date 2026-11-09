@@ -1,0 +1,879 @@
+{
+  "approvedScale": 0.08488063660477453,
+  "paletteExact": true,
+  "samplerSha256": "ff979bf59e6b3690a42bf2c2a8acad8da766e433fd7a4156146ab8e3531d460c",
+  "samplerUnchanged": true,
+  "cells": [
+    {
+      "cell": 0,
+      "state": "idle",
+      "sourceFile": "reference/approved-idle/kicker-idle-look-study.png",
+      "sourceSize": [
+        1312,
+        1199
+      ],
+      "sourceOpaqueBounds": [
+        283,
+        34,
+        968,
+        1164
+      ],
+      "sourceOpaquePixels": 341368,
+      "sourcePartialAlphaPixels": 382324,
+      "anchorX": 626,
+      "groundBottom": 1165,
+      "samplingWindow": {
+        "x0": -128,
+        "x1": 1380,
+        "y0": -154.5,
+        "y1": 1165
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 58,
+        "h": 96,
+        "dx": [
+          -29,
+          28
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "d9f9c84439488a4dc92d13a0337714cc192a105b21a6dfad5d83d10d68e2e713",
+      "nativeCellFile": "native-preview/cell-00.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 4,
+      "state": "walk",
+      "sourceFile": "studies/study-04-walk.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        201,
+        70,
+        988,
+        1204
+      ],
+      "sourceOpaquePixels": 352156,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 569,
+      "groundBottom": 1205,
+      "samplingWindow": {
+        "x0": -185,
+        "x1": 1323,
+        "y0": -114.5,
+        "y1": 1205
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 67,
+        "h": 96,
+        "dx": [
+          -31,
+          35
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "1766a8b542624dadb5d65f3e1ac011ef34173cf7b7ee247358338309762f5ab0",
+      "nativeCellFile": "native-preview/cell-04.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 5,
+      "state": "walk",
+      "sourceFile": "studies/study-05-walk.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        370,
+        62,
+        925,
+        1198
+      ],
+      "sourceOpaquePixels": 313884,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 570,
+      "groundBottom": 1199,
+      "samplingWindow": {
+        "x0": -184,
+        "x1": 1324,
+        "y0": -120.5,
+        "y1": 1199
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 47,
+        "h": 97,
+        "dx": [
+          -17,
+          29
+        ],
+        "up": [
+          0,
+          96
+        ],
+        "rows": [
+          15,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "237ec55d48836ca02fc70750cf768fe6dc952b53f1fbd91f5dc256fe26866522",
+      "nativeCellFile": "native-preview/cell-05.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 6,
+      "state": "walk",
+      "sourceFile": "studies/study-06-walk.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        194,
+        67,
+        987,
+        1202
+      ],
+      "sourceOpaquePixels": 354739,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 568,
+      "groundBottom": 1203,
+      "samplingWindow": {
+        "x0": -186,
+        "x1": 1322,
+        "y0": -116.5,
+        "y1": 1203
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 68,
+        "h": 96,
+        "dx": [
+          -32,
+          35
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "806856e2ebd2ebb8b5713b4fedd39ee27858824d74b932a5db69cf557db50aef",
+      "nativeCellFile": "native-preview/cell-06.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 7,
+      "state": "walk",
+      "sourceFile": "studies/study-07-walk.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        365,
+        64,
+        925,
+        1190
+      ],
+      "sourceOpaquePixels": 309187,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 549,
+      "groundBottom": 1191,
+      "samplingWindow": {
+        "x0": -205,
+        "x1": 1303,
+        "y0": -128.5,
+        "y1": 1191
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 48,
+        "h": 96,
+        "dx": [
+          -16,
+          31
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "8c9b08e43602d6ac2227e4ace401c009ce3e271b445d8628acf8e5ed69a2d083",
+      "nativeCellFile": "native-preview/cell-07.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 8,
+      "state": "enemyHighKick",
+      "sourceFile": "studies/study-08-enemyHighKick-startup.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        228,
+        56,
+        899,
+        1184
+      ],
+      "sourceOpaquePixels": 299134,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 553,
+      "groundBottom": 1185,
+      "samplingWindow": {
+        "x0": -201,
+        "x1": 1307,
+        "y0": -134.5,
+        "y1": 1185
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 57,
+        "h": 96,
+        "dx": [
+          -28,
+          28
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "08846cb88b22be5af63750ab815c74d309d788e9cd0012b5de95aa9d51d419a4",
+      "nativeCellFile": "native-preview/cell-08.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 9,
+      "state": "enemyHighKick",
+      "sourceFile": "studies/study-09-enemyHighKick-active.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        84,
+        131,
+        1111,
+        1186
+      ],
+      "sourceOpaquePixels": 289430,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 519,
+      "groundBottom": 1187,
+      "samplingWindow": {
+        "x0": -235,
+        "x1": 1273,
+        "y0": -132.5,
+        "y1": 1187
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 87,
+        "h": 90,
+        "dx": [
+          -37,
+          49
+        ],
+        "up": [
+          0,
+          89
+        ],
+        "rows": [
+          22,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "0e14cfc3462ddfac84d3f7e350d7b1a16886af3aae208920062b332ee6f28276",
+      "nativeCellFile": "native-preview/cell-09.png",
+      "geometryMetrics": {
+        "kickFarPixels": 97,
+        "crouchClearanceIntrusions": 0
+      },
+      "warnings": []
+    },
+    {
+      "cell": 10,
+      "state": "enemyHighKick",
+      "sourceFile": "studies/study-10-enemyHighKick-recovery.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        345,
+        55,
+        911,
+        1185
+      ],
+      "sourceOpaquePixels": 290856,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 553,
+      "groundBottom": 1186,
+      "samplingWindow": {
+        "x0": -201,
+        "x1": 1307,
+        "y0": -133.5,
+        "y1": 1186
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 48,
+        "h": 96,
+        "dx": [
+          -18,
+          29
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "311f974a13f7b4912a8bd4d8968f13a621ab7faab783574e0553cde381e3b41f",
+      "nativeCellFile": "native-preview/cell-10.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 12,
+      "state": "enemyLowSweep",
+      "sourceFile": "studies/study-12-enemyLowSweep-startup.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        312,
+        536,
+        986,
+        1186
+      ],
+      "sourceOpaquePixels": 250454,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 580,
+      "groundBottom": 1187,
+      "samplingWindow": {
+        "x0": -174,
+        "x1": 1334,
+        "y0": -132.5,
+        "y1": 1187
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 57,
+        "h": 55,
+        "dx": [
+          -23,
+          33
+        ],
+        "up": [
+          0,
+          54
+        ],
+        "rows": [
+          57,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "5cef1a7e3d920bd6dafaef2e97a935b24696a6f081252415cdc48de091146724",
+      "nativeCellFile": "native-preview/cell-12.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 13,
+      "state": "enemyLowSweep",
+      "sourceFile": "studies/study-13-enemyLowSweep-active.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        164,
+        491,
+        1041,
+        1174
+      ],
+      "sourceOpaquePixels": 267830,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 490,
+      "groundBottom": 1175,
+      "samplingWindow": {
+        "x0": -264,
+        "x1": 1244,
+        "y0": -144.5,
+        "y1": 1175
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 75,
+        "h": 58,
+        "dx": [
+          -28,
+          46
+        ],
+        "up": [
+          0,
+          57
+        ],
+        "rows": [
+          54,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "64776f094c83d9d7d481e16bf2f4ceb9af7bd142cc7c54a374539010d4616930",
+      "nativeCellFile": "native-preview/cell-13.png",
+      "geometryMetrics": {
+        "sweepFarPixels": 92
+      },
+      "warnings": []
+    },
+    {
+      "cell": 14,
+      "state": "enemyLowSweep",
+      "sourceFile": "studies/study-14-enemyLowSweep-recovery.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        245,
+        362,
+        937,
+        1188
+      ],
+      "sourceOpaquePixels": 255831,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 600,
+      "groundBottom": 1189,
+      "samplingWindow": {
+        "x0": -154,
+        "x1": 1354,
+        "y0": -130.5,
+        "y1": 1189
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 59,
+        "h": 70,
+        "dx": [
+          -30,
+          28
+        ],
+        "up": [
+          0,
+          69
+        ],
+        "rows": [
+          42,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "3bb97b164f0b736112124af9bb3375179e7712985c92521cd4de5828142de9e3",
+      "nativeCellFile": "native-preview/cell-14.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 16,
+      "state": "hurt",
+      "sourceFile": "studies/study-16-hurt-impact.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        270,
+        129,
+        997,
+        1185
+      ],
+      "sourceOpaquePixels": 325782,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 635,
+      "groundBottom": 1186,
+      "samplingWindow": {
+        "x0": -119,
+        "x1": 1389,
+        "y0": -133.5,
+        "y1": 1186
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 62,
+        "h": 90,
+        "dx": [
+          -31,
+          30
+        ],
+        "up": [
+          0,
+          89
+        ],
+        "rows": [
+          22,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "e27efe619d98ad2589b2875743b49966f93835e15ff3cdf4d688b2a14744808e",
+      "nativeCellFile": "native-preview/cell-16.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 17,
+      "state": "hurt",
+      "sourceFile": "studies/study-17-hurt-stagger.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        265,
+        221,
+        869,
+        1173
+      ],
+      "sourceOpaquePixels": 299346,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 565,
+      "groundBottom": 1174,
+      "samplingWindow": {
+        "x0": -189,
+        "x1": 1319,
+        "y0": -145.5,
+        "y1": 1174
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 51,
+        "h": 81,
+        "dx": [
+          -25,
+          25
+        ],
+        "up": [
+          0,
+          80
+        ],
+        "rows": [
+          31,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "5a0ef46237069067b32f5e68e54e017e02ab2ee360e1232019b8711ab844770a",
+      "nativeCellFile": "native-preview/cell-17.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 20,
+      "state": "knockdown",
+      "sourceFile": "studies/study-20-knockdown-topple.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        107,
+        263,
+        1043,
+        1185
+      ],
+      "sourceOpaquePixels": 309893,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 560,
+      "groundBottom": 1186,
+      "samplingWindow": {
+        "x0": -194,
+        "x1": 1314,
+        "y0": -133.5,
+        "y1": 1186
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 79,
+        "h": 78,
+        "dx": [
+          -38,
+          40
+        ],
+        "up": [
+          0,
+          77
+        ],
+        "rows": [
+          34,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "14b8eb25bc52e9bbda89b2cfad6dfe4e18b7be31e8f90245632cdb57310833b3",
+      "nativeCellFile": "native-preview/cell-20.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 21,
+      "state": "knockdown",
+      "sourceFile": "studies/study-21-knockdown-impact.png",
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sourceOpaqueBounds": [
+        208,
+        397,
+        1342,
+        951
+      ],
+      "sourceOpaquePixels": 295011,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 840,
+      "groundBottom": 952,
+      "samplingWindow": {
+        "x0": 86,
+        "x1": 1594,
+        "y0": -367.5,
+        "y1": 952
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 97,
+        "h": 47,
+        "dx": [
+          -54,
+          42
+        ],
+        "up": [
+          0,
+          46
+        ],
+        "rows": [
+          65,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "de7b0eac1ec1cc1cc15ecb5c590e7e3d5801550abac67bc1e513a9c650dbc78f",
+      "nativeCellFile": "native-preview/cell-21.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 22,
+      "state": "knockdown",
+      "sourceFile": "studies/study-22-knockdown-lying.png",
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "sourceOpaqueBounds": [
+        96,
+        570,
+        1436,
+        894
+      ],
+      "sourceOpaquePixels": 288887,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 820,
+      "groundBottom": 895,
+      "samplingWindow": {
+        "x0": 66,
+        "x1": 1574,
+        "y0": -424.5,
+        "y1": 895
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 7379,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 113,
+        "h": 28,
+        "dx": [
+          -61,
+          51
+        ],
+        "up": [
+          0,
+          27
+        ],
+        "rows": [
+          84,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "f1958731d1c4b287105ecb55dc577ab67009ba1d27917f3494bd709cf8835a2a",
+      "nativeCellFile": "native-preview/cell-22.png",
+      "geometryMetrics": {},
+      "warnings": [
+        "7379 source pixels exceed the handoff's +/-55 native px horizontal safe region"
+      ]
+    },
+    {
+      "cell": 36,
+      "state": "fallen",
+      "sourceFile": "studies/study-36-fallen.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        28,
+        705,
+        1210,
+        1157
+      ],
+      "sourceOpaquePixels": 235817,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 610,
+      "groundBottom": 1158,
+      "samplingWindow": {
+        "x0": -144,
+        "x1": 1364,
+        "y0": -161.5,
+        "y1": 1158
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 100,
+        "h": 38,
+        "dx": [
+          -49,
+          50
+        ],
+        "up": [
+          0,
+          37
+        ],
+        "rows": [
+          74,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "1cc28601e55cb2c3d8d9ebc04bff89ffd9d61419db821b30962672cf6deeb621",
+      "nativeCellFile": "native-preview/cell-36.png",
+      "geometryMetrics": {},
+      "warnings": []
+    },
+    {
+      "cell": 40,
+      "state": "getUp",
+      "sourceFile": "studies/study-40-get-up.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "sourceOpaqueBounds": [
+        214,
+        444,
+        966,
+        1179
+      ],
+      "sourceOpaquePixels": 266718,
+      "sourcePartialAlphaPixels": 0,
+      "anchorX": 615,
+      "groundBottom": 1180,
+      "samplingWindow": {
+        "x0": -139,
+        "x1": 1369,
+        "y0": -139.5,
+        "y1": 1180
+      },
+      "sourcePixelsOutsideNativeCell": 0,
+      "sourcePixelsOutsideHorizontalSafeRegion": 0,
+      "sourceCanvasEdgeOpaquePixels": 0,
+      "nativeBounds": {
+        "w": 64,
+        "h": 62,
+        "dx": [
+          -34,
+          29
+        ],
+        "up": [
+          0,
+          61
+        ],
+        "rows": [
+          50,
+          111
+        ]
+      },
+      "nativeRgbaSha256": "b1d2a0def5946df4b9bdd3c76cb124c64b2f4a1370f718022391ed3530ec7822",
+      "nativeCellFile": "native-preview/cell-40.png",
+      "geometryMetrics": {},
+      "warnings": []
+    }
+  ]
+}
