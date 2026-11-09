@@ -169,7 +169,9 @@ export function boot(root) {
     // The Input is inactive whenever a menu is open (see the frame loop), so Esc and P are
     // handled here: Esc closes help, or resumes from the pause screen; P resumes too.
     else if (key === 'Escape' && helpOpen()) { e.preventDefault(); closeHelp(); }
-    else if ((key === 'Escape' || key === 'p' || key === 'P') && game.state === 'paused' && ui.overlay === 'paused') { e.preventDefault(); unlockAudio(); game.resume(); }
+    // `!input.active` keeps this off the very key press that paused (the Input is still active
+    // for that event and has just handled it); the loop deactivates the Input a frame later.
+    else if ((key === 'Escape' || key === 'p' || key === 'P') && !input.active && game.state === 'paused' && ui.overlay === 'paused') { e.preventDefault(); unlockAudio(); game.resume(); }
   });
   const pauseStatus = root.querySelector('[data-pause-status]');
   let lastStatus = '';
