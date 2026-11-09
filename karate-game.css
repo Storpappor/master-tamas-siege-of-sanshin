@@ -273,8 +273,7 @@
 }
 .kg-hint .kg-key { margin-left: 2px; margin-right: 2px; }
 .kg-root--touch .kg-key { display: none; }
-/* Hints follow the input in use: the key summary for keyboards, the touch line for phones. */
-.kg-root--touch .kg-hint--keys { display: none; }
+/* The touch hint shows only on phones; keys live in How to play. */
 .kg-root--touch .kg-hint--touch { display: block; }
 .kg-help__body { width: 100%; min-height: 0; overflow: auto; text-align: left; }
 .kg-help { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -503,7 +502,6 @@
 @media (max-width: 640px) {
   .kg-controls { display: none; }
   .kg-hint--touch { display: block; }
-  .kg-hint--keys { display: none; }
   .kg-overlay { gap: 8px; padding: 10px; }
   .kg-overlay--story { gap: 10px; }
   .kg-title { font-size: 20px; }
