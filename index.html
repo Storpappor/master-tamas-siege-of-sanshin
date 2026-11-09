@@ -55,53 +55,6 @@
           <button type="button" class="kg-btn kg-btn--ghost" data-action="skip-story">Skip intro</button>
         </section>
 
-        <section class="kg-overlay" data-overlay="start">
-          <h1 class="kg-title">Master Tamas</h1>
-          <p class="kg-title__sub">Siege of Sanshin</p>
-          <p class="kg-sub">Fight your way across Södermalm and into the dojo.</p>
-          <p class="kg-quote">“I Algeriet räknade vi inte poäng. Dra tillbaka benet. Gå.”</p>
-          <div class="kg-controls">
-            <div>
-              <h2>Keyboard</h2>
-              <ul>
-                <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> or <kbd>WASD</kbd> move</li>
-                <li><kbd>C</kbd> duck</li>
-                <li><kbd>Space</kbd> jump</li>
-                <li><kbd>J</kbd> punch &nbsp; <kbd>K</kbd> kick &nbsp; <kbd>L</kbd> block</li>
-                <li><kbd>J</kbd>+<kbd>K</kbd> together: grab and throw</li>
-                <li>Double-tap a direction to sprint</li>
-                <li>Hold away from a strike to block it</li>
-                <li><kbd>I</kbd> Ajsich (kiai): double damage for 4 s</li>
-                <li><kbd>P</kbd> or <kbd>Esc</kbd> pause</li>
-              </ul>
-            </div>
-            <div>
-              <h2>Tips</h2>
-              <ul>
-                <li>Duck under high kicks, jump over low sweeps.</li>
-                <li>Hold block, or hold away from a strike, to absorb it.</li>
-                <li>A throw goes through a guard; strikes do not.</li>
-                <li>Ajsich breaks guards but needs time to recharge. Caught mid-kick? Dra tillbaka benet.</li>
-                <li>Land hits without getting hit to build a combo.</li>
-                <li>Step up or down to line up a strike, or to slip out of one.</li>
-                <li>Clear each fight, then follow the GO arrow.</li>
-                <li>Block, duck or sidestep throwing stars.</li>
-              </ul>
-            </div>
-          </div>
-          <button type="button" class="kg-btn kg-btn--primary" data-action="start">Press Start</button>
-          <p class="kg-hint" data-load-note>Loading hero artwork…</p>
-          <button type="button" class="kg-btn kg-btn--ghost" data-action="intro">Replay intro</button>
-          <p class="kg-hint kg-hint--keys">On phones, on-screen buttons appear below the game.</p>
-          <p class="kg-hint kg-hint--touch">Use the buttons below. Double-tap a direction to sprint, press Punch and Kick together to throw, and use Ajsich for double damage.</p>
-        </section>
-
-        <section class="kg-overlay" data-overlay="paused" hidden>
-          <h2 class="kg-title kg-title--small">Paused</h2>
-          <button type="button" class="kg-btn kg-btn--primary" data-action="resume">Resume</button>
-          <button type="button" class="kg-btn" data-action="sound" aria-pressed="true">Sound: On</button>
-        </section>
-
         <section class="kg-overlay" data-overlay="gameover" hidden>
           <h2 class="kg-title kg-title--small">Det är jävla shit.</h2>
           <p class="kg-title__sub">Tamas ties the belt again.</p>
@@ -116,6 +69,96 @@
           <p class="kg-sub">Score <strong data-result="score">0</strong> · Time <strong data-result="time">0:00</strong></p>
           <p class="kg-hint" data-result="bonus"></p>
           <button type="button" class="kg-btn kg-btn--primary" data-action="start">Play Again</button>
+        </section>
+      </div>
+
+      <!--
+        Menu shell: the title, pause and help screens live here, over the whole game element rather
+        than inside the 16:9 picture, so they size to the viewport and never clip. The result screens
+        stay inside the stage for now. While a menu is open the touch panel is inert (see main.js).
+      -->
+      <div class="kg-menus" data-menus>
+        <section class="kg-overlay kg-menu" data-overlay="start" hidden aria-label="Title screen">
+          <div class="kg-menu__panel">
+            <h1 class="kg-title">Master Tamas</h1>
+            <p class="kg-title__sub">Siege of Sanshin</p>
+            <p class="kg-sub">Fight your way across Södermalm and into the dojo.</p>
+            <p class="kg-quote">“I Algeriet räknade vi inte poäng. Dra tillbaka benet. Gå.”</p>
+            <button type="button" class="kg-btn kg-btn--primary" data-action="start">Start <kbd class="kg-key">Enter</kbd></button>
+            <p class="kg-hint" data-load-note>Loading hero artwork…</p>
+            <div class="kg-menu__row">
+              <button type="button" class="kg-btn" data-action="help">How to play <kbd class="kg-key">H</kbd></button>
+              <button type="button" class="kg-btn" data-action="intro">Intro</button>
+              <button type="button" class="kg-btn" data-action="sound" aria-pressed="true">Sound: On</button>
+            </div>
+            <p class="kg-hint kg-hint--keys">Move <kbd class="kg-key">←</kbd><kbd class="kg-key">→</kbd> · Punch <kbd class="kg-key">J</kbd> · Kick <kbd class="kg-key">K</kbd> · Block <kbd class="kg-key">L</kbd> · Jump <kbd class="kg-key">Space</kbd> · Pause <kbd class="kg-key">Esc</kbd></p>
+            <p class="kg-hint kg-hint--touch">Buttons appear under the game. Punch and Kick together: throw.</p>
+          </div>
+        </section>
+
+        <section class="kg-overlay kg-menu" data-overlay="paused" hidden aria-label="Paused">
+          <div class="kg-menu__panel kg-menu__panel--narrow">
+            <h2 class="kg-title kg-title--small">Paused</h2>
+            <button type="button" class="kg-btn kg-btn--primary kg-btn--wide" data-action="resume">Resume <kbd class="kg-key">Esc</kbd></button>
+            <button type="button" class="kg-btn kg-btn--wide" data-action="help">How to play <kbd class="kg-key">H</kbd></button>
+            <button type="button" class="kg-btn kg-btn--wide" data-action="restart">Restart run</button>
+            <button type="button" class="kg-btn kg-btn--wide" data-action="sound" aria-pressed="true">Sound: On</button>
+            <button type="button" class="kg-btn kg-btn--wide kg-btn--quiet" data-action="title">Title screen</button>
+            <p class="kg-hint" data-pause-status></p>
+          </div>
+        </section>
+
+        <section class="kg-overlay kg-menu" data-overlay="help" hidden aria-label="How to play">
+          <div class="kg-menu__panel kg-menu__panel--wide">
+            <h2 class="kg-title kg-title--small">How to play</h2>
+            <div class="kg-help__body">
+              <div class="kg-help kg-help--keys">
+                <div class="kg-help__col">
+                  <h3>Move</h3>
+                  <p><kbd class="kg-key">←</kbd> <kbd class="kg-key">→</kbd> walk · <kbd class="kg-key">↑</kbd> <kbd class="kg-key">↓</kbd> change lane (or <kbd class="kg-key">WASD</kbd>)</p>
+                  <p>Double-tap a direction to sprint</p>
+                  <p><kbd class="kg-key">Space</kbd> jump · <kbd class="kg-key">C</kbd> duck</p>
+                  <p>Clear each fight, then follow the GO arrow</p>
+                </div>
+                <div class="kg-help__col">
+                  <h3>Attack</h3>
+                  <p><kbd class="kg-key">J</kbd> punch · <kbd class="kg-key">K</kbd> kick</p>
+                  <p><kbd class="kg-key">J</kbd>+<kbd class="kg-key">K</kbd> together: grab and throw. A throw goes through a guard; strikes do not</p>
+                  <p><kbd class="kg-key">I</kbd> Ajsich (kiai): double damage for 4 s when the meter is full. It breaks guards but needs time to recharge</p>
+                  <p>Land hits without getting hit to build a combo</p>
+                </div>
+                <div class="kg-help__col">
+                  <h3>Defend</h3>
+                  <p><kbd class="kg-key">L</kbd> block, or hold away from a strike to absorb it</p>
+                  <p>Duck under high kicks, jump over low sweeps</p>
+                  <p>Block, duck or sidestep throwing stars</p>
+                  <p>Step up or down to line up a strike, or to slip out of one</p>
+                </div>
+              </div>
+              <div class="kg-help kg-help--touch">
+                <div class="kg-help__col">
+                  <h3>Move</h3>
+                  <p>Arrows: walk and change lane · double-tap a direction to sprint</p>
+                  <p>Jump and Duck buttons · clear each fight, then follow the GO arrow</p>
+                </div>
+                <div class="kg-help__col">
+                  <h3>Attack</h3>
+                  <p>Punch · Kick · press both together: grab and throw (goes through a guard)</p>
+                  <p>Ajsich: double damage for 4 s when the meter is full; it needs time to recharge</p>
+                </div>
+                <div class="kg-help__col">
+                  <h3>Defend</h3>
+                  <p>Block, or hold away from a strike · duck under high kicks, jump over low sweeps</p>
+                  <p>Block, duck or sidestep throwing stars</p>
+                </div>
+              </div>
+              <div class="kg-help__legend">
+                <h3>The screen</h3>
+                <p>Green bar: Tamas's health · Orange bar: Ajsich, ready when full · Enemies: how many are still standing · Kage's red bar appears for the boss fight</p>
+              </div>
+            </div>
+            <button type="button" class="kg-btn kg-btn--primary" data-action="help-back">Back <kbd class="kg-key">Esc</kbd></button>
+          </div>
         </section>
       </div>
 

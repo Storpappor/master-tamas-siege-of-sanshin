@@ -28,6 +28,7 @@ export const INTRO_SCREENS = [
 ];
 
 const SOUND_KEY = 'karate-challenge-sound';
+const INTRO_KEY = 'karate-challenge-intro-seen';
 
 export function boot(root) {
   const canvas = root.querySelector('canvas');
@@ -124,6 +125,60 @@ export function boot(root) {
   for (const b of root.querySelectorAll('[data-action="start"]')) b.addEventListener('click', startGame);
   for (const b of root.querySelectorAll('[data-action="resume"]')) b.addEventListener('click', () => { unlockAudio(); game.resume(); });
   for (const b of root.querySelectorAll('[data-action="pause"]')) b.addEventListener('click', () => game.togglePause());
+
+  // ---- Menu shell: How to play, Restart run, Title screen -------------------------------
+  // How to play opens over the title or the pause screen and goes back to exactly that screen,
+  // refocusing the button it was opened from. The game stays paused throughout: nothing here
+  // calls resume, and Esc while help is open only closes help.
+  const helpOverlay = root.querySelector('[data-overlay="help"]');
+  const helpOpen = () => Boolean(helpOverlay && !helpOverlay.hidden);
+  let helpOrigin = null;   // { overlay: 'start' | 'paused', focus: Element | null }
+  const openHelp = () => {
+    const from = ui.overlay;
+    if (helpOpen() || !helpOverlay || (from !== 'start' && from !== 'paused')) return;
+    helpOrigin = { overlay: from, focus: root.contains(document.activeElement) ? document.activeElement : null };
+    director.menu('confirm');
+    ui.showOverlay('help');
+  };
+  const closeHelp = () => {
+    if (!helpOpen()) return;
+    const back = helpOrigin || { overlay: game.state === 'paused' ? 'paused' : 'start', focus: null };
+    helpOrigin = null;
+    director.menu('back');
+    ui.showOverlay(back.overlay, null, { focus: back.focus });
+  };
+  for (const b of root.querySelectorAll('[data-action="help"]')) b.addEventListener('click', openHelp);
+  for (const b of root.querySelectorAll('[data-action="help-back"]')) b.addEventListener('click', closeHelp);
+  // Restart run: the existing game.start() resets the whole run (score, zone, waves), so the
+  // button says so. Title screen: the run is discarded and the title shows, no confirmation.
+  for (const b of root.querySelectorAll('[data-action="restart"]')) b.addEventListener('click', () => { if (game.state !== 'paused') return; director.menu('confirm'); startGame(); });
+  const toTitle = () => {
+    if (game.state !== 'paused') return;
+    director.menu('back');
+    game.reset();
+    game.state = 'start';
+    input.active = false;
+    input.reset();
+    ui.showOverlay('start');
+  };
+  for (const b of root.querySelectorAll('[data-action="title"]')) b.addEventListener('click', toTitle);
+  window.addEventListener('keydown', (e) => {
+    if (ui.storyActive || e.repeat) return;
+    const key = e.key;
+    if ((key === 'h' || key === 'H') && !helpOpen() && (ui.overlay === 'start' || ui.overlay === 'paused')) { e.preventDefault(); openHelp(); }
+    // Esc while paused reaches the Input's pause handler (below); on the title the Input is
+    // inactive, so Esc is handled here.
+    else if (key === 'Escape' && helpOpen() && !input.active) { e.preventDefault(); closeHelp(); }
+  });
+  const pauseStatus = root.querySelector('[data-pause-status]');
+  let lastStatus = '';
+  const syncPauseStatus = () => {
+    if (!pauseStatus || game.state !== 'paused') return;
+    const total = game.remainingEnemies + game.defeated;
+    const m = Math.floor(game.elapsed / 60), sec = String(Math.floor(game.elapsed % 60)).padStart(2, '0');
+    const text = `Score ${game.score.toLocaleString()} · ${game.remainingEnemies} of ${total} left · ${m}:${sec}${game.zone ? ` · ${game.zone.name}` : ''}`;
+    if (text !== lastStatus) { pauseStatus.textContent = text; lastStatus = text; }
+  };
   for (const b of root.querySelectorAll('[data-action="sound"]')) {
     b.addEventListener('click', () => {
       soundOn = !soundOn;
@@ -136,9 +191,9 @@ export function boot(root) {
     });
   }
 
-  input.onPause = () => game.togglePause();
+  input.onPause = () => { if (helpOpen()) closeHelp(); else game.togglePause(); };
   input.onConfirm = () => {
-    if (ui.storyActive) return; // the story cards handle Enter themselves
+    if (ui.storyActive || helpOpen()) return; // the story cards and the help screen handle Enter themselves
     if (['start', 'gameover', 'victory'].includes(game.state)) startGame();
     else if (game.state === 'paused') game.resume();
   };
@@ -189,6 +244,13 @@ export function boot(root) {
       acc = 0;
     }
     last = now;
+    // Menus own the input while the game is not playing: the touch panel is inert (taps cannot
+    // reach the gameplay buttons, and the buttons cannot cover a menu), and the title screen
+    // shows no HUD, since its numbers only mean something during a run.
+    const playing = game.state === 'playing';
+    if (touchArea && touchArea.inert !== !playing) touchArea.inert = !playing;
+    root.classList.toggle('kg-root--title', game.state === 'start');
+    syncPauseStatus();
     // Music and sound cues follow the state the steps just produced.
     director.update();
     renderer.render(game, now / 1000);
@@ -196,8 +258,14 @@ export function boot(root) {
   };
   requestAnimationFrame(frame);
 
-  // Opening story plays once, then the title card.
-  playIntro(() => ui.showOverlay('start'));
+  // Opening story plays on the first visit (and from the Intro button); later visits open on the
+  // title. Add ?intro=1 to the address to see it again.
+  let introSeen = false;
+  try { introSeen = localStorage.getItem(INTRO_KEY) === 'yes'; } catch { /* storage may be blocked */ }
+  const wantIntro = new URLSearchParams(window.location.search).has('intro');
+  const markIntroSeen = () => { try { localStorage.setItem(INTRO_KEY, 'yes'); } catch { /* ignore */ } };
+  if (introSeen && !wantIntro) ui.showOverlay('start');
+  else playIntro(() => { markIntroSeen(); ui.showOverlay('start'); });
 
   root.karateHero = hero; // exposed for debugging alongside root.karateGame
   root.karateRenderer = renderer;

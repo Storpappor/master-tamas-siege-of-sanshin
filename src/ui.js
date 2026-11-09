@@ -94,6 +94,8 @@ export function createUi(root) {
     // Optional painter for hero canvases inside overlays (set by main.js once the sprite is loaded).
     heroPainter: null,
     // Optional listener for menu interactions: 'move' when a story card advances, 'back' on skip.
+    // Which overlay is showing (null when none), for the menu wiring in main.js.
+    get overlay() { const el = overlays.find((o) => o !== story && !o.hidden); return el ? el.dataset.overlay : null; },
     onMenu: null,
 
     get storyActive() {
@@ -118,7 +120,9 @@ export function createUi(root) {
       this.showStory(lines, { onDone: done, skippable: false, hint: 'Enter · Space · tap' });
     },
 
-    showOverlay(name, data) {
+    // `focus`: the element to focus instead of the overlay's first button (used when a screen
+    // comes back after How to play, so the player lands on the button they left from).
+    showOverlay(name, data, { focus = null } = {}) {
       if (active && name !== 'story') finishStory();
       for (const el of overlays) {
         if (el === story) continue;
@@ -135,7 +139,7 @@ export function createUi(root) {
         if (show) {
           const heroCanvas = el.querySelector('[data-hero-canvas]');
           if (heroCanvas && this.heroPainter) this.heroPainter(heroCanvas, name);
-          const btn = el.querySelector('button');
+          const btn = (focus && el.contains(focus)) ? focus : el.querySelector('button');
           if (btn) setTimeout(() => btn.focus({ preventScroll: true }), 0);
         }
       }
