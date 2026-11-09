@@ -1,5 +1,10 @@
 # Mobile controls, phase 1: what was built and how it was checked
 
+> **Revision 1b (follow-up after the first physical-phone test)** is described in section 7 at the
+> end: the accidental page zoom (gesture guard, zoom recovery, diagnostics) and the pad's "drag
+> farther to run" replacing the double-tap sprint on touch. Sections 1 to 6 describe the first
+> build, fdf10cc, as tested on the phone.
+
 Branch `mobile-controls-phase1` off `main` at `bce64bf`, 9 November 2026. This is the first
 implementation pass of the proposal in `docs/mobile-controls-and-power-attacks-proposal.md`:
 the four-button mobile layout and the input fixes. **No combat value, enemy behaviour or
@@ -149,3 +154,117 @@ Recorded in the proposal, section 6.5: no multiplicative Kiai and power stacking
 modifier applies); entering guard clears the run-up; pure depth movement never charges and a
 diagonal counts its forward component; a short tunable landing recovery after any attempted
 powered aerial attack. None of it is implemented here.
+
+## 7. Revision 1b: accidental zoom, and drag farther to run
+
+Founder's phone findings on fdf10cc: (1) an accidental gesture sometimes zooms the whole page in,
+the normal view cannot reliably be restored and the controls move off-screen; (2) the double-tap
+sprint is difficult to use. Screenshots were taken in an app's embedded browser and show page
+zoom (the whole page, pad included, enlarged).
+
+### 7.1 Zoom: what the fdf10cc build actually did with gestures
+
+Checked against the shipped CSS and code, not by re-adding the same declarations:
+
+| Gesture path | fdf10cc | Why it could zoom |
+|---|---|---|
+| Double-tap on the HUD strip (health, score, Ajsich text, Pause, Sound) or the page frame | no `touch-action` rule at all on `.kg-hud`, `.kg-btn`, `.kg-wrap`, `body` | WebKit and Chrome zoom on a double-tap unless `touch-action: manipulation` or `none` applies on the touched element's chain; the HUD is a natural resting place for a thumb in portrait |
+| Pinch with one finger on a `none` element and the other elsewhere | per-element `touch-action: none` on stage, panel, buttons, playing root | a pinch is a page gesture: WebKit treats it as allowed unless *every* finger started on a blocked element; the HUD and frame are not blocked |
+| WebKit's own `gesturestart` / `gesturechange` | not handled | iOS fires these for pinch and rotate; preventing them is the reliable way to refuse a pinch on iOS, independent of `touch-action` |
+| `touchmove` with two fingers | prevented only on the panel and the stage, only while `game.state === 'playing'` (`src/main.js` old lines 151-154) | on the title card, the pause card, the story cards and the HUD nothing prevented it |
+| Rotation | nothing | iOS may keep a zoom factor across a rotation, and the layout switches between the in-flow panel and the landscape overlay |
+| **Getting back out** | the playing surface is `none` | once zoomed, the pinch-out needed to recover was blocked by the same rule; the player was stuck at the zoomed scale, with the controls partly off-screen |
+
+Page zoom versus a layout fault: the screenshots show the HUD, picture and pad all scaled
+together, which is browser zoom (`visualViewport.scale > 1`), not the canvas sizing (the
+canvas is sized from the stage's CSS box and never from the visual viewport). The diagnostic now
+prints `visualViewport.scale`, the visual and layout viewport sizes and offsets, the
+orientation, the last touch target and finger count, and counters of refused gestures, so the
+two can be told apart on the phone without a console.
+
+### 7.2 Zoom: what revision 1b does (`src/gestures.js`, `karate-game.css`, `src/main.js`)
+
+1. **Whole game: `touch-action: manipulation` on `.kg-root`.** Double-tap zoom is refused on
+   every element inside the game, the HUD included, through the ancestor chain; one-finger
+   panning stays allowed so a menu taller than the screen can still scroll. While a round is
+   being played the root is `none`, as before (`kg-root--playing`).
+2. **Gesture guard (`installGestureGuard`)**: on the document, in the capture phase, non-passive:
+   - `gesturestart` / `gesturechange` / `gestureend` whose target is inside the game: prevented
+     (WebKit pinch and rotate);
+   - `touchmove` with two or more fingers where any finger is inside the game: prevented, in
+     menus too (a pinch is never a game input);
+   - `touchmove` with one finger while playing: prevented (the thumb is a control, not a scroll);
+     with a menu open it is left alone.
+   The old per-element `touchmove` listeners are removed; independent pointers are untouched
+   (the guard never calls `preventDefault` on pointer events).
+3. **Recovery**: if `visualViewport.scale` is above 1.01 for 250 ms while playing, or at any
+   scale after a rotation, the viewport meta is rewritten once with `maximum-scale=1,
+   user-scalable=no`, which makes the browser snap back to scale 1, and restored on the next
+   frame so a reader who zooms a menu on purpose keeps that freedom. The meta itself is not
+   changed in `index.html`; the canvas is never shrunk to compensate.
+4. **Rotation** forgets every held thumb (`input.reset()`), then runs the zoom check.
+5. **Diagnostic** (`?touchlog=1`): adds the line described in 7.1.
+
+What the guard cannot do: an embedded browser that applies its own zoom gesture before the page
+sees any event. The counters in the diagnostic show whether the page saw the gesture at all.
+
+### 7.3 Drag farther to run (`src/input.js`, `src/entities.js`, CSS, help text)
+
+The pad reads the thumb's distance from the centre as a fraction of the pad's usable radius
+(`PAD` in `src/input.js`):
+
+| Zone | Distance | Effect |
+|---|---|---|
+| Centre | below 0.28 | stop (unchanged dead zone) |
+| Walk | 0.28 up to the run line | walk; directions by axis as before (0.38), diagonals allowed |
+| **Run** | **0.80 and beyond** to enter, **below 0.60** to leave (experiment, provisional) | the pad holds a new `sprint` input; the thumb may leave the pad |
+| Pull inward | back inside 0.60 | walking again, direction kept, no release and re-press of the direction |
+| Release, cancel, lost capture | | everything released |
+
+The run zone is drawn as a dotted ring at 80 % of the radius; ring, nub and arrows turn gold
+while running, the nub follows the thumb, and the existing sprint dust burst plays once when
+the run starts. Both thresholds are inside the pad (the pad edge is 1.0).
+
+**Player side (guarded change, intentional):** `Player.trackTaps` (`src/entities.js`) gains a
+narrow rule: while `input.sprint` is held together with at least one direction, `sprinting` is
+true, `sprintDir` follows the held direction (so the direction may change mid-run), and the
+sprint start cue fires once; when `input.sprint` is released the run ends. Same speed
+(x1.75), facing and hold-back guard rules as before; the keyboard double-tap sprint is untouched
+and still ends when its direction key is released. Scripted inputs without a `sprint` field
+behave exactly as before, which the replay baseline test confirms. The pad never simulates
+direction releases and re-taps.
+
+**State clearing:** `Input.reset()` (called on pause, resume, window blur, round start and now
+rotation) clears the `sprint` source and makes the pad forget its thumbs, so a slide after a
+reset does nothing until a fresh press. `pointercancel` and `lostpointercapture` release that
+pointer's directions and run only.
+
+**Guard:** `npm run guard` reports `src/input.js` (touch input, expected for the controls work)
+and `src/entities.js` (the held sprint rule above). No other gameplay file changed; attack
+numbers, enemy behaviour, Kiai and the keyboard map are as on `main`.
+
+### 7.4 Checks (revision 1b)
+
+Automated (not a device test): lint OK, build OK, **151 tests pass** (145 before; 6 new or
+extended: run-zone hysteresis values, walk/run/pull-back/release with no simulated re-taps,
+diagonal run and thumb outside the pad, run back to centre, cancel and lost capture release the
+run, reset forgets the thumb, no keyboard key maps to the pad sprint; player: the held sprint
+input runs at sprint speed, changes direction without a second start cue, ends on release, does
+nothing without a direction; the hold-back guard still blocks with the thumb in the run zone).
+The replay baseline and the playthrough pass unchanged.
+
+Emulated phone (desktop app's browser, 740 x 360, single synthetic pointer, not a device test):
+in menus the root computes `touch-action: manipulation`, the stage `none`; while playing the root
+computes `none`. On the pad: a press at 0.6 of the radius walks (72 units/s), a move to 0.9 runs
+(126 units/s, ring and nub gold), a move back to 0.7 keeps running, a move to 0.5 walks again
+with the direction kept, a move to 1.3 (outside the pad) runs, release stops. A press on the far
+left runs left and turns Tamas. The diagnostic line shows `scale=1.00`, matching viewport
+sizes and zero refused gestures in emulation. Pausing while running leaves `sprinting` true on
+the frozen player until the first resumed step, which ends it (the input was reset), as
+intended. Screenshot: `docs/mobile/phase1b-landscape-run-zone-emulated.jpg`.
+
+**Not verified here, for the phone retest:** whether any pinch or double-tap still zooms on the
+real device and in the embedded browser (watch `scale=` and the `gestures blocked` counters in
+`?touchlog=1`); whether the snap-back fires if a zoom slips through; the feel of the 0.80 / 0.60
+lines under a real thumb; the run on diagonals; rotation mid-run. The desktop app's browser
+cannot pinch.

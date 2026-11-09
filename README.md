@@ -15,7 +15,7 @@ Södermalm, drive the Shadow League out of the Sanshin Kan dojo and face Master 
 | Punch / Kick | J / K | Punch / Kick (also in the air: tap Jump, then Punch or Kick) |
 | Block | L | Not in the default layout: hold away from the strike (`?controls=block` shows a Block button for evaluation) |
 | Grab and throw (goes through a guard) | J + K together | Throw |
-| Sprint | Double-tap a direction | Double-tap a direction on the pad |
+| Sprint | Double-tap a direction | Drag the pad thumb farther, past the dotted ring (back inside to walk) |
 | Block without the block key | Hold the direction away from an incoming strike or star | Same, on the pad |
 | Ajsich, his kiai (double damage, breaks guards) | I | Tap the Ajsich meter when it is full |
 | Pause | P or Esc | Pause button |
