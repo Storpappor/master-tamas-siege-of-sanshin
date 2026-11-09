@@ -93,7 +93,7 @@
           <p class="kg-hint" data-load-note>Loading hero artwork…</p>
           <button type="button" class="kg-btn kg-btn--ghost" data-action="intro">Replay intro</button>
           <p class="kg-hint kg-hint--keys">On phones, on-screen buttons appear below the game.</p>
-          <p class="kg-hint kg-hint--touch">Use the buttons below. Double-tap a direction to sprint, press Punch and Kick together to throw, and use Ajsich for double damage.</p>
+          <p class="kg-hint kg-hint--touch">Slide the pad to move, double-tap a direction to sprint, hold away from a strike to block. Tap Jump, then Punch or Kick in the air. Throw goes through a guard. Tap the Ajsich meter when it is full.</p>
         </section>
 
         <section class="kg-overlay" data-overlay="paused" hidden>
@@ -119,20 +119,37 @@
         </section>
       </div>
 
+      <!--
+        Touch controls. Left thumb: one movement pad (slide the thumb, no lifting needed; double-tap a
+        direction to sprint; hold away from a strike to block). Right thumb: JUMP / PUNCH / KICK / THROW
+        in a diamond, and the Ajsich meter above them, tappable when full. DUCK and BLOCK are not in the
+        default layout; they are alternatives under evaluation, shown with ?controls=duck,block.
+      -->
       <div class="kg-touch" data-touch hidden aria-label="Touch controls">
-        <div class="kg-touch__pad">
-          <button type="button" class="kg-touch__btn kg-touch__btn--up" data-btn="up" aria-label="Move up">▲</button>
-          <button type="button" class="kg-touch__btn kg-touch__btn--left" data-btn="left" aria-label="Move left">◀</button>
-          <button type="button" class="kg-touch__btn kg-touch__btn--down" data-btn="down" aria-label="Move down">▼</button>
-          <button type="button" class="kg-touch__btn kg-touch__btn--right" data-btn="right" aria-label="Move right">▶</button>
+        <div class="kg-touch__left">
+          <div class="kg-touch__pad" data-pad role="group" aria-label="Move: slide your thumb">
+            <span class="kg-touch__arrow kg-touch__arrow--up" aria-hidden="true">▲</span>
+            <span class="kg-touch__arrow kg-touch__arrow--left" aria-hidden="true">◀</span>
+            <span class="kg-touch__arrow kg-touch__arrow--down" aria-hidden="true">▼</span>
+            <span class="kg-touch__arrow kg-touch__arrow--right" aria-hidden="true">▶</span>
+            <span class="kg-touch__nub" aria-hidden="true"></span>
+          </div>
+          <div class="kg-touch__alt" data-touch-alt hidden>
+            <button type="button" class="kg-touch__btn kg-touch__btn--small kg-touch__btn--duck" data-btn="duck" aria-label="Duck" hidden>Duck</button>
+            <button type="button" class="kg-touch__btn kg-touch__btn--small kg-touch__btn--block" data-btn="block" aria-label="Block" hidden>Block</button>
+          </div>
         </div>
-        <div class="kg-touch__actions">
-          <button type="button" class="kg-touch__btn kg-touch__btn--kiai" data-btn="kiai" aria-label="Ajsich">Ajsich</button>
-          <button type="button" class="kg-touch__btn kg-touch__btn--jump" data-btn="jump" aria-label="Jump">Jump</button>
-          <button type="button" class="kg-touch__btn kg-touch__btn--duck" data-btn="duck" aria-label="Duck">Duck</button>
-          <button type="button" class="kg-touch__btn kg-touch__btn--block" data-btn="block" aria-label="Block">Block</button>
-          <button type="button" class="kg-touch__btn kg-touch__btn--punch" data-btn="punch" aria-label="Punch">Punch</button>
-          <button type="button" class="kg-touch__btn kg-touch__btn--kick" data-btn="kick" aria-label="Kick">Kick</button>
+        <div class="kg-touch__right">
+          <button type="button" class="kg-touch__meter" data-btn="kiai" aria-label="Ajsich: tap when the meter is full">
+            <span class="kg-touch__meter-fill" data-touch-kiai-fill aria-hidden="true"></span>
+            <span class="kg-touch__meter-text" data-touch-kiai-text>Ajsich</span>
+          </button>
+          <div class="kg-touch__actions">
+            <button type="button" class="kg-touch__btn kg-touch__btn--jump" data-btn="jump" aria-label="Jump">Jump</button>
+            <button type="button" class="kg-touch__btn kg-touch__btn--punch" data-btn="punch" aria-label="Punch">Punch</button>
+            <button type="button" class="kg-touch__btn kg-touch__btn--kick" data-btn="kick" aria-label="Kick">Kick</button>
+            <button type="button" class="kg-touch__btn kg-touch__btn--throw" data-btn="throw" aria-label="Throw">Throw</button>
+          </div>
         </div>
       </div>
     </div>
