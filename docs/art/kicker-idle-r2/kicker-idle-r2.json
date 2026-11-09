@@ -1,0 +1,17 @@
+{
+  "image": "kicker-idle-r2.png",
+  "cell": {
+    "w": 128,
+    "h": 112
+  },
+  "anchor": {
+    "x": 64,
+    "y": 111
+  },
+  "columns": 1,
+  "states": {
+    "idle": [
+      0
+    ]
+  }
+}

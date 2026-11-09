@@ -1,0 +1,50 @@
+{
+  "base": {
+    "reference": "/workspace/scratch/cc934c935cdb/kicker_pose_work/reference/kicker-idle-r2/kicker-idle-look-study.png",
+    "prompt": "Use case: identity-preserve. Asset type: one animation pose study for a pixel-art karate game. The reference is the approved K1 Kicker idle and controls identity, body-part scale, costume and rendering. Generate exactly ONE full-body character on a genuinely transparent RGBA background. Output a square 1536 by 1536 canvas if possible. Anatomical scale must match a 1131-pixel standing figure: keep head, torso, upper/lower limbs, hands and feet at the same sizes across poses, never enlarge a crouching pose to fill the canvas. Place the ground at source y=1400, anchor x=768, with generous transparent margins and absolutely no clipped fingers, feet or ponytail. Facing right, the same 3/4 side game view. Keep the angular determined young male profile, swept dark brown hair and substantial ponytail with BLUE tie; lean athletic body in a LOOSE dark indigo gi, substantial folded sleeves and trouser fabric, gold small curled dragon/S-shaped chest emblem, BLUE cloth belt with a knot and TWO hanging tails, cream shin wraps and bare feet. Preserve reference face and hand anatomy, thick dark silhouette outline and crisp shaded pixel-art clusters, upper-left light, no photographic smoothing. Use only the approved palette: #1e1321 #483958 #2f233b #f9a664 #634e72 #cd7644 #f8dbb2 #3e5fd3 #533228 #a95b34 #cdab86 #967864 #1d0403 #e18e55 #ebc295 #2b3c99 #fdbc7b #764834 #401a0f #b08f74 #3b51b0 #f4ad26 #222b70 #8b553c #7a6253 #5073e2 #0d1149 #b07b4f. No text, label, border, floor, cast shadow, dust, motion lines, opponent, duplicate figure, extra limb or separate prop. This is a new pose of the exact reference character; retain its drawn quality instead of geometric flat primitives."
+  },
+  "poses": [
+    {
+      "cell": 8,
+      "state": "enemyHighKick",
+      "phase": "startup",
+      "name": "study-08-enemyHighKick-startup.png",
+      "instruction": "POSE: High-kick wind-up. Stand balanced on the rear LEFT leg (the screen-left/support leg), sole flat on ground y1400 below x768. Lift the lead RIGHT knee high in front of the belly toward screen right; shin bent with the bare foot tucked below the knee. Standing crown near y269, total figure height about1131. Rear arm angled BACK for balance, other hand raised near the face. Upright poised torso, determined gaze to the right, visibly chambered knee, no striking foot extension yet. Preserve the gi folds and belt tails. The planted leg must connect continuously through hip, knee and ankle."
+    },
+    {
+      "cell": 9,
+      "state": "enemyHighKick",
+      "phase": "active",
+      "name": "study-09-enemyHighKick-active.png",
+      "instruction": "POSE: High front-kick at contact, lead leg driven up and right, support leg on ground below anchor x768. Lean torso slightly BACK to screen left, a balance arm extended back/low, other hand near face. The extended kicking leg is articulated from hip to a HIGH knee then ankle; it must clear a crouching opponent. Striking bare foot MUST lie entirely in source x909..1404 (141..636 ahead of x768), and y410..693 (707..990 ABOVE ground y1400). Prefer kicking foot heel around x1255,y490 and toes around x1380,y480. Beyond source x1051 (283 ahead), no part of the kicking leg may lie below y717 (683 above ground). Knee should be near x1060,y550, keeping the shin and foot high. Foot points toward screen right, cream wrap clearly visible. Keep anatomical reference scale: equivalent standing1131px; support foot on floor, no limb stretching to solve geometry. Crown no higher than y269; entire figure within x120..1416. Clean forceful high kick with the reference face, cloth volume, belt and hair. No attack effects."
+    },
+    {
+      "cell": 10,
+      "state": "enemyHighKick",
+      "phase": "recovery",
+      "name": "study-10-enemyHighKick-recovery.png",
+      "instruction": "POSE: High-kick recovery. Support rear leg planted at x768 with sole on y1400. Front striking leg withdrawn from extension, knee bent and descending in front of the hips; front bare foot still lifted clear of the floor, around x1060,y1220. Torso returned upright, crown near y269, guard returning toward the approved idle. A distinct drawing from the chamber: knee now lower, around x1020,y1010, shin dropping rather than folded tightly. Keep balance natural, loose gi folds, ponytail and two blue belt tails with modest follow-through."
+    },
+    {
+      "cell": 12,
+      "state": "enemyLowSweep",
+      "phase": "startup",
+      "name": "study-12-enemyLowSweep-startup.png",
+      "instruction": "POSE: Low-sweep wind-up. Lower into a compact deeply bent crouch facing right, torso about884 source pixels tall from lowest grounded point to crown (native75px); crown around y516 and ground y1400. Same head and body-part size as reference, body reduced in height only by bent knees/hips. Hips under anchor x768. One hand braces on the ground in front, other hand near chest/guard. Both feet remain tucked under/in support, with the leading knee ready to extend a low sweep. Keep feet separated and leg connections anatomically clear. Determined face still looking toward the opponent on the right. Folded dark gi, gold emblem, blue knot/tails and cream wraps fully consistent."
+    },
+    {
+      "cell": 13,
+      "state": "enemyLowSweep",
+      "phase": "active",
+      "name": "study-13-enemyLowSweep-active.png",
+      "instruction": "POSE: Low sweep at contact. Hips low above anchor x768, supporting leg DEEPLY BENT, torso low leaning slightly forward, one palm braced on ground y1400. Lead leg extends LOW and forward to screen right with a long cream-wrapped shin and bare foot, toes right. The striking shin and foot MUST fit source x862..1381 (94..613 ahead of anchor) and y1117..1353 (47..283 above floor). Aim bare foot around x1270..1370,y1250..1320 and shin around x1070..1270,y1180..1300. The long forward leg is mostly horizontal and CLEARLY OFF the floor; not a high kick, not a split seated on the floor. Grounded hand and rear supporting foot are lowest points on y1400. Crown around y660 (pose about740 tall); KEEP reference head/torso/limb scales despite compressed pose, not full standing height. Lean angular profile, ponytail, gi folds and blue belt consistent. One character only."
+    },
+    {
+      "cell": 14,
+      "state": "enemyLowSweep",
+      "phase": "recovery",
+      "name": "study-14-enemyLowSweep-recovery.png",
+      "instruction": "POSE: Low-sweep recovery. Front leg has drawn BACK under the body after the extended sweep, both knees bent in a rising compact crouch, hips above anchor x768. One hand still touches the floor y1400 but starts pushing up; other hand returns near chest. Front foot replanted just ahead, heel/sole on ground, rear leg gathered ready to stand. Total crouched height about884source pixels (crown aroundy516), with unchanged anatomical body-part size. It must be recognizably DIFFERENT from the startup: weight coming forward onto front foot, torso more upright, elbow straighter as he pushes upward, belt tails settling. Face/profile to right, same detailed shaded gi and hair."
+    }
+  ]
+}

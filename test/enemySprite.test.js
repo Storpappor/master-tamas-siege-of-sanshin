@@ -211,6 +211,43 @@ test('the Kicker map of its brief resolves both attacks by phase and the walk fo
   assert.equal(resolveFrame(partial, { state: 'getUp', progress: 0.5 }), 40);
 });
 
+// The staged Kicker first package (approved idle r2 in cell 0 plus the 17 approved r1b pose cells):
+// the brief's partial-delivery map, its own cell and anchor, 18 populated slots each its own drawing,
+// the three pending victim states left unmapped so the procedural fallback draws them.
+const KICKER_FIRST_PACKAGE = { idle: [0], walk: [4, 5, 6, 7], enemyHighKick: [8, 9, 10], enemyLowSweep: [12, 13, 14], hurt: [16, 17], knockdown: [20, 21, 22], fallen: [36], getUp: [40] };
+
+test('the staged kicker.json and kicker.png follow the brief\'s partial-delivery contract (approved first package)', () => {
+  const map = JSON.parse(readFileSync(new URL('../assets/sprites/kicker.json', import.meta.url), 'utf8'));
+  const sheet = new SpriteSheet({ map });
+  assert.deepEqual(sheet.cell, { w: 128, h: 112 });
+  assert.deepEqual(sheet.anchor, { x: 64, y: 111 });
+  assert.equal(sheet.columns, 4);
+  assert.deepEqual(map.states, KICKER_FIRST_PACKAGE, 'the partial map: 8 states, 18 cells, the victim states omitted');
+  const png = decodePng(readFileSync(new URL('../assets/sprites/kicker.png', import.meta.url)));
+  assert.equal(png.width, 512);
+  assert.equal(png.height, 1232);
+  let semi = 0;
+  for (let i = 3; i < png.rgba.length; i += 4) if (png.rgba[i] !== 0 && png.rgba[i] !== 255) semi++;
+  assert.equal(semi, 0, 'binary alpha');
+  const alphaAt = (x, y) => png.rgba[(y * png.width + x) * 4 + 3];
+  const bounds = (c) => {
+    const ox = (c % 4) * 128, oy = Math.floor(c / 4) * 112;
+    let top = 112, bottom = -1, any = false;
+    for (let y = 0; y < 112; y++) for (let x = 0; x < 128; x++) if (alphaAt(ox + x, oy + y)) { any = true; top = Math.min(top, y); bottom = Math.max(bottom, y); }
+    return any ? { top, bottom } : null;
+  };
+  assert.deepEqual(bounds(0), { top: 16, bottom: 111 }, 'the idle figure stands 96 px with its soles on the anchor row');
+  const populated = Object.values(map.states).flat();
+  assert.equal(populated.length, 18);
+  for (const c of populated) assert.notEqual(bounds(c), null, `cell ${c} is drawn`);
+  for (const c of [24, 28, 32]) assert.equal(bounds(c), null, `pending victim cell ${c} stays transparent`);
+  const pixels = (c) => { const ox = (c % 4) * 128, oy = Math.floor(c / 4) * 112; let s = ''; for (let y = 0; y < 112; y++) s += png.rgba.subarray(((oy + y) * png.width + ox) * 4, ((oy + y) * png.width + ox + 128) * 4).toString('hex'); return s; };
+  assert.equal(new Set(populated.map(pixels)).size, 18, 'every populated slot is its own drawing');
+  for (const state of Object.keys(map.states)) assert.notEqual(resolveFrame(sheet, { state, phase: 'active', progress: 0.5, loop: 1 }), null, `${state} resolves on the staged sheet`);
+  for (const state of ['held', 'thrownDown1', 'thrownDown2']) assert.equal(resolveFrame(sheet, { state, progress: 0.5 }), null, `${state} is pending: procedural fallback`);
+  assert.deepEqual(['startup', 'active', 'recovery'].map((phase) => resolveFrame(sheet, { state: 'enemyLowSweep', phase })), [12, 13, 14], 'the sweep\'s crouch is its own startup cell');
+});
+
 // A recording 2D context: enough for drawFighter (fillRect) and SpriteSheet.draw (drawImage).
 function recordingContext() {
   const calls = { fillRect: 0, drawImage: 0, scale: [] };

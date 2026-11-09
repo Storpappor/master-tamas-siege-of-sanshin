@@ -1,0 +1,16 @@
+{
+  "title": "Kicker pose studies r1b — cell9 left-foot correction candidate",
+  "created_date": "2026-11-09",
+  "generator": "built-in image_gen",
+  "new_candidate_studies": 17,
+  "approved_idle_sha256": "9ea1446a850e6c7222b2326a5c4ff9ea4937030b0d689f8e703938f05edb0ee0",
+  "input_package_sha256": "869662e7ba4db1b7a6b1cb2112fbbb5f64f4ae0ee2e2c5536f6da235184e4290",
+  "new_pose_approval": "not approved",
+  "game_capture": false,
+  "revision": "r1b",
+  "previous_revision": "r1",
+  "previous_native_atlas_sha256": "e231120c82a5d7ee0117cd0ca21c0fa1cf0ae6bb459fced0d173cd726d16c2f1",
+  "native_atlas_sha256": "14adc7d39b79d6169b23500a8c0155ad9c4dd168f4f8b70bbd3dd0003e091555",
+  "correction_scope": "Cell9 source study only; all other native cells and source studies preserved.",
+  "corrected_raw_cell9_sha256": "0e3d9621dbc5ab970283d680b0233881445bc1c86734296d02e0a3df08b38144"
+}

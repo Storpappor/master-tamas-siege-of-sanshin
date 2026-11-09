@@ -1,0 +1,9 @@
+Precise-object-edit of the attached Kicker high-kick illustration.
+The raised LEFT foot has the toes on the WRONG SIDE. Correct its handedness by reversing the visible TOE ORDER. This is NOT a request to merely flatten the arch.
+In this exact camera view, the correct LEFT foot must show:
+- The BIG TOE at the LOWER edge of the forefoot, closest to the viewer. Make this clearly the broadest/longest toe, with one broad toenail visible on this near lower toe.
+- The other four toes get progressively smaller as they recede toward the UPPER/FAR edge. The uppermost toe is the LITTLE TOE, small and set back. The uppermost toe MUST NOT be the large big toe.
+- The inside/medial edge belonging to the big toe is on the lower/near side in this view; heel and ankle connect naturally to this foot. Reverse the current toe-fan arrangement instead of repeating it.
+Toes continue to point SCREEN RIGHT. Do not flip the character horizontally, do not switch legs or pose. Keep the kicking ankle connected at its current location, preserve the current kicking knee and cream shin wraps. Keep the foot in the same general reach/height envelope.
+Edit ONLY this bare kicking foot at the far right (approximately source x945..1095,y295..425). Keep ALL other artwork unchanged: same face, ponytail, torso, arms, gi folds, emblem, belt, support leg and foot; same source scale, same 1254×1254 canvas and placement. Match the original dark outline and warm cel shading. True transparent RGBA. No text, backdrop, shadow or effects.
+The unmistakable correction must be a large toe at BOTTOM/NEAR, and small little toe at TOP/FAR—the opposite of the supplied image.

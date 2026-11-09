@@ -1,0 +1,100 @@
+{
+  "purpose": "Quantify all cell9 changes; the foot edit is not asserted to preserve other pixels without evidence.",
+  "oldRawSha256": "3cbab0aeaa929e91159e9f402736937bdac5e64270ba8ee0df75c6e9dc1c87d1",
+  "newRawSha256": "0e3d9621dbc5ab970283d680b0233881445bc1c86734296d02e0a3df08b38144",
+  "oldAnchorX": 519,
+  "newAnchorX": 519,
+  "oldGroundBottom": 1186,
+  "newGroundBottom": 1187,
+  "source": {
+    "comparedPixels": 1572516,
+    "changedPixels": 321777,
+    "changedRgbaBytes": 951824,
+    "changedBounds": [
+      0,
+      18,
+      1231,
+      1253
+    ],
+    "changedVisiblePixels": 290101,
+    "changedVisibleBounds": [
+      84,
+      131,
+      1111,
+      1186
+    ],
+    "changedOpaqueMaskPixels": 8597,
+    "reviewFootRegion": [
+      930,
+      270,
+      1135,
+      450
+    ],
+    "changedPixelsOutsideReviewFootRegion": 304982,
+    "changedVisiblePixelsOutsideReviewFootRegion": 275068
+  },
+  "native": {
+    "comparedPixels": 14336,
+    "changedPixels": 681,
+    "changedRgbaBytes": 2109,
+    "changedBounds": [
+      27,
+      22,
+      113,
+      110
+    ],
+    "changedVisiblePixels": 681,
+    "changedVisibleBounds": [
+      27,
+      22,
+      113,
+      110
+    ],
+    "changedOpaqueMaskPixels": 66,
+    "reviewFootRegion": [
+      98,
+      30,
+      117,
+      52
+    ],
+    "changedPixelsOutsideReviewFootRegion": 627,
+    "changedVisiblePixelsOutsideReviewFootRegion": 627
+  },
+  "nativeBoundsBefore": {
+    "w": 86,
+    "h": 89,
+    "dx": [
+      -37,
+      48
+    ],
+    "up": [
+      0,
+      88
+    ],
+    "rows": [
+      23,
+      111
+    ]
+  },
+  "nativeBoundsAfter": {
+    "w": 87,
+    "h": 90,
+    "dx": [
+      -37,
+      49
+    ],
+    "up": [
+      0,
+      89
+    ],
+    "rows": [
+      22,
+      111
+    ]
+  },
+  "geometryMetrics": {
+    "kickFarPixels": 97,
+    "crouchClearanceIntrusions": 0
+  },
+  "warnings": []
+}

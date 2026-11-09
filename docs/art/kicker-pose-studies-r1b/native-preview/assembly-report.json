@@ -1,0 +1,683 @@
+{
+  "scale": 0.08488063660477453,
+  "palette": [
+    "#1e1321",
+    "#483958",
+    "#2f233b",
+    "#f9a664",
+    "#634e72",
+    "#cd7644",
+    "#f8dbb2",
+    "#3e5fd3",
+    "#533228",
+    "#a95b34",
+    "#cdab86",
+    "#967864",
+    "#1d0403",
+    "#e18e55",
+    "#ebc295",
+    "#2b3c99",
+    "#fdbc7b",
+    "#764834",
+    "#401a0f",
+    "#b08f74",
+    "#3b51b0",
+    "#f4ad26",
+    "#222b70",
+    "#8b553c",
+    "#7a6253",
+    "#5073e2",
+    "#0d1149",
+    "#b07b4f"
+  ],
+  "cells": [
+    {
+      "cell": 0,
+      "state": "idle",
+      "file": "reference/approved-idle/kicker-idle-look-study.png",
+      "sha256": "c750ab0f2fa94e5282b0213e03c4b8fd1b6def956d7c4cb91422d77c5def8fcd",
+      "sourceBounds": {
+        "x": [
+          283,
+          968
+        ],
+        "y": [
+          34,
+          1164
+        ]
+      },
+      "anchorSrcX": 626,
+      "groundBottom": 1165,
+      "outlined": 27,
+      "bounds": {
+        "w": 58,
+        "h": 96,
+        "dx": [
+          -29,
+          28
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 4,
+      "state": "walk",
+      "file": "studies/study-04-walk.png",
+      "sha256": "66d6ec253c426d67247c98b387eb1a77b23dcd5c7f35fa3a6707e5de6c3b199d",
+      "sourceBounds": {
+        "x": [
+          201,
+          988
+        ],
+        "y": [
+          70,
+          1204
+        ]
+      },
+      "anchorSrcX": 569,
+      "groundBottom": 1205,
+      "outlined": 16,
+      "bounds": {
+        "w": 67,
+        "h": 96,
+        "dx": [
+          -31,
+          35
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 5,
+      "state": "walk",
+      "file": "studies/study-05-walk.png",
+      "sha256": "c94d1863dab6e5ae8b0480ac2e7ebba517fa676ccf0b9717d2c55d857a884495",
+      "sourceBounds": {
+        "x": [
+          370,
+          925
+        ],
+        "y": [
+          62,
+          1198
+        ]
+      },
+      "anchorSrcX": 570,
+      "groundBottom": 1199,
+      "outlined": 13,
+      "bounds": {
+        "w": 47,
+        "h": 97,
+        "dx": [
+          -17,
+          29
+        ],
+        "up": [
+          0,
+          96
+        ],
+        "rows": [
+          15,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 6,
+      "state": "walk",
+      "file": "studies/study-06-walk.png",
+      "sha256": "450c352368dd6c45291d6db07753154b537ee4d7be41c152bc41d4095e01c50b",
+      "sourceBounds": {
+        "x": [
+          194,
+          987
+        ],
+        "y": [
+          67,
+          1202
+        ]
+      },
+      "anchorSrcX": 568,
+      "groundBottom": 1203,
+      "outlined": 7,
+      "bounds": {
+        "w": 68,
+        "h": 96,
+        "dx": [
+          -32,
+          35
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 7,
+      "state": "walk",
+      "file": "studies/study-07-walk.png",
+      "sha256": "273379c712b3058bc9c061b63d952458409a148901b323dd9108cf927236c606",
+      "sourceBounds": {
+        "x": [
+          365,
+          925
+        ],
+        "y": [
+          64,
+          1190
+        ]
+      },
+      "anchorSrcX": 549,
+      "groundBottom": 1191,
+      "outlined": 15,
+      "bounds": {
+        "w": 48,
+        "h": 96,
+        "dx": [
+          -16,
+          31
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 8,
+      "state": "enemyHighKick",
+      "file": "studies/study-08-enemyHighKick-startup.png",
+      "sha256": "57d6e19975c10a48291f2f8d7dc119777af9c63e28824a442b6aff3ed193f14a",
+      "sourceBounds": {
+        "x": [
+          228,
+          899
+        ],
+        "y": [
+          56,
+          1184
+        ]
+      },
+      "anchorSrcX": 553,
+      "groundBottom": 1185,
+      "outlined": 44,
+      "bounds": {
+        "w": 57,
+        "h": 96,
+        "dx": [
+          -28,
+          28
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 9,
+      "state": "enemyHighKick",
+      "file": "studies/study-09-enemyHighKick-active.png",
+      "sha256": "d76694823a88c22b84a9e3bd320dd12191c66c7f14cd5148399ca218772d786a",
+      "sourceBounds": {
+        "x": [
+          84,
+          1111
+        ],
+        "y": [
+          131,
+          1186
+        ]
+      },
+      "anchorSrcX": 519,
+      "groundBottom": 1187,
+      "outlined": 35,
+      "bounds": {
+        "w": 87,
+        "h": 90,
+        "dx": [
+          -37,
+          49
+        ],
+        "up": [
+          0,
+          89
+        ],
+        "rows": [
+          22,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 10,
+      "state": "enemyHighKick",
+      "file": "studies/study-10-enemyHighKick-recovery.png",
+      "sha256": "7468af7da47efd7e3a7fe7d050837c60a2d4c5c9b7e57f0191f96ba5c1ff45c9",
+      "sourceBounds": {
+        "x": [
+          345,
+          911
+        ],
+        "y": [
+          55,
+          1185
+        ]
+      },
+      "anchorSrcX": 553,
+      "groundBottom": 1186,
+      "outlined": 33,
+      "bounds": {
+        "w": 48,
+        "h": 96,
+        "dx": [
+          -18,
+          29
+        ],
+        "up": [
+          0,
+          95
+        ],
+        "rows": [
+          16,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 12,
+      "state": "enemyLowSweep",
+      "file": "studies/study-12-enemyLowSweep-startup.png",
+      "sha256": "d590123f39b7029fad13740b4ebdf92c8086436cb0181e196e031418c0177fd5",
+      "sourceBounds": {
+        "x": [
+          312,
+          986
+        ],
+        "y": [
+          536,
+          1186
+        ]
+      },
+      "anchorSrcX": 580,
+      "groundBottom": 1187,
+      "outlined": 7,
+      "bounds": {
+        "w": 57,
+        "h": 55,
+        "dx": [
+          -23,
+          33
+        ],
+        "up": [
+          0,
+          54
+        ],
+        "rows": [
+          57,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 13,
+      "state": "enemyLowSweep",
+      "file": "studies/study-13-enemyLowSweep-active.png",
+      "sha256": "07cf50d7604094a257e0ee8bca9a3eda670042d9079f11d006a11acfd1e039ac",
+      "sourceBounds": {
+        "x": [
+          164,
+          1041
+        ],
+        "y": [
+          491,
+          1174
+        ]
+      },
+      "anchorSrcX": 490,
+      "groundBottom": 1175,
+      "outlined": 21,
+      "bounds": {
+        "w": 75,
+        "h": 58,
+        "dx": [
+          -28,
+          46
+        ],
+        "up": [
+          0,
+          57
+        ],
+        "rows": [
+          54,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 14,
+      "state": "enemyLowSweep",
+      "file": "studies/study-14-enemyLowSweep-recovery.png",
+      "sha256": "03ee52b51578f2e866251e1c25f88a8e22d1574b4d89344070670ea00991e80b",
+      "sourceBounds": {
+        "x": [
+          245,
+          937
+        ],
+        "y": [
+          362,
+          1188
+        ]
+      },
+      "anchorSrcX": 600,
+      "groundBottom": 1189,
+      "outlined": 26,
+      "bounds": {
+        "w": 59,
+        "h": 70,
+        "dx": [
+          -30,
+          28
+        ],
+        "up": [
+          0,
+          69
+        ],
+        "rows": [
+          42,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 16,
+      "state": "hurt",
+      "file": "studies/study-16-hurt-impact.png",
+      "sha256": "67f55201cbaaa961f34c60646a9e17b0a7fad6dfc8e7fdb7f63294291d12936a",
+      "sourceBounds": {
+        "x": [
+          270,
+          997
+        ],
+        "y": [
+          129,
+          1185
+        ]
+      },
+      "anchorSrcX": 635,
+      "groundBottom": 1186,
+      "outlined": 30,
+      "bounds": {
+        "w": 62,
+        "h": 90,
+        "dx": [
+          -31,
+          30
+        ],
+        "up": [
+          0,
+          89
+        ],
+        "rows": [
+          22,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 17,
+      "state": "hurt",
+      "file": "studies/study-17-hurt-stagger.png",
+      "sha256": "af9b94c5c294f3fcbf808ebf3524118877c08e88e0744c09acca0fa4e3eaa76b",
+      "sourceBounds": {
+        "x": [
+          265,
+          869
+        ],
+        "y": [
+          221,
+          1173
+        ]
+      },
+      "anchorSrcX": 565,
+      "groundBottom": 1174,
+      "outlined": 15,
+      "bounds": {
+        "w": 51,
+        "h": 81,
+        "dx": [
+          -25,
+          25
+        ],
+        "up": [
+          0,
+          80
+        ],
+        "rows": [
+          31,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 20,
+      "state": "knockdown",
+      "file": "studies/study-20-knockdown-topple.png",
+      "sha256": "294e13def93e2429c69a31df8310535bf8d72f277458e9c52e1ca2e63fbbc65a",
+      "sourceBounds": {
+        "x": [
+          107,
+          1043
+        ],
+        "y": [
+          263,
+          1185
+        ]
+      },
+      "anchorSrcX": 560,
+      "groundBottom": 1186,
+      "outlined": 80,
+      "bounds": {
+        "w": 79,
+        "h": 78,
+        "dx": [
+          -38,
+          40
+        ],
+        "up": [
+          0,
+          77
+        ],
+        "rows": [
+          34,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 21,
+      "state": "knockdown",
+      "file": "studies/study-21-knockdown-impact.png",
+      "sha256": "60b0cb274bf60159749c5ec8bb131a3a077cfc7c887c926ac0d03ad6478929a6",
+      "sourceBounds": {
+        "x": [
+          208,
+          1342
+        ],
+        "y": [
+          397,
+          951
+        ]
+      },
+      "anchorSrcX": 840,
+      "groundBottom": 952,
+      "outlined": 43,
+      "bounds": {
+        "w": 97,
+        "h": 47,
+        "dx": [
+          -54,
+          42
+        ],
+        "up": [
+          0,
+          46
+        ],
+        "rows": [
+          65,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 22,
+      "state": "knockdown",
+      "file": "studies/study-22-knockdown-lying.png",
+      "sha256": "6abf4690f1fa0d818d72de4d7db1357d7fa986eba5920cf5eb2e5fe902208ad9",
+      "sourceBounds": {
+        "x": [
+          96,
+          1436
+        ],
+        "y": [
+          570,
+          894
+        ]
+      },
+      "anchorSrcX": 820,
+      "groundBottom": 895,
+      "outlined": 29,
+      "bounds": {
+        "w": 113,
+        "h": 28,
+        "dx": [
+          -61,
+          51
+        ],
+        "up": [
+          0,
+          27
+        ],
+        "rows": [
+          84,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 36,
+      "state": "fallen",
+      "file": "studies/study-36-fallen.png",
+      "sha256": "b1bc351bf554b6388ce501d4ac2035094c288d1d34b8df4be818d6df43d77c6c",
+      "sourceBounds": {
+        "x": [
+          28,
+          1210
+        ],
+        "y": [
+          705,
+          1157
+        ]
+      },
+      "anchorSrcX": 610,
+      "groundBottom": 1158,
+      "outlined": 34,
+      "bounds": {
+        "w": 100,
+        "h": 38,
+        "dx": [
+          -49,
+          50
+        ],
+        "up": [
+          0,
+          37
+        ],
+        "rows": [
+          74,
+          111
+        ]
+      }
+    },
+    {
+      "cell": 40,
+      "state": "getUp",
+      "file": "studies/study-40-get-up.png",
+      "sha256": "e619d1523033875398d9d1da85b4c106c10615c7d8086f43e5b98f58f683cdff",
+      "sourceBounds": {
+        "x": [
+          214,
+          966
+        ],
+        "y": [
+          444,
+          1179
+        ]
+      },
+      "anchorSrcX": 615,
+      "groundBottom": 1180,
+      "outlined": 19,
+      "bounds": {
+        "w": 64,
+        "h": 62,
+        "dx": [
+          -34,
+          29
+        ],
+        "up": [
+          0,
+          61
+        ],
+        "rows": [
+          50,
+          111
+        ]
+      }
+    }
+  ],
+  "mappedStates": [
+    "idle",
+    "walk",
+    "enemyHighKick",
+    "enemyLowSweep",
+    "hurt",
+    "knockdown",
+    "fallen",
+    "getUp"
+  ],
+  "unmappedCells": [
+    24,
+    28,
+    32
+  ],
+  "warnings": [],
+  "pngSha256": "14adc7d39b79d6169b23500a8c0155ad9c4dd168f4f8b70bbd3dd0003e091555",
+  "jsonSha256": "9b86e9f99bf34d1d807e34dca98bfd4c8189fac68aab18bdb786b2b84de7e4e4"
+}
