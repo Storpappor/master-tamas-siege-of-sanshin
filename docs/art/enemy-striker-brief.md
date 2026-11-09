@@ -23,7 +23,8 @@ Striker is staged against Tamas (section 8); the temporary hold occlusion stays 
 | Renderer: optional JSON-mapped sheet per enemy type, procedural fallback per state, mirroring | implemented on `enemy-sheets-striker`, unit-tested, gameplay guard passing |
 | Pipeline verified with a labelled diagnostic sheet (loading, routing, fallback, mirrored placement, the recommended 128 × 96 cell) | done, `preview/striker-diagnostic-both-facings.png` |
 | Hold, throw-down, landing, floor time, get-up (simulation) | unchanged from `main`; the offsets and frame numbers below are the merged ones |
-| Striker sheet (S1 at the sizes of section 3) | **to be delivered** by the art chat (sections 6 and 7) |
+| Striker sheet (S1 at the sizes of section 3) | delivered and merged (pull request #11); production `striker.png` 4551f4f2… was the S1 baseline until the revision below |
+| Controlled-arm revision of cells 20, 24, 28 (held, thrownDown1, thrownDown2) | **approved 9 November 2026 (founder): v1c, `striker.png` SHA-256 `118459f1730f5a5b0f738033bb4f80d18bd08795fd3b6137ef230d159e2f6582`** = the art chat's v1 (`ad306ff8…`, cells 20 and 24 as delivered) with cell 28's controlled hand and distal forearm lowered three rows so the complete hand clears Tamas by k30 (real game, both facings: k24 0/36, k27 22/36, k30 36/36). Paired with Tamas `a427c431…` (cells 61/62 as reviewed), unchanged. R1 `975d990a…`, R2 `7dd791be…` and v1.1 `b9e8b8d3…` are historical alternatives, not for integration. The hold's partly obscured grip stays an accepted limitation; the foreground-hand pass stays deferred. |
 | Kicker, thrower, boss sheets | later, same mechanism; what differs for them is in section 9 |
 
 ---
