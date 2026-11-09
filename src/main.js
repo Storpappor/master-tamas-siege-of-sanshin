@@ -166,9 +166,10 @@ export function boot(root) {
     if (ui.storyActive || e.repeat) return;
     const key = e.key;
     if ((key === 'h' || key === 'H') && !helpOpen() && (ui.overlay === 'start' || ui.overlay === 'paused')) { e.preventDefault(); openHelp(); }
-    // Esc while paused reaches the Input's pause handler (below); on the title the Input is
-    // inactive, so Esc is handled here.
-    else if (key === 'Escape' && helpOpen() && !input.active) { e.preventDefault(); closeHelp(); }
+    // The Input is inactive whenever a menu is open (see the frame loop), so Esc and P are
+    // handled here: Esc closes help, or resumes from the pause screen; P resumes too.
+    else if (key === 'Escape' && helpOpen()) { e.preventDefault(); closeHelp(); }
+    else if ((key === 'Escape' || key === 'p' || key === 'P') && game.state === 'paused' && ui.overlay === 'paused') { e.preventDefault(); unlockAudio(); game.resume(); }
   });
   const pauseStatus = root.querySelector('[data-pause-status]');
   let lastStatus = '';
@@ -249,6 +250,9 @@ export function boot(root) {
     // shows no HUD, since its numbers only mean something during a run.
     const playing = game.state === 'playing';
     if (touchArea && touchArea.inert !== !playing) touchArea.inert = !playing;
+    // Gameplay keys are captured only while playing: on a menu, Space and the letters belong to
+    // the buttons (Space must activate a focused button, not queue a jump for the resume).
+    if (input.active !== playing) input.active = playing;
     root.classList.toggle('kg-root--title', game.state === 'start');
     syncPauseStatus();
     // Music and sound cues follow the state the steps just produced.
