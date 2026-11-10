@@ -15,6 +15,8 @@ export function createUi(root) {
     comboWrap: q('[data-hud="combo-wrap"]'),
     combo: q('[data-hud="combo"]'),
     kiaiButton: q('[data-btn="kiai"]'),
+    touchKiaiFill: q('[data-touch-kiai-fill]'),
+    touchKiaiText: q('[data-touch-kiai-text]'),
   };
   const soundButtons = [...root.querySelectorAll('[data-action="sound"]')];
   const touch = q('[data-touch]');
@@ -158,19 +160,26 @@ export function createUi(root) {
       if (kiai && hud.kiai) {
         const pct = Math.round(kiai.fraction * 100);
         const mode = kiai.active ? 'active' : kiai.ready ? 'ready' : 'cooling';
-        if (force || last.kiaiPct !== pct) hud.kiai.style.width = `${pct}%`;
+        if (force || last.kiaiPct !== pct) {
+          hud.kiai.style.width = `${pct}%`;
+          // The touch meter is the Kiai button itself: its fill shows the same charge.
+          if (hud.touchKiaiFill) hud.touchKiaiFill.style.width = `${pct}%`;
+        }
         if (force || last.kiaiMode !== mode) {
+          const label = mode === 'active' ? 'AJSICH!' : mode === 'ready' ? 'Ready' : 'Charging';
           hud.kiai.classList.toggle('is-ready', mode === 'ready');
           hud.kiai.classList.toggle('is-active', mode === 'active');
           if (hud.kiaiText) {
-            hud.kiaiText.textContent = mode === 'active' ? 'AJSICH!' : mode === 'ready' ? 'Ready' : 'Charging';
+            hud.kiaiText.textContent = label;
             hud.kiaiText.classList.toggle('is-ready', mode === 'ready');
             hud.kiaiText.classList.toggle('is-active', mode === 'active');
           }
           if (hud.kiaiButton) {
             hud.kiaiButton.classList.toggle('is-ready', mode === 'ready');
+            hud.kiaiButton.classList.toggle('is-active', mode === 'active');
             hud.kiaiButton.classList.toggle('is-cooling', mode === 'cooling');
           }
+          if (hud.touchKiaiText) hud.touchKiaiText.textContent = mode === 'ready' ? 'Kiai: tap!' : mode === 'active' ? 'Kiai active' : 'Kiai charging';
         }
         last.kiaiPct = pct; last.kiaiMode = mode;
       }
@@ -191,6 +200,20 @@ export function createUi(root) {
     setTouchVisible(on) {
       if (touch) touch.hidden = !on;
       root.classList.toggle('kg-root--touch', on);
+      // The page frame gives up its padding in phone landscape so the picture can fill the screen.
+      const body = root.ownerDocument && root.ownerDocument.body;
+      if (body) body.classList.toggle('kg-page--touch', on);
+    },
+
+    // Alternatives under evaluation (DUCK, BLOCK): hidden unless asked for by name.
+    showTouchAlternatives(names) {
+      const alt = q('[data-touch-alt]');
+      const wanted = names.filter((n) => ['duck', 'block'].includes(n));
+      if (alt) alt.hidden = wanted.length === 0;
+      for (const n of ['duck', 'block']) {
+        const b = q(`[data-btn="${n}"]`);
+        if (b) b.hidden = !wanted.includes(n);
+      }
     },
   };
   return api;

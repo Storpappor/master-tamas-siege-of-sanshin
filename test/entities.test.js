@@ -260,3 +260,79 @@ test('separate pushes overlapping fighters apart', () => {
   separate(a, front, 11);
   assert.equal(front.x, before, 'fighters on different parts of the floor pass freely');
 });
+
+test('a held sprint input (touch pad run zone) runs while a direction is held and ends when let go', () => {
+  const p = new Player(100);
+  // One step of plain walking first: no double-tap involved anywhere in this test.
+  p.update(STEP, { ...idle, right: true });
+  assert.equal(p.sprinting, false);
+  p.update(STEP, { ...idle, right: true, sprint: true });
+  assert.equal(p.sprinting, true, 'the run starts the moment the zone is entered');
+  assert.equal(p.lastEvent, 'sprint', 'same start cue as the double-tap sprint');
+  assert.ok(Math.abs(p.vx - PHYSICS.playerSpeed * SPRINT.speedMultiplier) < 1e-9, 'same sprint speed');
+  assert.equal(p.facing, 1);
+  // The direction may change without ending the run, and the start cue does not fire again.
+  p.lastEvent = null;
+  p.update(STEP, { ...idle, right: true, down: true, sprint: true });
+  assert.equal(p.sprinting, true);
+  assert.equal(p.lastEvent, null, 'no second sprint burst on a direction change');
+  p.update(STEP, { ...idle, down: true, sprint: true });
+  assert.equal(p.sprinting, true, 'still running straight down');
+  assert.ok(Math.abs(p.vz - PHYSICS.playerDepthSpeed * SPRINT.speedMultiplier) < 1e-9);
+  // Pulling back inside the ring: walking again, direction kept.
+  p.update(STEP, { ...idle, down: true });
+  assert.equal(p.sprinting, false, 'letting go of the run zone ends the run');
+  assert.ok(Math.abs(p.vz - PHYSICS.playerDepthSpeed) < 1e-9, 'back to walking speed');
+  // The run zone without any direction does nothing.
+  const q = new Player(100);
+  q.update(STEP, { ...idle, sprint: true });
+  assert.equal(q.sprinting, false);
+  assert.equal(q.vx, 0);
+});
+
+test('the pad run and the hold-back guard: holding away from a strike still blocks, run or not', () => {
+  const p = new Player(100);
+  p.facing = 1;
+  p.update(STEP, { ...idle, left: true, sprint: true }, { threatDir: 1, nearDir: 1 });
+  assert.equal(p.blocking, true, 'holding away from the threat raises the guard');
+  assert.equal(p.vx, 0, 'a guard does not move, however far the thumb is');
+  assert.equal(p.facing, 1, 'eyes stay on the enemy');
+});
+
+test('regression: touching the pad twice in the walk zone never starts a sprint; only the run zone does', () => {
+  // The pad's press/release edges arrive with padMove: true. Before the fix they reached the
+  // keyboard double-tap detector: touch down, up for a frame, down again inside the tap window
+  // made the player sprint although the pad never asked for it.
+  const pad = (over) => ({ ...idle, padMove: true, ...over });
+  const p = new Player(100);
+  p.update(STEP, pad({ right: true }));
+  p.update(STEP, pad({}));
+  p.update(STEP, pad({ right: true }));
+  assert.equal(p.sprinting, false, 'two quick pad touches are two walks');
+  assert.ok(Math.abs(p.vx - PHYSICS.playerSpeed) < 1e-9, 'walking speed');
+  run(p, 0.5, () => p.update(STEP, pad({ right: true })));
+  assert.equal(p.sprinting, false, 'and holding does not start one either');
+  // Up to four quick re-touches inside the window: still walking.
+  for (let i = 0; i < 4; i++) { p.update(STEP, pad({})); p.update(STEP, pad({ right: true })); }
+  assert.equal(p.sprinting, false);
+  // The run zone is the only way to run on touch.
+  p.update(STEP, pad({ right: true, sprint: true }));
+  assert.equal(p.sprinting, true);
+  assert.ok(Math.abs(p.vx - PHYSICS.playerSpeed * SPRINT.speedMultiplier) < 1e-9);
+  p.update(STEP, pad({ right: true }));
+  assert.equal(p.sprinting, false, 'back inside the ring: walking');
+
+  // A pad tap followed by a key tap inside the window is not a double-tap either.
+  const mixed = new Player(100);
+  mixed.update(STEP, pad({ left: true }));
+  mixed.update(STEP, idle);
+  mixed.update(STEP, { ...idle, left: true });
+  assert.equal(mixed.sprinting, false, 'the pad touch left no tap timer behind');
+
+  // The keyboard double-tap is unchanged (no padMove flag).
+  const key = new Player(100);
+  key.update(STEP, { ...idle, right: true });
+  key.update(STEP, idle);
+  key.update(STEP, { ...idle, right: true });
+  assert.equal(key.sprinting, true, 'two key taps still sprint');
+});
