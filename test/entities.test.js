@@ -298,3 +298,41 @@ test('the pad run and the hold-back guard: holding away from a strike still bloc
   assert.equal(p.vx, 0, 'a guard does not move, however far the thumb is');
   assert.equal(p.facing, 1, 'eyes stay on the enemy');
 });
+
+test('regression: touching the pad twice in the walk zone never starts a sprint; only the run zone does', () => {
+  // The pad's press/release edges arrive with padMove: true. Before the fix they reached the
+  // keyboard double-tap detector: touch down, up for a frame, down again inside the tap window
+  // made the player sprint although the pad never asked for it.
+  const pad = (over) => ({ ...idle, padMove: true, ...over });
+  const p = new Player(100);
+  p.update(STEP, pad({ right: true }));
+  p.update(STEP, pad({}));
+  p.update(STEP, pad({ right: true }));
+  assert.equal(p.sprinting, false, 'two quick pad touches are two walks');
+  assert.ok(Math.abs(p.vx - PHYSICS.playerSpeed) < 1e-9, 'walking speed');
+  run(p, 0.5, () => p.update(STEP, pad({ right: true })));
+  assert.equal(p.sprinting, false, 'and holding does not start one either');
+  // Up to four quick re-touches inside the window: still walking.
+  for (let i = 0; i < 4; i++) { p.update(STEP, pad({})); p.update(STEP, pad({ right: true })); }
+  assert.equal(p.sprinting, false);
+  // The run zone is the only way to run on touch.
+  p.update(STEP, pad({ right: true, sprint: true }));
+  assert.equal(p.sprinting, true);
+  assert.ok(Math.abs(p.vx - PHYSICS.playerSpeed * SPRINT.speedMultiplier) < 1e-9);
+  p.update(STEP, pad({ right: true }));
+  assert.equal(p.sprinting, false, 'back inside the ring: walking');
+
+  // A pad tap followed by a key tap inside the window is not a double-tap either.
+  const mixed = new Player(100);
+  mixed.update(STEP, pad({ left: true }));
+  mixed.update(STEP, idle);
+  mixed.update(STEP, { ...idle, left: true });
+  assert.equal(mixed.sprinting, false, 'the pad touch left no tap timer behind');
+
+  // The keyboard double-tap is unchanged (no padMove flag).
+  const key = new Player(100);
+  key.update(STEP, { ...idle, right: true });
+  key.update(STEP, idle);
+  key.update(STEP, { ...idle, right: true });
+  assert.equal(key.sprinting, true, 'two key taps still sprint');
+});

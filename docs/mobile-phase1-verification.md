@@ -268,3 +268,37 @@ real device and in the embedded browser (watch `scale=` and the `gestures blocke
 `?touchlog=1`); whether the snap-back fires if a zoom slips through; the feel of the 0.80 / 0.60
 lines under a real thumb; the run on diagonals; rotation mid-run. The desktop app's browser
 cannot pinch.
+
+### 7.5 Revision 1c: touch edges no longer reach the double-tap detector; bounded snap-back
+
+Founder's headless reproduction on 675e90d: touch down at 50 % of the pad radius (walk), release
+for one simulation frame, touch down again at the same spot inside the 0.25 s tap window:
+`input.sprint` stays false, yet `player.sprinting` turns true and the pad's run indicator stays
+off. Cause: the pad's press and release of a direction look exactly like key taps to
+`Player.trackTaps`, which only ever knew the keyboard.
+
+Fix: the snapshot now carries `padMove`, true while any direction is held by a touch pointer
+(`Input.padMove`, `src/input.js`). `Player.trackTaps` treats direction edges as taps only when
+`padMove` is false; pad edges clear the tap timer instead of arming it, so a pad touch followed
+by a key tap inside the window is not a double-tap either. On touch the run comes from the held
+`sprint` input alone; the keyboard double-tap is unchanged. The radial thresholds stay at the
+provisional 0.80 / 0.60. Regression tests: `test/entities.test.js` ("touching the pad twice in
+the walk zone never starts a sprint"), `test/input.test.js` (`padMove` is false for keys, true
+for the pad, and a second quick walk-zone touch is still a walk request). Scripted inputs without
+the field behave as before; the replay baseline passes.
+
+Zoom snap-back bound (`ZOOM_RESET` in `src/gestures.js`): at most 3 resets per 10 s; further
+triggers are counted as `suppressed=` in the diagnostic instead of rewriting the meta again, so a
+browser that keeps its zoom despite the meta, or that fires viewport resizes continuously,
+cannot be reset in a loop. `test/gestures.test.js` drives the guard with fake document and window
+objects: pinch moves refused in menus and in play, one-finger moves refused only in play,
+WebKit gesture events refused, one snap-back while playing with the original meta restored, none
+in a menu except after a rotation, the bound under twelve resizes at scale 2, and no reset at
+scale 1. **The zoom diagnosis and the snap-back remain awaiting physical-device verification**;
+these tests prove the logic, not the browser.
+
+Skin and names: PR #22 (navy/cyan touch-control skin, colours only; the ability named "Kiai" in
+the interface) is merged into the branch as its own commit, after checking that it changes only
+colour declarations in the touch section of `karate-game.css`, the hint, comment, meter label
+and aria text in `index.html`, and the three meter strings in `src/ui.js`. Geometry, class names,
+hit areas and input code are unchanged; the floating "AJSICH!" and Tamas's shout are unchanged.

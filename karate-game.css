@@ -469,6 +469,10 @@
 .kg-touch[inert] .kg-touch__btn, .kg-touch[inert] .kg-touch__meter, .kg-touch[inert] .kg-touch__pad { background: #101623; border-color: #393545; color: #777482; box-shadow: none; }
 .kg-touch[inert] .kg-touch__nub { background: #1a2030; border-color: #393545; }
 
+/* Touch panel while a menu has it inert (menu-shell branch): the disabled look of the design. */
+.kg-touch[inert] .kg-touch__btn, .kg-touch[inert] .kg-touch__meter, .kg-touch[inert] .kg-touch__pad { background: #101623; border-color: #393545; color: #777482; box-shadow: none; }
+.kg-touch[inert] .kg-touch__nub { background: #1a2030; border-color: #393545; }
+
 /* While a round is being played the whole game area is a control surface: no scroll, no zoom. */
 .kg-root--playing { touch-action: none; }
 
