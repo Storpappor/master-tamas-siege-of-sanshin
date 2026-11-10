@@ -15,16 +15,17 @@ import { BACKGROUNDS, loadBackground } from './background.js';
 const SPRITE_URL = new URL('../assets/tamas-hero-spritesheet.png', import.meta.url).href;
 const HERO_SHEET_URL = new URL('../assets/sprites/tamas.json', import.meta.url).href;
 
-// Opening story, one card per entry. Lines are drawn exactly as written.
+// Opening story, one card per entry. Lines are drawn exactly as written. Story, narration and
+// character lines are Swedish; menus and system UI are English (docs/ui-display-names.md).
 export const INTRO_SCREENS = [
-  ['STOCKHOLM. MIDNIGHT.'],
-  ['BUDAPEST 1942. ALGERIA 1960.', 'STOCKHOLM TONIGHT.'],
-  ['TWO ARMIES. ONE DOJO.', 'HE IS NOT DONE.'],
-  ['HIS BEST STUDENT LEFT.', 'HE TOOK FIVE DOJOS WITH HIM.'],
-  ['THEY CALL THEMSELVES', 'THE SHADOW LEAGUE.'],
-  ['TONIGHT THEY COME FOR', 'THE SANSHINKAN NAME.'],
-  ['THREE HEARTS:', 'COURAGE. FOCUS. DISCIPLINE.'],
-  ['AT 84, TAMAS WEBER', 'TIES HIS BELT ONE MORE TIME.'],
+  ['STOCKHOLM. MIDNATT.'],
+  ['BUDAPEST 1942. ALGERIET 1960.', 'STOCKHOLM I NATT.'],
+  ['TVÅ ARMÉER. EN DOJO.', 'HAN ÄR INTE FÄRDIG.'],
+  ['HANS BÄSTA ELEV GICK.', 'HAN TOG FEM DOJOR MED SIG.'],
+  ['DE KALLAR SIG', 'SKUGGLIGAN.'],
+  ['I NATT KOMMER DE FÖR', 'NAMNET SANSHINKAN.'],
+  ['TRE HJÄRTAN:', 'MOD. FOKUS. DISCIPLIN.'],
+  ['VID 84 KNYTER TAMAS WEBER', 'BÄLTET EN GÅNG TILL.'],
 ];
 
 const SOUND_KEY = 'karate-challenge-sound';

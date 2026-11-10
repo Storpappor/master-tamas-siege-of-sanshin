@@ -46,7 +46,7 @@ Run a single suite with `node --test test/combat.test.js`.
 | Sound cues, their variation and voice limits | `CUE` in `src/sound.js` |
 | Which game moment plays which cue or track | `src/audioDirector.js` |
 | Music tracks, loop points, music volume | `MUSIC` in `src/music.js` |
-| Story and dialogue text | `INTRO_SCREENS` in `src/main.js`, `KAGE_DIALOGUE` and `ZONE_CARDS` in `src/game.js`, end cards in `index.html` |
+| Story and dialogue text (Swedish; menus stay English) | `INTRO_SCREENS` in `src/main.js`, `KAGE_DIALOGUE` and `ZONE_CARDS` in `src/game.js`, end cards in `index.html`; display names and the presentation-time translations in `src/names.js` (`docs/ui-display-names.md`) |
 
 Keep these in sync when they change:
 
