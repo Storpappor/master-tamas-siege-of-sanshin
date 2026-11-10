@@ -271,6 +271,9 @@ export function boot(root) {
     // the buttons (Space must activate a focused button, not queue a jump for the resume).
     if (input.active !== playing) input.active = playing;
     root.classList.toggle('kg-root--title', game.state === 'start');
+    // While a menu owns the screen the root must not clip: on phones the menu layer is fixed to
+    // the viewport, and Safari clips a fixed descendant at an overflow-clipped ancestor's box.
+    root.classList.toggle('kg-root--menu', !playing);
     syncPauseStatus();
     syncResultStats();
     // Music and sound cues follow the state the steps just produced.
