@@ -302,6 +302,7 @@
 /* Keyboard and touch copy follow the input in use. */
 .kg-only-touch { display: none; }
 .kg-root--touch .kg-only-touch { display: block; }
+.kg-root--touch .kg-help__note .kg-only-touch { display: inline; }
 .kg-root--touch .kg-only-keys { display: none; }
 .kg-root--touch .kg-key { display: none; }
 .kg-root--touch .kg-btn--primary .kg-key { display: none; }
