@@ -230,14 +230,45 @@ export function boot(root) {
       box.textContent = lines.join('\n');
     }, 500);
   }
-  // Touch diagnostics for phones (no console): open the game with ?touchlog=1. Shows the last
-  // pointer and key events as the input layer saw them, which actions are held and by how many
-  // sources, and the pointers the browser reports, so a dropped or stuck input can be read off.
+  // Touch diagnostics for phones (no console): open the game with ?touchlog=1. Developer-only.
+  // Starts as a one-line pill in a corner so it covers almost nothing; a tap on it expands the
+  // full log (held actions and their sources, the pad's pointers, the player's x/facing/run, the
+  // viewport scale and refused gestures, the last input-layer events and raw pointer events), a
+  // second tap collapses it again, and the small corner control moves it between the four
+  // corners so it never sits on the control being reproduced.
   if (params.has('touchlog')) {
     const box = document.createElement('pre');
     box.className = 'kg-touchlog';
-    box.style.cssText = 'position:fixed;right:4px;top:4px;z-index:9999;margin:0;padding:6px 8px;max-width:46vw;max-height:60vh;overflow:hidden;font:10px/1.3 monospace;color:#fff;background:rgba(0,0,0,.72);white-space:pre-wrap;pointer-events:none;';
+    box.setAttribute('role', 'status');
+    box.style.cssText = 'position:fixed;z-index:9999;margin:0;padding:4px 8px;font:10px/1.3 monospace;color:#fff;background:rgba(0,0,0,.78);white-space:pre-wrap;overflow:hidden;border-radius:6px;touch-action:manipulation;user-select:none;-webkit-user-select:none;';
+    const corner = document.createElement('button');
+    corner.type = 'button';
+    corner.textContent = '\u2924';
+    corner.setAttribute('aria-label', 'Move the touch log to the next corner');
+    corner.style.cssText = 'position:fixed;z-index:10000;width:22px;height:22px;padding:0;border:1px solid #888;border-radius:11px;background:rgba(0,0,0,.78);color:#fff;font:12px/20px monospace;touch-action:manipulation;';
     document.body.appendChild(box);
+    document.body.appendChild(corner);
+    let expanded = false;
+    let cornerIndex = 1; // 0 top-left, 1 top-right, 2 bottom-right, 3 bottom-left
+    const place = () => {
+      const top = cornerIndex < 2, right = cornerIndex === 1 || cornerIndex === 2;
+      const edge = 'calc(4px + env(safe-area-inset-top, 0px))';
+      box.style.top = top ? edge : 'auto';
+      box.style.bottom = top ? 'auto' : 'calc(4px + env(safe-area-inset-bottom, 0px))';
+      box.style.left = right ? 'auto' : '28px';
+      box.style.right = right ? '28px' : 'auto';
+      box.style.maxWidth = expanded ? '70vw' : '60vw';
+      box.style.maxHeight = expanded ? '55vh' : '1.6em';
+      box.style.whiteSpace = expanded ? 'pre-wrap' : 'nowrap';
+      box.style.textOverflow = 'ellipsis';
+      corner.style.top = top ? edge : 'auto';
+      corner.style.bottom = top ? 'auto' : 'calc(4px + env(safe-area-inset-bottom, 0px))';
+      corner.style.left = right ? 'auto' : '4px';
+      corner.style.right = right ? '4px' : 'auto';
+    };
+    box.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); expanded = !expanded; place(); });
+    corner.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); cornerIndex = (cornerIndex + 1) % 4; place(); });
+    place();
     const log = [];
     const t0 = performance.now();
     const stamp = () => ((performance.now() - t0) / 1000).toFixed(2).padStart(6);
@@ -245,6 +276,7 @@ export function boot(root) {
     const raw = [];
     for (const type of ['pointerdown', 'pointerup', 'pointercancel']) {
       window.addEventListener(type, (e) => {
+        if (e.target === box || e.target === corner) return;
         const target = e.target && e.target.closest ? e.target.closest('[data-btn],[data-pad]') : null;
         const name = target ? (target.dataset.btn || 'pad') : (e.target && e.target.className ? String(e.target.className).slice(0, 18) : '?');
         raw.push(`${stamp()} ${type.padEnd(13)} id=${e.pointerId} ${e.pointerType} on ${name}`);
@@ -253,8 +285,11 @@ export function boot(root) {
     }
     setInterval(() => {
       const held = Object.entries(input.sources).filter(([, s]) => s.size).map(([a, s]) => `${a}:${s.size}`).join(' ') || 'nothing';
+      const vv = window.visualViewport;
+      const pill = `held ${held} | scale ${vv ? vv.scale.toFixed(2) : '?'} | ${game.state} x=${Math.round(game.player.x)} | tap for more`;
+      if (!expanded) { box.textContent = pill; return; }
       const sources = ['left', 'right', 'up', 'down', 'sprint'].map((a) => `${a}:[${[...input.sources[a]].join(',')}]`).join(' ');
-      box.textContent = [`held ${held}`, `pad pointers [${input.padPointerIds().join(',')}] ${sources}`, `game=${game.state} player x=${Math.round(game.player.x)} facing=${game.player.facing} sprint=${game.player.sprinting}`, gestures.describe(), '--- input layer ---', ...log, '--- browser ---', ...raw].join('\n');
+      box.textContent = [`held ${held}   (tap to collapse)`, `pad pointers [${input.padPointerIds().join(',')}] ${sources}`, `game=${game.state} player x=${Math.round(game.player.x)} facing=${game.player.facing} sprint=${game.player.sprinting}`, gestures.describe(), '--- input layer ---', ...log, '--- browser ---', ...raw].join('\n');
     }, 100);
   }
   root.karateHeroSheet = heroSheet;
