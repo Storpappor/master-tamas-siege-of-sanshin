@@ -290,3 +290,59 @@ test('the snapshot says whether the movement comes from the pad, so touch edges 
   assert.equal(s.sprint, false, 'a second touch in the walk zone is still a walk request');
   assert.equal(s.padMove, true);
 });
+
+test('a new touch on the pad supersedes an earlier pad pointer whose end was never reported', () => {
+  const { input, pad } = touchInput();
+  pad.fire('pointerdown', { pointerId: 1, clientX: 5, clientY: 50 }); // run left
+  assert.deepEqual([input.held.left, input.held.sprint], [true, true]);
+  // The thumb lifted but neither pointerup, pointercancel nor lostpointercapture ever arrived.
+  pad.fire('pointerdown', { pointerId: 2, clientX: 95, clientY: 50 }); // run right with a new pointer
+  const s = input.snapshot();
+  assert.equal(s.left, false, 'the dead pointer no longer holds left');
+  assert.equal(s.right, true);
+  assert.equal(s.sprint, true);
+  assert.deepEqual(input.padPointerIds(), [2]);
+  assert.equal(input.sources.left.size, 0);
+});
+
+test('a pad pointer that ends lets go of everything it holds, even if its recorded state is wrong', () => {
+  const { input, pad } = touchInput();
+  pad.fire('pointerdown', { pointerId: 1, clientX: 5, clientY: 5 }); // run up-left
+  input.press('down', 1); // a stray hold by the same pointer that the pad never recorded
+  pad.fire('pointercancel', { pointerId: 1 });
+  assert.equal(Object.values(input.held).some(Boolean), false, 'nothing held');
+  assert.equal(input.sources.down.size, 0);
+});
+
+test('a moving contact the pad never saw start is adopted as a fresh press; a hovering mouse is not', () => {
+  const { input, pad } = touchInput();
+  pad.fire('pointermove', { pointerId: 9, pointerType: 'touch', buttons: 1, clientX: 95, clientY: 50 });
+  assert.equal(input.held.right, true, 'the lost pointerdown is made good');
+  assert.deepEqual(input.padPointerIds(), [9]);
+  pad.fire('pointerup', { pointerId: 9 });
+  assert.equal(input.held.right, false);
+  pad.fire('pointermove', { pointerId: 10, pointerType: 'mouse', buttons: 0, clientX: 95, clientY: 50 });
+  assert.equal(input.held.right, false, 'a mouse passing over the pad does nothing');
+});
+
+test('watchdog: when no finger is on the screen, everything held by touch is released; keys stay', () => {
+  const { input, pad, buttons } = touchInput();
+  input.active = true;
+  const win = new FakeEl();
+  input.attachKeyboard(win);
+  const doc = new FakeEl();
+  input.attachTouchWatchdog(doc);
+  win.fire('keydown', { code: 'KeyW', key: 'w', repeat: false });
+  pad.fire('pointerdown', { pointerId: 1, clientX: 5, clientY: 50 }); // run left
+  buttons.punch.fire('pointerdown', { pointerId: 2 });
+  assert.deepEqual([input.held.left, input.held.sprint, input.held.punch, input.held.up], [true, true, true, true]);
+  doc.fire('touchend', { touches: [{}] }); // one finger still down: nothing changes
+  assert.deepEqual([input.held.left, input.held.punch], [true, true]);
+  doc.fire('touchend', { touches: [] }); // last finger lifted, but no pointerup ever came
+  assert.deepEqual([input.held.left, input.held.sprint, input.held.punch], [false, false, false]);
+  assert.equal(input.held.up, true, 'the key is still held');
+  assert.equal(buttons.punch.classes.has('is-active'), false);
+  assert.deepEqual(input.padPointerIds(), []);
+  pad.fire('pointermove', { pointerId: 1, clientX: 95, clientY: 50 }); // the dead pointer may not move the player
+  assert.equal(input.held.right, false);
+});

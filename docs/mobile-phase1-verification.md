@@ -302,3 +302,50 @@ the interface) is merged into the branch as its own commit, after checking that 
 colour declarations in the touch section of `karate-game.css`, the hint, comment, meter label
 and aria text in `index.html`, and the three meter strings in `src/ui.js`. Geometry, class names,
 hit areas and input code are unchanged; the floating "AJSICH!" and Tamas's shout are unchanged.
+
+### 7.6 Revision 1d: a thumb can never be pinned by a stale pad pointer
+
+Founder's phone finding on the combined candidate (a7f64de, controls 9f37f68, landscape, real
+iPhone): after running into the left edge of the picture, dragging the stick right did not
+reverse Tamas; the pad showed the nub on the right and still amber while he stayed at the edge
+facing left.
+
+**What the code allowed.** Reversing without lifting is correct in every headless and emulated
+run (the UX session reproduced the exact sequence in Chromium with the same result: reversal,
+boundary and release all fine). The only state that produces "stick right, player pinned" is a
+direction still held by a pad pointer whose end was never delivered: then `left` stays held by
+the dead pointer id, the new touch presses `right`, and the two cancel to no movement with the
+run flag still set and the facing unchanged. The pad recorded one entry per pointer id and
+released only on that id's `pointerup`, `pointercancel` or `lostpointercapture`; if a browser
+drops that event, or reports the lift under another id, the hold survives for the rest of the
+round. Nothing in the game's facing or edge rules contributes: at the edge `x` is clamped, and a
+held `right` moves the player right at once (`test/padGame.test.js`).
+
+**Smallest supported correction (`src/input.js`):**
+1. One thumb per pad: a new `pointerdown` on the pad forgets every earlier pad pointer and
+   releases everything it held, so a stale direction can never pin the player.
+2. A pad pointer that ends lets go of **everything** it holds (`releaseSource`), not only what the
+   pad recorded for it.
+3. A moving touch contact the pad never saw start (a lost `pointerdown`) is adopted as a fresh
+   press; a thumb forgotten by a reset (pause, blur, rotation) stays dormant until it lifts or
+   presses again, as before.
+4. Watchdog on the document: when `touchend` / `touchcancel` reports no remaining finger on the
+   screen, everything held by touch is released (keys stay). Touch events are independent of
+   pointer capture and of which element a finger started on, so this catches any lost pointer
+   event for any button or the pad.
+5. `?touchlog=1` now shows the pad's live pointer ids, the sources holding each direction and the
+   sprint, and the player's x, facing and run flag, so a stale id is visible on the device.
+
+**Verification (headless, not a device test):** `test/padGame.test.js` drives the real `Game`
+through the real `Input` with a fake pad: run left to the edge, reverse right without lifting
+(turns and leaves the edge at sprint speed), neutral stops, release stops; the same to the right
+edge (found by running until the player stops gaining ground, since the camera follows); a lost
+`pointerup` at the edge followed by a new touch takes over at once; pause and resume mid-run
+leave nothing held and a fresh press runs again. `test/input.test.js` adds the supersede, the
+release-everything, the adoption and the watchdog cases. 167 tests pass; lint, build and the
+guard (still `src/input.js` and `src/entities.js`) unchanged in kind. Emulated browser: the same
+sequence on the local build, plus a synthetic `touchend` with no touches clearing a deliberately
+stale hold.
+
+**Still unknown:** which event the iPhone actually lost. The diagnostic line is the instrument
+for that; the correction above holds whichever it was.
