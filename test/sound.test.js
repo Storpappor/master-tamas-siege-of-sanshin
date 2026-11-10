@@ -16,20 +16,24 @@ class FakeNode {
   stop() {}
 }
 class FakeContext {
-  constructor() { this.currentTime = 0; this.state = 'running'; this.sampleRate = 48000; this.destination = {}; this.started = []; this.resumed = 0; }
+  constructor() { this.currentTime = 0; this.state = 'running'; this.sampleRate = 48000; this.destination = {}; this.started = []; this.resumed = 0; this.decoded = 0; }
   createGain() { return new FakeNode(this); }
   createOscillator() { return new FakeNode(this); }
-  createBufferSource() { return new FakeNode(this); }
+  createBufferSource() { const n = new FakeNode(this); n.isBufferSource = true; return n; }
   createBiquadFilter() { return new FakeNode(this); }
   createBuffer(ch, len) { return { getChannelData: () => new Float32Array(len) }; }
+  decodeAudioData() { this.decoded++; return Promise.resolve({ duration: 0.8, isVoice: true }); }
   resume() { this.resumed++; this.state = 'running'; return Promise.resolve(); }
 }
+const tick = () => new Promise((r) => setTimeout(r, 0));
 
 function make(opts = {}) {
   const ctx = new FakeContext();
-  const sound = new Sound({ createContext: () => ctx, random: () => 0.5, ...opts });
+  const sound = new Sound({ createContext: () => ctx, random: () => 0.5, samples: {}, ...opts });
   return { ctx, sound };
 }
+const VOICE = { ajsich: { src: 'ajsich.mp3', vol: 0.95 } };
+const voicePlayed = (ctx) => ctx.started.filter((n) => n.isBufferSource && n.buffer && n.buffer.isVoice).length;
 
 test('play() queues raw game events and drain() hands them over once', () => {
   const { sound } = make();
@@ -118,4 +122,47 @@ test('unlock creates one context and resumes a suspended one', () => {
   sound.unlock();
   assert.equal(ctx.resumed, 1);
   assert.equal(sound.ctx, ctx);
+});
+
+test('kiaiStart speaks the recorded word once it has loaded, and skips the synthesized shout', async () => {
+  const { ctx, sound } = make({ samples: VOICE, fetchBytes: async () => new ArrayBuffer(8) });
+  await sound.load();
+  sound.unlock();
+  await tick();
+  assert.equal(ctx.decoded, 1);
+  const before = ctx.started.length;
+  assert.equal(sound.cue('kiaiStart'), true);
+  assert.equal(voicePlayed(ctx), 1);
+  assert.equal(ctx.started.length - before, 1, 'the word alone: no oscillators or noise');
+});
+
+test('kiaiStart falls back to the synthesized shout while the word is missing or loading', async () => {
+  const { ctx, sound } = make({ samples: VOICE, fetchBytes: () => new Promise(() => {}) }); // never resolves
+  sound.load();
+  sound.unlock();
+  assert.equal(sound.cue('kiaiStart'), true);
+  assert.equal(voicePlayed(ctx), 0);
+  assert.ok(ctx.started.length >= 3, 'tones and noise of the shout');
+  const errors = [];
+  const missing = make({ samples: VOICE, fetchBytes: async () => { throw new Error('404'); }, onError: (e) => errors.push(e.message) });
+  await missing.sound.load();
+  missing.sound.unlock();
+  await tick();
+  assert.deepEqual(errors, ['404']);
+  assert.equal(missing.sound.cue('kiaiStart'), true);
+  assert.equal(voicePlayed(missing.ctx), 0);
+});
+
+test('the word plays through the effects master at its own level and is not played by the per-strike cue', async () => {
+  const { ctx, sound } = make({ samples: VOICE, fetchBytes: async () => new ArrayBuffer(8) });
+  await sound.load();
+  sound.unlock();
+  await tick();
+  sound.cue('kiaiStrike');
+  assert.equal(voicePlayed(ctx), 0);
+  ctx.currentTime = 1;
+  sound.cue('kiaiStart');
+  const voice = ctx.started.find((n) => n.isBufferSource && n.buffer && n.buffer.isVoice);
+  assert.ok(voice);
+  assert.equal(voice.connect.length, 1);
 });

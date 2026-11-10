@@ -1,7 +1,7 @@
 // Entry point: wires the DOM, input, audio, renderer and game loop together.
 import { STEP } from './constants.js';
 import { Input } from './input.js';
-import { Sound } from './sound.js';
+import { Sound, SAMPLES } from './sound.js';
 import { MusicMixer, MUSIC } from './music.js';
 import { createAudioDirector } from './audioDirector.js';
 import { Renderer } from './renderer.js';
@@ -39,7 +39,14 @@ export function boot(root) {
 
   // Effects and music share one AudioContext (created on the first gesture) but have separate
   // gains. The game only sees `audio`; the director below turns its events into cues and music.
-  const audio = new Sound({ enabled: soundOn, onError: (err) => console.warn('Sound effect failed.', err) });
+  // Recorded voice lines resolve next to the music; ?ajsich=N switches the take for listening tests.
+  const take = new URLSearchParams(window.location.search).get('ajsich');
+  const samples = take ? { ...SAMPLES, ajsich: { ...SAMPLES.ajsich, src: `../assets/audio/ajsich-${take}.mp3` } } : SAMPLES;
+  const audio = new Sound({
+    enabled: soundOn, samples, resolveUrl: (src) => new URL(src, import.meta.url).href,
+    onError: (err) => console.warn('Sound effect or voice line failed.', err),
+  });
+  audio.load();
   audio.onDuck = () => music.duck();
   // The music is optional: a track that fails to load, or is not supplied yet, is simply skipped.
   const musicErrors = {};

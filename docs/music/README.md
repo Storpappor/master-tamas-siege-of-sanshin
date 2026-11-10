@@ -121,3 +121,29 @@ Each cue has a minimum repeat gap and the impact and whoosh groups are limited t
 simultaneous voices; repeated cues vary pitch by up to 4.5 % and level by up to 12 %. Heavy cues
 (throw landing, kiai hit, knockout, player damage, boss entrance, game start) duck the music to
 half for 0.35 s.
+
+## Voice lines
+
+`SAMPLES` in `src/sound.js` lists recorded one-shots. They are fetched at boot and decoded on the
+shared context at the first gesture, like the music; a cue that uses one plays its synthesized
+version while the file is missing or still loading, so nothing depends on them.
+
+| Sample | Cue | Asset | Level |
+|---|---|---|---|
+| `ajsich` | `kiaiStart` (Kiai activates; the per-strike cue stays wordless) | `assets/audio/ajsich-1.mp3` (default) | `vol: 0.95` through the effects master (0.24), with the usual music duck |
+
+Candidate takes `ajsich-1` to `ajsich-5` are generated character voices (macOS speech
+synthesis, pitched down, saturated, trimmed, peak −1 dBFS, mono, 48 kHz, 96 kbit/s MP3):
+
+| Take | Voice | Character |
+|---|---|---|
+| 1 | Daniel (UK), pitched −14 % | deep, firm |
+| 2 | Ralph (US), pitched −5 % | low, broad |
+| 3 | Fred (US), pitched −18 % | rough, older |
+| 4 | Rocko (UK), pitched −12 % | gruff |
+| 5 | Grandpa (UK), pitched −10 % | old man, closest to an 84-year-old |
+
+Open the game with `?ajsich=N` to hear take N in place of the default; `?ajsich=0` (a missing
+file) demonstrates the fallback shout. The founder's pick becomes `SAMPLES.ajsich.src`; the other
+takes are then removed. A real recording can replace it under the same spec: one shouted word,
+dry, 0.4 to 0.8 s, under 10 ms of lead-in, peak about −1 dBFS, mono, delivered as WAV.
