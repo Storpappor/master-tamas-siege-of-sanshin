@@ -30,7 +30,7 @@ class FakeEl {
 }
 
 // The game's input set as the player reads it (NO_INPUT in game.js plus the pad's sprint request).
-const GAME_KEYS = ['left', 'right', 'up', 'down', 'duck', 'block', 'jump', 'punch', 'kick', 'kiai', 'sprint'];
+const GAME_KEYS = ['left', 'right', 'up', 'down', 'duck', 'block', 'jump', 'punch', 'kick', 'kiai', 'sprint', 'padMove'];
 
 function touchInput() {
   const buttons = { jump: new FakeEl(), punch: new FakeEl(), kick: new FakeEl(), throw: new FakeEl(), kiai: new FakeEl() };
@@ -266,4 +266,27 @@ test('the keyboard has no sprint key; key repeat fires no second edge; reset cle
   input.reset();
   assert.equal(input.held.jump, false);
   assert.equal(input.sources.jump.size, 0);
+});
+
+test('the snapshot says whether the movement comes from the pad, so touch edges are never keyboard taps', () => {
+  const { input, pad } = touchInput();
+  input.active = true;
+  const win = new FakeEl();
+  input.attachKeyboard(win);
+  assert.equal(input.snapshot().padMove, false, 'nothing held');
+  win.fire('keydown', { code: 'ArrowRight', key: 'ArrowRight', repeat: false });
+  assert.equal(input.snapshot().padMove, false, 'a key holds the direction');
+  win.fire('keyup', { code: 'ArrowRight', key: 'ArrowRight' });
+  pad.fire('pointerdown', { pointerId: 1, clientX: 75, clientY: 50 }); // 50 % of the radius: walk zone
+  let s = input.snapshot();
+  assert.equal(s.right, true);
+  assert.equal(s.sprint, false);
+  assert.equal(s.padMove, true, 'the pad holds the direction');
+  pad.fire('pointerup', { pointerId: 1, clientX: 75, clientY: 50 });
+  assert.equal(input.snapshot().padMove, false);
+  pad.fire('pointerdown', { pointerId: 2, clientX: 75, clientY: 50 }); // the same spot again, quickly
+  s = input.snapshot();
+  assert.equal(s.right, true);
+  assert.equal(s.sprint, false, 'a second touch in the walk zone is still a walk request');
+  assert.equal(s.padMove, true);
 });
