@@ -13,6 +13,7 @@
 // Recorded one-shots, decoded on the shared context at unlock. A cue that uses one falls back to
 // its synthesized version while the file is missing or still loading. Paths are resolved by main.js.
 export const SAMPLES = {
+  // Temporary voice: replace the file with Tamas's own recording when supplied (see docs/music/README.md).
   ajsich: { src: '../assets/audio/ajsich-1.mp3', vol: 0.95 },   // Tamas shouts the word when Kiai activates
 };
 

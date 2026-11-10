@@ -132,18 +132,13 @@ version while the file is missing or still loading, so nothing depends on them.
 |---|---|---|---|
 | `ajsich` | `kiaiStart` (Kiai activates; the per-strike cue stays wordless) | `assets/audio/ajsich-1.mp3` (default) | `vol: 0.95` through the effects master (0.24), with the usual music duck |
 
-Candidate takes `ajsich-1` to `ajsich-5` are generated character voices (macOS speech
-synthesis, pitched down, saturated, trimmed, peak −1 dBFS, mono, 48 kHz, 96 kbit/s MP3):
+**Temporary voice — replace with Tamas's own recording when supplied.** `ajsich-1.mp3` is a
+generated placeholder (macOS speech synthesis, "Daniel", pitched down 14 %, saturated, trimmed,
+peak −1 dBFS, mono, 48 kHz, 96 kbit/s MP3). It is not the final voice: the founder records
+Tamas himself saying "ajsich"; that recording replaces the file under the same name, with only
+the format and level adjustments needed for the game (trim, peak −1 dBFS, mono, MP3), and the
+playback hook stays as it is. Open the game with `?ajsich=N` to try another file
+`assets/audio/ajsich-N.mp3` without changing the config; `?ajsich=0` demonstrates the fallback.
 
-| Take | Voice | Character |
-|---|---|---|
-| 1 | Daniel (UK), pitched −14 % | deep, firm |
-| 2 | Ralph (US), pitched −5 % | low, broad |
-| 3 | Fred (US), pitched −18 % | rough, older |
-| 4 | Rocko (UK), pitched −12 % | gruff |
-| 5 | Grandpa (UK), pitched −10 % | old man, closest to an 84-year-old |
-
-Open the game with `?ajsich=N` to hear take N in place of the default; `?ajsich=0` (a missing
-file) demonstrates the fallback shout. The founder's pick becomes `SAMPLES.ajsich.src`; the other
-takes are then removed. A real recording can replace it under the same spec: one shouted word,
+A real recording can replace it under the same spec: one shouted word,
 dry, 0.4 to 0.8 s, under 10 ms of lead-in, peak about −1 dBFS, mono, delivered as WAV.
