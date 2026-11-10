@@ -132,17 +132,18 @@ export function boot(root) {
   // calls resume, and Esc while help is open only closes help.
   const helpOverlay = root.querySelector('[data-overlay="help"]');
   const helpOpen = () => Boolean(helpOverlay && !helpOverlay.hidden);
-  let helpOrigin = null;   // { overlay: 'start' | 'paused', focus: Element | null }
+  const HELP_FROM = ['start', 'paused', 'gameover', 'victory'];
+  let helpOrigin = null;   // { overlay: one of HELP_FROM, focus: Element | null }
   const openHelp = () => {
     const from = ui.overlay;
-    if (helpOpen() || !helpOverlay || (from !== 'start' && from !== 'paused')) return;
+    if (helpOpen() || !helpOverlay || !HELP_FROM.includes(from)) return;
     helpOrigin = { overlay: from, focus: root.contains(document.activeElement) ? document.activeElement : null };
     director.menu('confirm');
     ui.showOverlay('help');
   };
   const closeHelp = () => {
     if (!helpOpen()) return;
-    const back = helpOrigin || { overlay: game.state === 'paused' ? 'paused' : 'start', focus: null };
+    const back = helpOrigin || { overlay: HELP_FROM.includes(game.state) ? game.state : 'start', focus: null };
     helpOrigin = null;
     director.menu('back');
     ui.showOverlay(back.overlay, null, { focus: back.focus });
@@ -153,7 +154,7 @@ export function boot(root) {
   // button says so. Title screen: the run is discarded and the title shows, no confirmation.
   for (const b of root.querySelectorAll('[data-action="restart"]')) b.addEventListener('click', () => { if (game.state !== 'paused') return; director.menu('confirm'); startGame(); });
   const toTitle = () => {
-    if (game.state !== 'paused') return;
+    if (!['paused', 'gameover', 'victory'].includes(game.state)) return;
     director.menu('back');
     game.reset();
     game.state = 'start';
@@ -165,7 +166,7 @@ export function boot(root) {
   window.addEventListener('keydown', (e) => {
     if (ui.storyActive || e.repeat) return;
     const key = e.key;
-    if ((key === 'h' || key === 'H') && !helpOpen() && (ui.overlay === 'start' || ui.overlay === 'paused')) { e.preventDefault(); openHelp(); }
+    if ((key === 'h' || key === 'H') && !helpOpen() && HELP_FROM.includes(ui.overlay)) { e.preventDefault(); openHelp(); }
     // The Input is inactive whenever a menu is open (see the frame loop), so Esc and P are
     // handled here: Esc closes help, or resumes from the pause screen; P resumes too.
     else if (key === 'Escape' && helpOpen()) { e.preventDefault(); closeHelp(); }
@@ -181,6 +182,20 @@ export function boot(root) {
     const m = Math.floor(game.elapsed / 60), sec = String(Math.floor(game.elapsed % 60)).padStart(2, '0');
     const text = `Score ${game.score.toLocaleString()} · ${game.remainingEnemies} of ${total} left · ${m}:${sec}${game.zone ? ` · ${game.zone.name}` : ''}`;
     if (text !== lastStatus) { pauseStatus.textContent = text; lastStatus = text; }
+  };
+  // The result screens show how many enemies the run cleared, from the same values as the pause
+  // status (the game passes score, time and bonuses; the counts are read here).
+  const resultCleared = [...root.querySelectorAll('[data-result="cleared"]')];
+  const resultTotal = [...root.querySelectorAll('[data-result="total"]')];
+  let lastCleared = '';
+  const syncResultStats = () => {
+    if (game.state !== 'gameover' && game.state !== 'victory') return;
+    const total = game.remainingEnemies + game.defeated;
+    const key = `${game.defeated}/${total}`;
+    if (key === lastCleared) return;
+    lastCleared = key;
+    for (const el of resultCleared) el.textContent = String(game.defeated);
+    for (const el of resultTotal) el.textContent = String(total);
   };
   for (const b of root.querySelectorAll('[data-action="sound"]')) {
     b.addEventListener('click', () => {
@@ -257,6 +272,7 @@ export function boot(root) {
     if (input.active !== playing) input.active = playing;
     root.classList.toggle('kg-root--title', game.state === 'start');
     syncPauseStatus();
+    syncResultStats();
     // Music and sound cues follow the state the steps just produced.
     director.update();
     renderer.render(game, now / 1000);

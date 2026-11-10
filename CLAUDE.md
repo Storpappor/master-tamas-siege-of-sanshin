@@ -61,7 +61,7 @@ Keep these in sync when they change:
 - `src/main.js` runs `boot` on import and needs a browser, so tests cannot import it.
 - `index.html` must be served over http; ES modules fail from `file://`.
 - The start buttons stay disabled until the hero sprite sheet has loaded.
-- The canvas bitmap font (`GLYPHS` in `src/sprites.js`) has A-Z, `ÅÄÖ`, 0-9 and `+-!:.` only;
+- The canvas bitmap font (`GLYPHS` in `src/sprites.js`) has A-Z, `ÅÄÖ`, 0-9 and `+-!:.>/` only;
   other characters such as `É` draw as blanks. Story cards and the HUD are HTML, so they
   are not affected.
 - The street and dojo backgrounds are modelled on the real Sanshin Kan on Södermalm, so

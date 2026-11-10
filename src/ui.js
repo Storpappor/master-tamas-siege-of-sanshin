@@ -5,20 +5,27 @@ import { displayText } from './names.js';
 
 // Menu headings are drawn with the game's own 3x5 bitmap font (the same one the canvas uses for
 // banners), so the menus share the picture's pixel typography without any web font. Each
-// <canvas data-pixel-text> gets its text at data-scale pixels per glyph pixel, with a one-pixel
-// dark shadow; the glow and sizing are CSS.
+// <canvas data-pixel-text> gets its text at data-scale pixels per glyph pixel. data-shadow="layered"
+// gives the title's magenta and purple offsets; otherwise a one-pixel dark shadow.
 function paintPixelText(canvas) {
   const text = canvas.dataset.pixelText || '';
   const scale = Math.max(1, Number(canvas.dataset.scale) || 4);
-  const color = canvas.dataset.color || '#ffffff';
+  const color = canvas.dataset.color || '#f3ead8';
+  const layered = canvas.dataset.shadow === 'layered';
   const pad = scale;
-  const w = textWidth(text.toUpperCase(), scale) + pad * 2;
-  const h = 5 * scale + pad * 2;
-  canvas.width = w; canvas.height = h;
-  canvas.style.width = `${w}px`;
+  const w = textWidth(text.toUpperCase(), scale) + pad * 2 + (layered ? scale : 0);
+  const h = 5 * scale + pad * 2 + (layered ? scale : 0);
+  canvas.width = w; canvas.height = h; // drawn 1:1; the stylesheet may scale it on small screens
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, w, h);
-  drawText(ctx, text, pad, pad, { color, scale, shadow: '#0a0614' });
+  if (layered) {
+    const far = Math.max(1, Math.round(scale * 0.66)), near = Math.max(1, Math.round(scale * 0.33));
+    drawText(ctx, text, pad + far, pad + far, { color: '#a12e78', scale });
+    drawText(ctx, text, pad + near, pad + near, { color: '#594478', scale });
+    drawText(ctx, text, pad, pad, { color, scale });
+  } else {
+    drawText(ctx, text, pad, pad, { color, scale, shadow: '#0a0614' });
+  }
 }
 
 export function createUi(root) {
@@ -106,6 +113,8 @@ export function createUi(root) {
   if (story) {
     story.addEventListener('click', (e) => {
       if (skipButton && skipButton.contains(e.target)) { finishStory(true); return; }
+      // A keyboard-activated Continue button (click detail 0) was already handled by onStoryKey.
+      if (e.detail === 0 && e.target.closest && e.target.closest('[data-action="story-next"]')) return;
       advanceStory();
     });
   }
