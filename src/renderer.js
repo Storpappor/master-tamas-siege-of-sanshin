@@ -3,6 +3,7 @@
 import { VIEW_W, VIEW_H, GROUND_Y, FLOOR_TOP, WORLD_WIDTH, COLORS, screenY } from './constants.js';
 import { LEVEL_1 } from './level.js';
 import { drawFighter, drawShuriken, drawText } from './sprites.js';
+import { displayText } from './names.js';
 import { heroFrameIndex, heroState, resolveFrame } from './heroSprite.js';
 import { enemyState } from './enemySprite.js';
 import { ART_SCALE } from './artScale.js';
@@ -466,12 +467,12 @@ export class Renderer {
       g.globalAlpha = a;
       g.fillStyle = 'rgba(20,12,8,0.75)';
       g.fillRect(0, 44, VIEW_W, 26);
-      drawText(g, game.banner.text, VIEW_W / 2, 50, { color: '#ffd166', scale: 2, align: 'center', shadow: '#5a1e12' });
+      drawText(g, displayText(game.banner.text), VIEW_W / 2, 50, { color: '#ffd166', scale: 2, align: 'center', shadow: '#5a1e12' });
       g.globalAlpha = 1;
     }
     if (game.state === 'playing' && game.elapsed < 2.2) {
       g.globalAlpha = game.elapsed < 1.8 ? 1 : (2.2 - game.elapsed) / 0.4;
-      drawText(g, 'FIGHT!', VIEW_W / 2, 78, { color: '#ffffff', scale: 3, align: 'center', shadow: '#5a1e12' });
+      drawText(g, 'SLÅSS!', VIEW_W / 2, 78, { color: '#ffffff', scale: 3, align: 'center', shadow: '#5a1e12' });
       g.globalAlpha = 1;
     }
     if (game.showGo && (this.reducedMotion || Math.floor(time * 3) % 2 === 0)) this.drawGo(g);

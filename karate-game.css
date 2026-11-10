@@ -1,81 +1,120 @@
-/* Master Tamas: all rules are scoped under .kg-* so they cannot leak into the host site. */
+/* Master Tamas: all rules are scoped under .kg-* so they cannot leak into the host site.
+   Visual direction (design document, 10 November 2026): dark navy ground, opaque panels, bone-white
+   text, cyan for selection and focus, magenta for identity, green / amber / coral for health,
+   Kiai and danger. Pixel headings use the game's own bitmap font; everything else is monospace. */
 .kg-page {
   margin: 0;
-  background: #14100d;
-  color: #f3ead6;
+  background: #080d1b;
+  color: #f3ead8;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 .kg-wrap {
-  max-width: 960px;
+  max-width: 1060px;
   margin: 0 auto;
   padding: 16px;
   box-sizing: border-box;
 }
 .kg-root {
-  --kg-bg: #1d1611;
-  --kg-panel: #2b2119;
-  --kg-accent: #e0493a;
-  --kg-accent-2: #ffd166;
-  --kg-health: #5dd17a;
-  --kg-health-low: #e0493a;
-  --kg-kiai: #ffb347;
-  --kg-text: #f3ead6;
-  --kg-muted: #b9a98f;
+  --kg-bg: #0b1021;
+  --kg-panel: #121a2d;
+  --kg-text: #f3ead8;
+  --kg-muted: #b0a7bf;
+  --kg-line: #514367;
+  --kg-cyan: #21c5d4;
+  --kg-magenta: #c13d89;
+  --kg-health: #68d68c;
+  --kg-health-low: #ef7184;
+  --kg-kiai: #f3b654;
+  --kg-accent: #ef7184;
+  --kg-accent-2: #f3b654;
+  --kg-dialog: #111729;
+  --kg-dialog-line: #6f5486;
+  --kg-field: #142237;
+  --kg-field-line: #2d5569;
+  position: relative;
+  isolation: isolate;
   background: var(--kg-bg);
-  border: 2px solid #4a3321;
-  border-radius: 8px;
-  overflow: hidden;
+  border: 1px solid var(--kg-line);
+  box-shadow: inset 0 0 0 5px #0a0e1c;
+  overflow: clip;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
+/* Corner marks: cyan top-left, magenta bottom-right, the identity colours of the title. */
+.kg-root::before, .kg-root::after {
+  content: "";
+  position: absolute;
+  z-index: 8;
+  width: 30px; height: 18px;
+  pointer-events: none;
+}
+.kg-root::before { top: 3px; left: 3px; border-top: 2px solid var(--kg-cyan); border-left: 1px solid var(--kg-cyan); }
+.kg-root::after { right: 3px; bottom: 3px; border-bottom: 2px solid var(--kg-magenta); border-right: 1px solid var(--kg-magenta); }
 
-/* HUD */
+/* ---- HUD: health, Kiai, score, enemies, the named boss meter when it applies, pause ---------- */
 .kg-hud {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 18px;
-  padding: 10px 14px;
-  background: var(--kg-panel);
-  border-bottom: 2px solid #4a3321;
-  font-size: 14px;
-  letter-spacing: 0.04em;
+  gap: 8px 18px;
+  min-height: 48px;
+  padding: 8px 14px;
+  background: var(--kg-bg);
+  border-bottom: 1px solid var(--kg-line);
+  font-size: 12px;
+  line-height: 1.2;
   text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
-.kg-hud__label { color: var(--kg-muted); margin-right: 6px; font-size: 12px; }
-.kg-hud__small { color: var(--kg-muted); font-size: 11px; margin-left: 6px; }
-.kg-hud__health, .kg-hud__boss, .kg-hud__kiai { display: flex; align-items: center; }
-.kg-hud__stat strong { color: var(--kg-accent-2); font-size: 16px; }
-.kg-hud__buttons { margin-left: auto; display: flex; gap: 8px; }
+.kg-hud__health, .kg-hud__kiai, .kg-hud__boss, .kg-hud__stat { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; }
+.kg-hud__health { flex: 1.4 1 150px; }
+.kg-hud__kiai { flex: 1 1 130px; }
+.kg-hud__boss { flex: 1 1 140px; }
+.kg-hud__label { color: var(--kg-muted); font-size: 11px; font-weight: 600; }
+.kg-hud__name { color: var(--kg-text); }
+.kg-hud__boss .kg-hud__label { color: var(--kg-accent); }
+.kg-hud__value, .kg-hud__stat strong { color: var(--kg-text); font-size: 12px; font-weight: 700; }
+.kg-hud__state { color: var(--kg-muted); font-size: 11px; }
+.kg-hud__state.is-ready { color: var(--kg-kiai); }
+.kg-hud__state.is-active { color: #fff1c2; }
 .kg-bar {
-  width: 140px; height: 12px;
-  background: #0d0a08;
-  border: 2px solid #5b4330;
-  border-radius: 2px;
+  flex: 1 1 36px;
+  min-width: 36px;
+  height: 9px;
   overflow: hidden;
+  background: #070d18;
+  border: 1px solid var(--kg-line);
+  border-radius: 1px;
 }
-.kg-bar--boss { width: 120px; }
-.kg-bar__fill {
-  height: 100%; width: 100%;
-  background: var(--kg-health);
-  transition: width 120ms linear;
-}
-.kg-bar--boss .kg-bar__fill { background: var(--kg-accent); }
-.kg-bar--kiai { width: 90px; }
-.kg-bar--kiai .kg-bar__fill { background: #8a6a3a; }
+.kg-bar__fill { height: 100%; width: 100%; background: var(--kg-health); transition: width 120ms linear; }
+.kg-bar__fill.is-low { background: var(--kg-health-low); }
+.kg-bar--kiai .kg-bar__fill { background: #8b6c3c; }
 .kg-bar--kiai .kg-bar__fill.is-ready { background: var(--kg-kiai); }
 .kg-bar--kiai .kg-bar__fill.is-active { background: #fff1c2; }
-.kg-hud__kiai .kg-hud__small.is-ready { color: var(--kg-kiai); }
-.kg-hud__kiai .kg-hud__small.is-active { color: #fff1c2; }
-.kg-bar__fill.is-low { background: var(--kg-health-low); }
+.kg-bar--boss .kg-bar__fill { background: var(--kg-accent); }
+.kg-btn--hud {
+  margin-left: auto;
+  height: 28px;
+  min-width: 58px;
+  padding: 0 9px;
+  border: 1px solid var(--kg-line);
+  border-radius: 2px;
+  background: var(--kg-panel);
+  color: var(--kg-text);
+  font: 600 11px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.kg-btn--hud:hover, .kg-btn--hud:focus-visible { border-color: var(--kg-cyan); outline: 1px solid var(--kg-cyan); outline-offset: 2px; }
 
-/* Stage */
+/* ---- Stage ------------------------------------------------------------------------------- */
 .kg-stage {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: #000;
+  background: #080c18;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -89,117 +128,211 @@
   max-height: 100%;
 }
 
-/* Overlays */
-.kg-overlay {
+/* ---- Shared type and small parts --------------------------------------------------------- */
+.kg-kicker { display: block; font-size: 11px; line-height: 1.4; letter-spacing: 2px; color: var(--kg-muted); text-transform: uppercase; }
+.kg-kicker--cyan { color: var(--kg-cyan); }
+.kg-subtitle { margin: 0; font-size: 13px; letter-spacing: 2px; line-height: 1.5; color: var(--kg-text); text-transform: uppercase; }
+.kg-spectrum { display: flex; width: 62%; height: 3px; margin: 20px 0 26px; }
+.kg-spectrum i { display: block; height: 100%; }
+.kg-spectrum i:nth-child(1) { width: 68%; background: var(--kg-cyan); }
+.kg-spectrum i:nth-child(2) { width: 17%; background: #76558e; }
+.kg-spectrum i:nth-child(3) { width: 15%; background: var(--kg-magenta); }
+.kg-quote { margin: 0; color: var(--kg-muted); font-size: 17px; line-height: 1.45; font-style: normal; max-width: 44ch; }
+.kg-hint { margin: 0; color: var(--kg-muted); font-size: 12px; line-height: 1.5; }
+.kg-heading { margin: 0; line-height: 0; }
+.kg-logo { margin: 0; display: grid; justify-items: center; gap: 14px; line-height: 0; }
+.kg-pixel-text { display: block; margin: 0 auto; max-width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges; }
+.kg-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.kg-key {
+  display: inline-block;
+  padding: 5px 7px;
+  border: 1px solid #6b597d;
+  box-shadow: 0 2px 0 #6b597d;
+  background: #1b2438;
+  color: var(--kg-text);
+  font: 12px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+/* ---- Buttons ----------------------------------------------------------------------------- */
+.kg-btn {
+  font: inherit;
+  color: var(--kg-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.kg-btn:focus-visible { outline: 2px solid var(--kg-cyan); outline-offset: 3px; }
+.kg-btn:disabled { opacity: 0.48; cursor: wait; }
+/* The one action per screen: a full row, cyan label with a chevron, the key on the right. */
+.kg-btn--primary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  width: 100%;
+  min-height: 52px;
+  padding: 13px 18px;
+  background: var(--kg-field);
+  border: 1px solid var(--kg-field-line);
+  box-shadow: 0 0 0 4px #080d19;
+  color: var(--kg-cyan);
+  text-align: left;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.kg-btn--primary .kg-btn__label::before { content: "> "; }
+.kg-btn--primary .kg-key { color: var(--kg-muted); background: transparent; border: 0; box-shadow: none; padding: 0; font-size: 11px; }
+.kg-btn--primary:hover { background: #192f43; border-color: var(--kg-cyan); }
+/* Secondary actions: plain rows; quiet actions: small bordered chips. */
+.kg-btn--plain { display: block; width: 100%; min-height: 42px; padding: 10px 12px; text-align: center; font-size: 14px; letter-spacing: 1px; }
+.kg-btn--plain:hover { background: #172237; border-color: var(--kg-line); }
+.kg-btn--muted { font-size: 12px; color: var(--kg-muted); }
+.kg-btn--quiet { padding: 9px 12px; min-height: 36px; background: #101629; border: 1px solid var(--kg-line); font-size: 11px; line-height: 1.4; letter-spacing: 0.5px; }
+.kg-btn--quiet:hover { border-color: var(--kg-cyan); }
+.kg-menu__row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+/* ---- Menu layer: title, story, pause, help, results -------------------------------------- */
+.kg-menus { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.kg-overlay { box-sizing: border-box; }
+.kg-overlay[hidden] { display: none; }
+.kg-menu {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 16px;
+  justify-content: flex-start;
+  padding: 14px;
+  background: rgba(3, 7, 21, 0.72);
+  overflow: clip;
+  pointer-events: auto;
   text-align: center;
-  background: rgba(14, 10, 8, 0.86);
-  box-sizing: border-box;
-  overflow: auto;
 }
-.kg-overlay[hidden] { display: none; }
-.kg-title {
-  margin: 0;
-  font-size: clamp(22px, 5vw, 40px);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--kg-accent-2);
-  text-shadow: 3px 3px 0 #5a1e12;
-}
-.kg-title--small { font-size: clamp(20px, 4vw, 30px); }
-.kg-sub { margin: 0; color: var(--kg-text); font-size: clamp(12px, 2vw, 15px); }
-.kg-hint { margin: 0; color: var(--kg-muted); font-size: 12px; }
-.kg-quote { margin: 0; color: var(--kg-muted); font-size: 12px; font-style: italic; max-width: 32ch; }
-.kg-controls {
+/* Dialogs size to their content and stay inside the viewport (sticky offsets); long content
+   scrolls inside the dialog with its footer action in view, never the page. */
+.kg-dialog {
+  position: sticky;
+  top: 12px;
+  bottom: 12px;
+  margin: auto 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 32px;
-  justify-content: center;
-  text-align: left;
-  font-size: clamp(11px, 1.8vw, 14px);
-}
-.kg-controls h2 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; color: var(--kg-muted); letter-spacing: 0.1em; }
-.kg-controls ul { margin: 0; padding: 0; list-style: none; line-height: 1.6; }
-.kg-controls kbd {
-  display: inline-block;
-  min-width: 14px;
-  padding: 0 5px;
-  border: 1px solid #7a5a3f;
-  border-bottom-width: 3px;
-  border-radius: 3px;
-  background: #3a2a1e;
-  font: inherit;
+  flex-direction: column;
+  width: min(420px, 100%);
+  max-height: calc(100dvh - 24px);
+  box-sizing: border-box;
+  padding: 30px;
+  overflow: auto;
+  background: var(--kg-dialog);
+  border: 1px solid var(--kg-dialog-line);
   text-align: center;
 }
+.kg-dialog::before { content: ""; position: absolute; top: -1px; left: 28px; width: 62px; height: 3px; background: var(--kg-cyan); }
+.kg-dialog__header { display: grid; justify-items: center; gap: 13px; margin-bottom: 26px; }
+.kg-dialog__header--start { justify-items: start; text-align: left; gap: 7px; margin-bottom: 12px; }
+.kg-dialog__actions { display: grid; gap: 7px; }
+.kg-dialog__secondary { display: grid; margin-top: 5px; }
+.kg-dialog__actions .kg-menu__row { margin-top: 8px; }
+.kg-run-status { font-size: 11px; line-height: 1.7; color: var(--kg-muted); border-top: 1px solid #34304a; margin-top: 20px; padding-top: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.kg-run-status:empty { display: none; }
+.kg-pixel-text--heading { height: 28px; width: auto; }
 
-.kg-title__sub {
-  margin: 0;
-  color: var(--kg-accent);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  font-size: clamp(12px, 2.4vw, 18px);
+/* Title: copy on the left, the portrait on the right, the whole game element as the screen. */
+.kg-menu--title { padding: 0; background: var(--kg-bg); }
+.kg-title-layout { display: grid; grid-template-columns: 56% 44%; width: 100%; height: 100%; padding: 18px; box-sizing: border-box; }
+.kg-title-copy { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 22px 30px; min-width: 0; z-index: 2; }
+.kg-title-copy .kg-logo { width: 100%; max-width: 410px; margin: 28px 0 18px; }
+.kg-title-copy .kg-subtitle { margin-top: 4px; }
+.kg-title-actions { width: 100%; max-width: 400px; display: grid; gap: 10px; }
+.kg-title-copy .kg-quote { margin-top: 22px; }
+.kg-title-copy .kg-hint--touch { margin-top: 10px; }
+.kg-title-art {
+  min-width: 0;
+  background-image:
+    linear-gradient(90deg, var(--kg-bg) 4%, transparent 38%),
+    linear-gradient(270deg, var(--kg-bg), transparent 10%),
+    linear-gradient(180deg, var(--kg-bg), transparent 16%),
+    linear-gradient(0deg, var(--kg-bg), transparent 14%),
+    url("assets/ui/title-tamas.png");
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, cover;
+  background-position: center, center, center, center, 55% 30%;
+  background-repeat: no-repeat;
 }
-.kg-hud__name { color: var(--kg-accent-2); font-weight: 700; }
-.kg-hero-pose { image-rendering: pixelated; image-rendering: crisp-edges; width: 81px; height: auto; }
+.kg-hint--touch { display: none; }
+.kg-root--touch .kg-hint--touch { display: block; }
 
-/* Story cards: black screen, off-white pixel text, deep red rule */
-.kg-overlay--story { background: #060405; gap: 14px; cursor: pointer; }
-.kg-story__rule { width: 56px; height: 4px; background: var(--kg-accent); }
+/* Story cards: the intro and the in-game exchanges, full screen, typed out line by line. */
+.kg-menu--story { padding: 30px; background: linear-gradient(160deg, #0b1021, #10172c 55%, #160f24); cursor: pointer; justify-content: center; }
+.kg-story { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.kg-story .kg-spectrum { margin: 14px 0 0; }
 .kg-story__text {
-  margin: 0;
+  margin: 40px 0;
   min-height: 3.4em;
   max-width: 92%;
-  font-size: clamp(13px, 2.6vw, 22px);
-  line-height: 1.7;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #f3ead6;
-  white-space: pre-line;
-  text-shadow: 2px 2px 0 #5a1e12;
-}
-.kg-story__text.is-typing::after { content: '\258E'; color: var(--kg-accent); animation: kg-blink 0.6s steps(1) infinite; }
-.kg-story__hint { margin: 0; color: #8f8068; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
-@keyframes kg-blink { 50% { opacity: 0; } }
-
-/* Buttons */
-.kg-btn {
-  font: inherit;
-  font-size: 14px;
-  letter-spacing: 0.08em;
+  font-size: clamp(14px, 2.6vw, 22px);
+  line-height: 1.8;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--kg-text);
-  background: #3a2a1e;
-  border: 2px solid #7a5a3f;
-  border-bottom-width: 4px;
-  border-radius: 4px;
-  padding: 8px 18px;
-  cursor: pointer;
+  white-space: pre-line;
 }
-.kg-btn:hover { background: #4a3626; }
-.kg-btn:active { border-bottom-width: 2px; transform: translateY(2px); }
-.kg-btn:focus-visible { outline: 3px solid var(--kg-accent-2); outline-offset: 2px; }
-.kg-btn--primary { background: var(--kg-accent); border-color: #8f2a20; font-size: 16px; padding: 12px 32px; }
-.kg-btn--primary:hover { background: #ee5a4b; }
-.kg-btn--small { font-size: 11px; padding: 5px 10px; border-bottom-width: 3px; }
-.kg-btn--ghost { background: transparent; border-color: #5a4330; font-size: 11px; padding: 5px 12px; border-bottom-width: 3px; }
-.kg-btn:disabled { opacity: 0.5; cursor: wait; }
+.kg-story__text.is-typing::after { content: '\258E'; color: var(--kg-cyan); animation: kg-blink 0.6s steps(1) infinite; }
+.kg-story__actions { display: grid; gap: 15px; width: min(100%, 320px); }
+.kg-story__hint { margin: 16px 0 0; color: var(--kg-muted); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+@keyframes kg-blink { 50% { opacity: 0; } }
 
-/* Touch controls */
+/* Help: two columns of rows (action left, keys right), notes, the screen legend, Back in view. */
+.kg-dialog--help { width: min(880px, 100%); padding: 18px 26px; }
+.kg-help__scroll { overflow: auto; min-height: 0; padding-right: 6px; text-align: left; scrollbar-color: var(--kg-dialog-line) var(--kg-dialog); scrollbar-width: thin; }
+.kg-help__columns { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.kg-help__section h3 { margin: 0 0 8px; font-size: 13px; line-height: 1.5; color: var(--kg-kiai); font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+.kg-help__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; border-bottom: 1px solid #302e46; font-size: 13px; line-height: 1.4; }
+.kg-keys { display: flex; align-items: center; justify-content: end; gap: 6px; flex-wrap: wrap; text-align: right; }
+.kg-help__note { margin: 8px 0 0; font-size: 12px; line-height: 1.55; color: var(--kg-muted); }
+.kg-help__note strong { font-weight: 500; color: var(--kg-text); }
+.kg-help__screen { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 8px 18px; margin-top: 10px; padding: 10px 0 2px; border-top: 1px solid var(--kg-line); font-size: 11px; line-height: 1.5; color: var(--kg-muted); }
+.kg-help__screen b { color: var(--kg-text); font-weight: 500; text-transform: uppercase; }
+.kg-dialog__footer { display: flex; justify-content: center; padding-top: 10px; }
+.kg-btn--back { max-width: 210px; min-height: 46px; }
+/* Keyboard and touch copy follow the input in use. */
+.kg-only-touch { display: none; }
+.kg-root--touch .kg-only-touch { display: block; }
+.kg-root--touch .kg-help__note .kg-only-touch { display: inline; }
+.kg-root--touch .kg-only-keys { display: none; }
+.kg-root--touch .kg-key { display: none; }
+.kg-root--touch .kg-btn--primary .kg-key { display: none; }
+
+/* Results: the same dialog, the run's numbers in three columns. */
+.kg-dialog--result { width: min(550px, 100%); padding: 35px; align-items: center; }
+.kg-dialog--result .kg-heading { margin-top: 20px; }
+.kg-pixel-text--result { max-width: 100%; }
+.kg-dialog--result .kg-quote { margin: 18px 0 26px; font-size: 16px; }
+.kg-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin: 0 0 24px; }
+.kg-stats dt { margin: 0; font-size: 10px; line-height: 1.5; letter-spacing: 1px; color: var(--kg-muted); text-transform: uppercase; }
+.kg-stats dd { margin: 0; font-size: 24px; line-height: 1.5; color: var(--kg-kiai); font-variant-numeric: tabular-nums; }
+.kg-stats dd small { font-size: 13px; }
+.kg-dialog--result .kg-dialog__actions { width: 100%; gap: 12px; }
+.kg-dialog--result .kg-hint { margin: -14px 0 20px; }
+.kg-dialog--result .kg-hint:empty { display: none; }
+.kg-hero-pose { image-rendering: pixelated; image-rendering: crisp-edges; width: 54px; height: auto; margin-bottom: 10px; }
+
+/* The title screen shows no run data: the HUD belongs to an active run. */
+.kg-root--title .kg-hud { display: none; }
+
+/* ---- Touch controls (the six-button panel on main; the controls workstream owns the layout) -- */
 .kg-touch {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   gap: 12px;
   padding: 12px;
-  background: var(--kg-panel);
-  border-top: 2px solid #4a3321;
+  background: var(--kg-bg);
+  border-top: 1px solid var(--kg-line);
   touch-action: none;
 }
 .kg-touch[hidden] { display: none; }
@@ -213,70 +346,123 @@
 .kg-touch__btn--left { grid-area: left; }
 .kg-touch__btn--down { grid-area: down; }
 .kg-touch__btn--right { grid-area: right; }
-.kg-touch__actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
+.kg-touch__actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .kg-touch__btn {
   width: 64px; height: 64px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
+  font: 600 11px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   text-transform: uppercase;
   color: var(--kg-text);
-  background: #3a2a1e;
-  border: 2px solid #7a5a3f;
-  border-bottom-width: 5px;
-  border-radius: 12px;
+  background: var(--kg-panel);
+  border: 1px solid var(--kg-line);
+  border-radius: 50%;
   touch-action: none;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.kg-touch__btn.is-active { background: #6a4a32; border-bottom-width: 2px; transform: translateY(3px); }
-.kg-touch__btn--punch { background: #8f2a20; border-color: #c54a3d; }
-.kg-touch__btn--kick { background: #a0481d; border-color: #d2743b; }
-.kg-touch__btn--block { background: #244a7a; border-color: #4c7fc0; }
-.kg-touch__btn--jump { background: #3f6a2a; border-color: #6fa84c; }
-.kg-touch__actions .kg-touch__btn--kiai { grid-column: 1 / -1; width: auto; height: 44px; background: #8a5a1e; border-color: #e0a04a; color: #fff1c2; }
-.kg-touch__btn--kiai.is-ready { box-shadow: 0 0 0 2px var(--kg-kiai); }
-.kg-touch__btn--kiai.is-cooling { opacity: 0.55; }
+.kg-touch__btn:focus-visible { outline: 2px solid var(--kg-cyan); outline-offset: 3px; }
+.kg-touch__btn.is-active { background: #203b4c; border-color: var(--kg-cyan); box-shadow: inset 0 0 0 1px var(--kg-cyan); }
+.kg-touch__actions .kg-touch__btn--kiai { grid-column: 1 / -1; width: auto; height: 36px; border-radius: 3px; border-color: #8b6c3c; color: var(--kg-kiai); }
+.kg-touch__btn--kiai.is-ready { border-color: var(--kg-kiai); box-shadow: 0 0 0 1px var(--kg-kiai); }
+.kg-touch__btn--kiai.is-cooling { opacity: 0.6; }
+/* Touch panel while a menu is open: inert (set by main.js) and dimmed under the menu layer. */
+.kg-touch[inert] .kg-touch__btn { background: #101623; border-color: #393545; color: #777482; }
 
-@media (max-width: 480px) {
+/* ---- Phones ------------------------------------------------------------------------------ */
+/* The game element is shorter than the screen (portrait) or taller than it (landscape): the
+   menu layer takes the viewport instead, so every screen gets the whole display to work with. */
+@media (max-width: 640px), (orientation: landscape) and (max-height: 520px) {
+  .kg-menu { position: fixed; height: 100vh; height: 100dvh; }
+  /* Safari (real devices) clips a fixed descendant at the root's overflow-clipped box: while a
+     menu is open the root clips nothing (main.js sets the class whenever the game is not playing). */
+  .kg-root--menu { overflow: visible; }
+}
+@media (max-width: 640px) {
   .kg-wrap { padding: 8px; }
-  .kg-hud { font-size: 12px; gap: 8px 12px; padding: 8px 10px; }
-  .kg-bar { width: 100px; }
+  .kg-hud { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-rows: 25px 20px; gap: 5px 10px; min-height: 64px; padding: 6px 8px; }
+  .kg-hud__health { grid-column: 1 / 3; grid-row: 1; }
+  .kg-btn--hud { grid-column: 3; grid-row: 1; height: 24px; margin-left: 0; }
+  .kg-hud__kiai { grid-column: 1; grid-row: 2; gap: 5px; }
+  .kg-hud__score { grid-column: 2; grid-row: 2; gap: 5px; }
+  .kg-hud__enemies { grid-column: 3; grid-row: 2; gap: 5px; }
+  .kg-hud__combo { grid-column: 1 / 4; grid-row: 3; }
+  .kg-hud__boss { grid-column: 1 / 4; grid-row: 4; }
+  .kg-hud__kiai .kg-bar { min-width: 22px; }
+  .kg-menu { padding: 16px; }
+  .kg-dialog { padding: 24px 20px; max-height: calc(100dvh - 16px); top: 8px; bottom: 8px; }
+  .kg-dialog--help { max-height: calc(100dvh - 16px); }
+  .kg-help__columns { grid-template-columns: 1fr; gap: 20px; }
+  .kg-help__screen { grid-template-columns: 1fr; justify-content: start; }
+  .kg-dialog--result { padding: 28px 20px; }
+  .kg-stats dd { font-size: 21px; }
+  /* Portrait title: sized to the visible viewport (dvh), so the whole composition, the portrait,
+     the logo, Play and the secondary actions, fits a phone with its browser chrome showing and
+     needs no scrolling. The sizes are capped at the design's values on tall screens. */
+  .kg-title-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); gap: 0; overflow: auto; }
+  .kg-title-art { order: -1; height: min(245px, 31vh); height: min(245px, 31dvh); aspect-ratio: 190 / 245; width: auto; justify-self: center; background-image: linear-gradient(0deg, var(--kg-bg), transparent 14%), url("assets/ui/title-tamas.png"); background-size: 100% 100%, cover; background-position: center, 55% 30%; }
+  .kg-title-copy { padding: 1dvh 14px 0; justify-content: flex-start; }
+  .kg-title-copy .kg-kicker { font-size: 10px; }
+  .kg-title-copy .kg-logo { max-width: 270px; gap: min(10px, 1.2dvh); margin: min(14px, 1.8dvh) 0 min(10px, 1.2dvh); }
+  .kg-logo__master { height: min(30px, 3.8dvh); width: auto; }
+  .kg-logo__tamas { height: min(78px, 9.5dvh); width: auto; }
+  .kg-title-copy .kg-subtitle { font-size: 12px; }
+  .kg-title-copy .kg-spectrum { margin: min(14px, 1.6dvh) 0 min(18px, 2.2dvh); }
+  .kg-title-actions { gap: min(10px, 1.2dvh); }
+  .kg-title-actions .kg-btn--primary { min-height: min(52px, 6.5dvh); padding: 10px 16px; }
+  .kg-title-actions .kg-btn--plain { min-height: 36px; padding: 7px 10px; }
+  .kg-title-actions .kg-btn--quiet { min-height: 32px; padding: 6px 10px; }
+  .kg-title-copy .kg-quote { font-size: 14px; margin-top: min(16px, 2dvh); }
+  .kg-title-copy .kg-hint--touch { margin-top: min(8px, 1dvh); font-size: 10px; }
+  .kg-menu--story { padding: 20px; }
+  .kg-story__text { margin: 28px 0; }
   .kg-touch { padding: 8px; gap: 8px; }
   .kg-touch__pad, .kg-touch__actions { gap: 5px; }
-  .kg-touch__btn { width: 48px; height: 48px; font-size: 10px; border-radius: 9px; }
-  .kg-touch__actions .kg-touch__btn--kiai { width: auto; height: 40px; }
+  .kg-touch__btn { width: 50px; height: 50px; font-size: 10px; }
+  .kg-touch__actions .kg-touch__btn--kiai { width: auto; height: 36px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .kg-menu { padding: 13px; }
+  .kg-dialog { padding: 17px 24px; }
+  .kg-dialog__header { gap: 8px; margin-bottom: 15px; }
+  .kg-pixel-text--heading { height: 23px; }
+  .kg-dialog__actions { gap: 6px; }
+  .kg-btn--primary { min-height: 44px; padding: 10px 14px; font-size: 15px; }
+  .kg-btn--plain { min-height: 32px; padding: 7px 10px; font-size: 12px; }
+  .kg-btn--quiet { min-height: 30px; padding: 6px 9px; }
+  .kg-run-status { margin-top: 12px; padding-top: 7px; font-size: 10px; }
+  .kg-dialog--help { height: 100%; padding: 18px 24px; }
+  .kg-dialog--help .kg-dialog__header { margin-bottom: 10px; gap: 5px; }
+  .kg-dialog__footer { padding-top: 12px; }
+  .kg-help__section h3 { margin-top: 0; }
+  .kg-help__row { min-height: 38px; }
+  .kg-dialog--result { padding: 22px 32px; }
+  .kg-title-layout { padding: 10px 12px; grid-template-columns: 56% 44%; overflow: auto; }
+  .kg-title-copy { padding: 4px 28px; }
+  .kg-title-copy .kg-logo { max-width: 265px; gap: 6px; margin: 6px 0 8px; }
+  .kg-logo__master { height: 22px; width: auto; }
+  .kg-logo__tamas { height: 52px; width: auto; }
+  .kg-title-copy .kg-kicker { font-size: 10px; }
+  .kg-title-copy .kg-subtitle { font-size: 11px; }
+  .kg-title-copy .kg-spectrum { margin: 8px 0 10px; }
+  .kg-title-actions { gap: 5px; }
+  .kg-title-actions .kg-btn--primary { min-height: 40px; padding: 8px 14px; }
+  .kg-title-actions .kg-btn--plain { min-height: 28px; padding: 5px 10px; }
+  .kg-title-actions .kg-btn--quiet { min-height: 26px; padding: 4px 9px; }
+  .kg-title-copy .kg-quote { font-size: 13px; margin-top: 8px; }
+  .kg-title-copy .kg-hint--touch { margin-top: 5px; font-size: 10px; }
+  .kg-hero-pose { display: none; }
+  .kg-dialog--result .kg-heading { margin-top: 8px; }
+  .kg-dialog--result .kg-quote { margin: 8px 0 10px; }
+  .kg-stats { margin-bottom: 10px; }
+  .kg-dialog--result .kg-hint { margin: -4px 0 10px; }
+  .kg-menu--story { padding: 16px; }
+  .kg-story__text { margin: 18px 0; }
+  .kg-story__actions { gap: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .kg-bar__fill { transition: none; }
   .kg-story__text.is-typing::after { animation: none; }
-  .kg-btn:active, .kg-touch__btn.is-active { transform: none; }
 }
 
 /* Make the hidden attribute win over the flex/grid display rules above. */
 .kg-root [hidden] { display: none !important; }
-
-/* Compact start screen on small screens: the keyboard list is replaced by a one-line hint. */
-.kg-hint--touch { display: none; }
-@media (max-width: 640px) {
-  .kg-controls { display: none; }
-  .kg-hint--touch { display: block; }
-  .kg-hint--keys { display: none; }
-  .kg-overlay { gap: 8px; padding: 10px; }
-  .kg-overlay--story { gap: 10px; }
-  /* Title card on phones: title, subtitle, start and replay must fit the 16:9 stage. */
-  .kg-overlay[data-overlay="start"] { gap: 6px; }
-  .kg-overlay[data-overlay="start"] .kg-sub { display: none; }
-  .kg-title { font-size: 20px; }
-  .kg-title__sub { font-size: 11px; }
-  .kg-hint--touch { font-size: 10px; line-height: 1.3; }
-  .kg-story__text { line-height: 1.5; }
-  .kg-hero-pose { width: 54px; }
-  .kg-btn--ghost { font-size: 10px; padding: 4px 8px; }
-  .kg-sub { font-size: 12px; }
-  .kg-btn--primary { font-size: 14px; padding: 10px 24px; }
-}

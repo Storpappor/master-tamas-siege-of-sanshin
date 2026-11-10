@@ -46,7 +46,7 @@ Run a single suite with `node --test test/combat.test.js`.
 | Sound cues, their variation and voice limits | `CUE` in `src/sound.js` |
 | Which game moment plays which cue or track | `src/audioDirector.js` |
 | Music tracks, loop points, music volume | `MUSIC` in `src/music.js` |
-| Story and dialogue text | `INTRO_SCREENS` in `src/main.js`, `KAGE_DIALOGUE` and `ZONE_CARDS` in `src/game.js`, end cards in `index.html` |
+| Story and dialogue text (Swedish; menus stay English) | `INTRO_SCREENS` in `src/main.js`, `KAGE_DIALOGUE` and `ZONE_CARDS` in `src/game.js`, end cards in `index.html`; display names and the presentation-time translations in `src/names.js` (`docs/ui-display-names.md`) |
 
 Keep these in sync when they change:
 
@@ -61,7 +61,7 @@ Keep these in sync when they change:
 - `src/main.js` runs `boot` on import and needs a browser, so tests cannot import it.
 - `index.html` must be served over http; ES modules fail from `file://`.
 - The start buttons stay disabled until the hero sprite sheet has loaded.
-- The canvas bitmap font (`GLYPHS` in `src/sprites.js`) has A-Z, `ÅÄÖ`, 0-9 and `+-!:.` only;
+- The canvas bitmap font (`GLYPHS` in `src/sprites.js`) has A-Z, `ÅÄÖ`, 0-9 and `+-!:.>/` only;
   other characters such as `É` draw as blanks. Story cards and the HUD are HTML, so they
   are not affected.
 - The street and dojo backgrounds are modelled on the real Sanshin Kan on Södermalm, so

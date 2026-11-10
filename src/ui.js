@@ -1,6 +1,35 @@
 // DOM side of the game: HUD values, overlays and the sound/touch toggles.
 // Values are cached so the DOM is only touched when something changes.
+import { drawText, textWidth } from './sprites.js';
+import { displayText } from './names.js';
+
+// Menu headings are drawn with the game's own 3x5 bitmap font (the same one the canvas uses for
+// banners), so the menus share the picture's pixel typography without any web font. Each
+// <canvas data-pixel-text> gets its text at data-scale pixels per glyph pixel. data-shadow="layered"
+// gives the title's magenta and purple offsets; otherwise a one-pixel dark shadow.
+function paintPixelText(canvas) {
+  const text = canvas.dataset.pixelText || '';
+  const scale = Math.max(1, Number(canvas.dataset.scale) || 4);
+  const color = canvas.dataset.color || '#f3ead8';
+  const layered = canvas.dataset.shadow === 'layered';
+  const pad = scale;
+  const w = textWidth(text.toUpperCase(), scale) + pad * 2 + (layered ? scale : 0);
+  const h = 5 * scale + pad * 2 + (layered ? scale : 0);
+  canvas.width = w; canvas.height = h; // drawn 1:1; the stylesheet may scale it on small screens
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+  if (layered) {
+    const far = Math.max(1, Math.round(scale * 0.66)), near = Math.max(1, Math.round(scale * 0.33));
+    drawText(ctx, text, pad + far, pad + far, { color: '#a12e78', scale });
+    drawText(ctx, text, pad + near, pad + near, { color: '#594478', scale });
+    drawText(ctx, text, pad, pad, { color, scale });
+  } else {
+    drawText(ctx, text, pad, pad, { color, scale, shadow: '#0a0614' });
+  }
+}
+
 export function createUi(root) {
+  for (const c of root.querySelectorAll('canvas[data-pixel-text]')) paintPixelText(c);
   const q = (sel) => root.querySelector(sel);
   const overlays = [...root.querySelectorAll('[data-overlay]')];
   const hud = {
@@ -37,7 +66,7 @@ export function createUi(root) {
   function renderScreen() {
     stopTyping();
     const lines = active.screens[active.index];
-    active.full = lines.join('\n');
+    active.full = lines.map(displayText).join('\n'); // dialogue speaker labels use display names
     if (reducedMotion) {
       storyText.textContent = active.full;
       return;
@@ -84,6 +113,8 @@ export function createUi(root) {
   if (story) {
     story.addEventListener('click', (e) => {
       if (skipButton && skipButton.contains(e.target)) { finishStory(true); return; }
+      // A keyboard-activated Continue button (click detail 0) was already handled by onStoryKey.
+      if (e.detail === 0 && e.target.closest && e.target.closest('[data-action="story-next"]')) return;
       advanceStory();
     });
   }
@@ -94,6 +125,8 @@ export function createUi(root) {
     // Optional painter for hero canvases inside overlays (set by main.js once the sprite is loaded).
     heroPainter: null,
     // Optional listener for menu interactions: 'move' when a story card advances, 'back' on skip.
+    // Which overlay is showing (null when none), for the menu wiring in main.js.
+    get overlay() { const el = overlays.find((o) => o !== story && !o.hidden); return el ? el.dataset.overlay : null; },
     onMenu: null,
 
     get storyActive() {
@@ -118,7 +151,9 @@ export function createUi(root) {
       this.showStory(lines, { onDone: done, skippable: false, hint: 'Enter · Space · tap' });
     },
 
-    showOverlay(name, data) {
+    // `focus`: the element to focus instead of the overlay's first button (used when a screen
+    // comes back after How to play, so the player lands on the button they left from).
+    showOverlay(name, data, { focus = null } = {}) {
       if (active && name !== 'story') finishStory();
       for (const el of overlays) {
         if (el === story) continue;
@@ -135,7 +170,7 @@ export function createUi(root) {
         if (show) {
           const heroCanvas = el.querySelector('[data-hero-canvas]');
           if (heroCanvas && this.heroPainter) this.heroPainter(heroCanvas, name);
-          const btn = el.querySelector('button');
+          const btn = (focus && el.contains(focus)) ? focus : el.querySelector('button');
           if (btn) setTimeout(() => btn.focus({ preventScroll: true }), 0);
         }
       }
@@ -163,7 +198,7 @@ export function createUi(root) {
           hud.kiai.classList.toggle('is-ready', mode === 'ready');
           hud.kiai.classList.toggle('is-active', mode === 'active');
           if (hud.kiaiText) {
-            hud.kiaiText.textContent = mode === 'active' ? 'AJSICH!' : mode === 'ready' ? 'Ready' : 'Charging';
+            hud.kiaiText.textContent = mode === 'active' ? 'Active' : mode === 'ready' ? 'Ready' : 'Charging';
             hud.kiaiText.classList.toggle('is-ready', mode === 'ready');
             hud.kiaiText.classList.toggle('is-active', mode === 'active');
           }

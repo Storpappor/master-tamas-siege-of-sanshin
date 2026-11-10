@@ -15,19 +15,21 @@ import { BACKGROUNDS, loadBackground } from './background.js';
 const SPRITE_URL = new URL('../assets/tamas-hero-spritesheet.png', import.meta.url).href;
 const HERO_SHEET_URL = new URL('../assets/sprites/tamas.json', import.meta.url).href;
 
-// Opening story, one card per entry. Lines are drawn exactly as written.
+// Opening story, one card per entry. Lines are drawn exactly as written. Story, narration and
+// character lines are Swedish; menus and system UI are English (docs/ui-display-names.md).
 export const INTRO_SCREENS = [
-  ['STOCKHOLM. MIDNIGHT.'],
-  ['BUDAPEST 1942. ALGERIA 1960.', 'STOCKHOLM TONIGHT.'],
-  ['TWO ARMIES. ONE DOJO.', 'HE IS NOT DONE.'],
-  ['HIS BEST STUDENT LEFT.', 'HE TOOK FIVE DOJOS WITH HIM.'],
-  ['THEY CALL THEMSELVES', 'THE SHADOW LEAGUE.'],
-  ['TONIGHT THEY COME FOR', 'THE SANSHINKAN NAME.'],
-  ['THREE HEARTS:', 'COURAGE. FOCUS. DISCIPLINE.'],
-  ['AT 84, TAMAS WEBER', 'TIES HIS BELT ONE MORE TIME.'],
+  ['STOCKHOLM. MIDNATT.'],
+  ['BUDAPEST 1942. ALGERIET 1960.', 'STOCKHOLM I NATT.'],
+  ['TVÅ ARMÉER. EN DOJO.', 'HAN ÄR INTE FÄRDIG.'],
+  ['HANS BÄSTA ELEV GICK.', 'HAN TOG FEM DOJOR MED SIG.'],
+  ['DE KALLAR SIG', 'SKUGGLIGAN.'],
+  ['I NATT KOMMER DE FÖR', 'NAMNET SANSHINKAN.'],
+  ['TRE HJÄRTAN:', 'MOD. FOKUS. DISCIPLIN.'],
+  ['VID 84 KNYTER TAMAS WEBER', 'BÄLTET EN GÅNG TILL.'],
 ];
 
 const SOUND_KEY = 'karate-challenge-sound';
+const INTRO_KEY = 'karate-challenge-intro-seen';
 
 export function boot(root) {
   const canvas = root.querySelector('canvas');
@@ -124,6 +126,78 @@ export function boot(root) {
   for (const b of root.querySelectorAll('[data-action="start"]')) b.addEventListener('click', startGame);
   for (const b of root.querySelectorAll('[data-action="resume"]')) b.addEventListener('click', () => { unlockAudio(); game.resume(); });
   for (const b of root.querySelectorAll('[data-action="pause"]')) b.addEventListener('click', () => game.togglePause());
+
+  // ---- Menu shell: How to play, Restart run, Title screen -------------------------------
+  // How to play opens over the title or the pause screen and goes back to exactly that screen,
+  // refocusing the button it was opened from. The game stays paused throughout: nothing here
+  // calls resume, and Esc while help is open only closes help.
+  const helpOverlay = root.querySelector('[data-overlay="help"]');
+  const helpOpen = () => Boolean(helpOverlay && !helpOverlay.hidden);
+  const HELP_FROM = ['start', 'paused', 'gameover', 'victory'];
+  let helpOrigin = null;   // { overlay: one of HELP_FROM, focus: Element | null }
+  const openHelp = () => {
+    const from = ui.overlay;
+    if (helpOpen() || !helpOverlay || !HELP_FROM.includes(from)) return;
+    helpOrigin = { overlay: from, focus: root.contains(document.activeElement) ? document.activeElement : null };
+    director.menu('confirm');
+    ui.showOverlay('help');
+  };
+  const closeHelp = () => {
+    if (!helpOpen()) return;
+    const back = helpOrigin || { overlay: HELP_FROM.includes(game.state) ? game.state : 'start', focus: null };
+    helpOrigin = null;
+    director.menu('back');
+    ui.showOverlay(back.overlay, null, { focus: back.focus });
+  };
+  for (const b of root.querySelectorAll('[data-action="help"]')) b.addEventListener('click', openHelp);
+  for (const b of root.querySelectorAll('[data-action="help-back"]')) b.addEventListener('click', closeHelp);
+  // Restart run: the existing game.start() resets the whole run (score, zone, waves), so the
+  // button says so. Title screen: the run is discarded and the title shows, no confirmation.
+  for (const b of root.querySelectorAll('[data-action="restart"]')) b.addEventListener('click', () => { if (game.state !== 'paused') return; director.menu('confirm'); startGame(); });
+  const toTitle = () => {
+    if (!['paused', 'gameover', 'victory'].includes(game.state)) return;
+    director.menu('back');
+    game.reset();
+    game.state = 'start';
+    input.active = false;
+    input.reset();
+    ui.showOverlay('start');
+  };
+  for (const b of root.querySelectorAll('[data-action="title"]')) b.addEventListener('click', toTitle);
+  window.addEventListener('keydown', (e) => {
+    if (ui.storyActive || e.repeat) return;
+    const key = e.key;
+    if ((key === 'h' || key === 'H') && !helpOpen() && HELP_FROM.includes(ui.overlay)) { e.preventDefault(); openHelp(); }
+    // The Input is inactive whenever a menu is open (see the frame loop), so Esc and P are
+    // handled here: Esc closes help, or resumes from the pause screen; P resumes too.
+    else if (key === 'Escape' && helpOpen()) { e.preventDefault(); closeHelp(); }
+    // `!input.active` keeps this off the very key press that paused (the Input is still active
+    // for that event and has just handled it); the loop deactivates the Input a frame later.
+    else if ((key === 'Escape' || key === 'p' || key === 'P') && !input.active && game.state === 'paused' && ui.overlay === 'paused') { e.preventDefault(); unlockAudio(); game.resume(); }
+  });
+  const pauseStatus = root.querySelector('[data-pause-status]');
+  let lastStatus = '';
+  const syncPauseStatus = () => {
+    if (!pauseStatus || game.state !== 'paused') return;
+    const total = game.remainingEnemies + game.defeated;
+    const m = Math.floor(game.elapsed / 60), sec = String(Math.floor(game.elapsed % 60)).padStart(2, '0');
+    const text = `Score ${game.score.toLocaleString()} · ${game.remainingEnemies} of ${total} left · ${m}:${sec}${game.zone ? ` · ${game.zone.name}` : ''}`;
+    if (text !== lastStatus) { pauseStatus.textContent = text; lastStatus = text; }
+  };
+  // The result screens show how many enemies the run cleared, from the same values as the pause
+  // status (the game passes score, time and bonuses; the counts are read here).
+  const resultCleared = [...root.querySelectorAll('[data-result="cleared"]')];
+  const resultTotal = [...root.querySelectorAll('[data-result="total"]')];
+  let lastCleared = '';
+  const syncResultStats = () => {
+    if (game.state !== 'gameover' && game.state !== 'victory') return;
+    const total = game.remainingEnemies + game.defeated;
+    const key = `${game.defeated}/${total}`;
+    if (key === lastCleared) return;
+    lastCleared = key;
+    for (const el of resultCleared) el.textContent = String(game.defeated);
+    for (const el of resultTotal) el.textContent = String(total);
+  };
   for (const b of root.querySelectorAll('[data-action="sound"]')) {
     b.addEventListener('click', () => {
       soundOn = !soundOn;
@@ -136,9 +210,9 @@ export function boot(root) {
     });
   }
 
-  input.onPause = () => game.togglePause();
+  input.onPause = () => { if (helpOpen()) closeHelp(); else game.togglePause(); };
   input.onConfirm = () => {
-    if (ui.storyActive) return; // the story cards handle Enter themselves
+    if (ui.storyActive || helpOpen()) return; // the story cards and the help screen handle Enter themselves
     if (['start', 'gameover', 'victory'].includes(game.state)) startGame();
     else if (game.state === 'paused') game.resume();
   };
@@ -189,6 +263,20 @@ export function boot(root) {
       acc = 0;
     }
     last = now;
+    // Menus own the input while the game is not playing: the touch panel is inert (taps cannot
+    // reach the gameplay buttons, and the buttons cannot cover a menu), and the title screen
+    // shows no HUD, since its numbers only mean something during a run.
+    const playing = game.state === 'playing';
+    if (touchArea && touchArea.inert !== !playing) touchArea.inert = !playing;
+    // Gameplay keys are captured only while playing: on a menu, Space and the letters belong to
+    // the buttons (Space must activate a focused button, not queue a jump for the resume).
+    if (input.active !== playing) input.active = playing;
+    root.classList.toggle('kg-root--title', game.state === 'start');
+    // While a menu owns the screen the root must not clip: on phones the menu layer is fixed to
+    // the viewport, and Safari clips a fixed descendant at an overflow-clipped ancestor's box.
+    root.classList.toggle('kg-root--menu', !playing);
+    syncPauseStatus();
+    syncResultStats();
     // Music and sound cues follow the state the steps just produced.
     director.update();
     renderer.render(game, now / 1000);
@@ -196,8 +284,14 @@ export function boot(root) {
   };
   requestAnimationFrame(frame);
 
-  // Opening story plays once, then the title card.
-  playIntro(() => ui.showOverlay('start'));
+  // Opening story plays on the first visit (and from the Intro button); later visits open on the
+  // title. Add ?intro=1 to the address to see it again.
+  let introSeen = false;
+  try { introSeen = localStorage.getItem(INTRO_KEY) === 'yes'; } catch { /* storage may be blocked */ }
+  const wantIntro = new URLSearchParams(window.location.search).has('intro');
+  const markIntroSeen = () => { try { localStorage.setItem(INTRO_KEY, 'yes'); } catch { /* ignore */ } };
+  if (introSeen && !wantIntro) ui.showOverlay('start');
+  else playIntro(() => { markIntroSeen(); ui.showOverlay('start'); });
 
   root.karateHero = hero; // exposed for debugging alongside root.karateGame
   root.karateRenderer = renderer;
