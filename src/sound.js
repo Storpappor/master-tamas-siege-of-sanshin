@@ -10,6 +10,13 @@
 // Repeated cues get a little pitch and level variation, and each cue has a minimum gap and a
 // voice limit so a crowd of hits never piles up into noise.
 
+// Recorded one-shots, decoded on the shared context at unlock. A cue that uses one falls back to
+// its synthesized version while the file is missing or still loading. Paths are resolved by main.js.
+export const SAMPLES = {
+  // Temporary voice: replace the file with Tamas's own recording when supplied (see docs/music/README.md).
+  ajsich: { src: '../assets/audio/ajsich-1.mp3', vol: 0.95 },   // Tamas shouts the word when Kiai activates
+};
+
 const CUE = {
   // ---- menu ---------------------------------------------------------------------------------
   menuMove:    { gap: 0.05, duck: false, play: (s, v) => s.tone({ freq: 1180 * v.pitch, dur: 0.025, type: 'square', vol: 0.09 * v.vol }) },
@@ -28,7 +35,12 @@ const CUE = {
   kiaiStrike:  { group: 'whoosh', voices: 2, gap: 0.05, play: (s, v) => { s.tone({ freq: 330 * v.pitch, end: 420 * v.pitch, dur: 0.07, type: 'sawtooth', vol: 0.45 * v.vol }); s.tone({ freq: 420 * v.pitch, end: 180, dur: 0.16, type: 'sawtooth', vol: 0.5 * v.vol, delay: 0.07 }); s.noise({ dur: 0.1, vol: 0.25, freq: 1200, delay: 0.05 }); } },
   jump:        { gap: 0.1, play: (s, v) => s.tone({ freq: 260 * v.pitch, end: 620 * v.pitch, dur: 0.14, type: 'square', vol: 0.28 * v.vol }) },
   land:        { gap: 0.1, play: (s, v) => s.noise({ dur: 0.04, vol: 0.18 * v.vol, freq: 300 }) },
-  kiaiStart:   { gap: 0.3, duck: true, vary: false, play: (s) => { s.tone({ freq: 260, end: 520, dur: 0.12, type: 'sawtooth', vol: 0.5 }); s.tone({ freq: 520, end: 200, dur: 0.3, type: 'sawtooth', vol: 0.55, delay: 0.12 }); s.noise({ dur: 0.2, vol: 0.3, freq: 1000, delay: 0.1 }); } },
+  // Kiai activates: Tamas says "ajsich" (the recorded word alone); the synthesized shout stands in
+  // until the recording has loaded, or when it is missing.
+  kiaiStart:   { gap: 0.3, duck: true, vary: false, play: (s) => {
+    if (s.voice('ajsich')) return;
+    s.tone({ freq: 260, end: 520, dur: 0.12, type: 'sawtooth', vol: 0.5 }); s.tone({ freq: 520, end: 200, dur: 0.3, type: 'sawtooth', vol: 0.55, delay: 0.12 }); s.noise({ dur: 0.2, vol: 0.3, freq: 1000, delay: 0.1 });
+  } },
 
   // ---- grabs and throws ---------------------------------------------------------------------
   grabReach:   { group: 'whoosh', voices: 2, gap: 0.05, play: (s, v) => { s.noise({ dur: 0.06, vol: 0.2 * v.vol, freq: 2300 * v.pitch, end: 1400 }); s.tone({ freq: 300 * v.pitch, end: 380 * v.pitch, dur: 0.05, type: 'square', vol: 0.14 * v.vol }); } },
@@ -71,8 +83,15 @@ function defaultContext() {
   return AC ? new AC() : null;
 }
 
+async function defaultFetch(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.arrayBuffer();
+}
+
 export class Sound {
-  constructor({ enabled = true, volume = 0.24, createContext = defaultContext, random = Math.random, onDuck = null, onError = () => {} } = {}) {
+  constructor({ enabled = true, volume = 0.24, createContext = defaultContext, random = Math.random, onDuck = null, onError = () => {},
+    samples = SAMPLES, resolveUrl = (src) => src, fetchBytes = defaultFetch } = {}) {
     this.enabled = enabled;
     this.volume = volume;
     this.createContext = createContext;
@@ -82,10 +101,49 @@ export class Sound {
     this.ctx = null;
     this.master = null;
     this.noiseBuffer = null;
+    // name -> { url, vol, bytes, buffer, failed }
+    this.samples = {};
+    for (const [name, cfg] of Object.entries(samples)) {
+      if (cfg && cfg.src) this.samples[name] = { url: resolveUrl(cfg.src), vol: cfg.vol ?? 1, bytes: null, buffer: null, decoding: false, failed: false };
+    }
+    this.fetchBytes = fetchBytes;
     this.queue = [];          // raw game events since the last drain()
     this.suppressed = new Set();
     this.lastAt = {};         // cue name -> context time it last played
     this.voices = {};         // group -> end times of the cues playing in it
+  }
+
+  // Fetch the recorded samples early; decoding waits for the context. Safe to call once at boot.
+  load() {
+    return Promise.all(Object.entries(this.samples).map(([name, smp]) => {
+      if (smp.bytes || smp.failed) return Promise.resolve();
+      return this.fetchBytes(smp.url)
+        .then((bytes) => { smp.bytes = bytes; this.decodeSample(name); })
+        .catch((err) => { smp.failed = true; this.onError(err); });
+    }));
+  }
+
+  decodeSample(name) {
+    const smp = this.samples[name];
+    if (!this.ctx || !smp || !smp.bytes || smp.buffer || smp.decoding) return;
+    smp.decoding = true;
+    Promise.resolve()
+      .then(() => this.ctx.decodeAudioData(smp.bytes.slice(0)))
+      .then((buffer) => { smp.buffer = buffer; smp.decoding = false; })
+      .catch((err) => { smp.decoding = false; smp.failed = true; this.onError(err); });
+  }
+
+  // Play a recorded sample now; false when it is not (yet) available, so the cue can fall back.
+  voice(name, { vol = 1, delay = 0 } = {}) {
+    const smp = this.samples[name];
+    if (!smp || !smp.buffer) return false;
+    const src = this.ctx.createBufferSource();
+    src.buffer = smp.buffer;
+    const gain = this.ctx.createGain();
+    gain.gain.value = smp.vol * vol;
+    src.connect(gain).connect(this.master);
+    src.start(this.ctx.currentTime + delay);
+    return true;
   }
 
   // Browsers only allow audio after a user gesture; call this from a click or key handler.
@@ -104,6 +162,7 @@ export class Sound {
       this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const data = this.noiseBuffer.getChannelData(0);
       for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      for (const name of Object.keys(this.samples)) this.decodeSample(name);
     }
     if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
   }
