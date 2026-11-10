@@ -258,6 +258,7 @@ export function boot(root) {
   // Fixed-step game loop; rendering runs every animation frame.
   let last = null;
   let acc = 0;
+  const touchArea = root.querySelector('[data-touch]'); // made inert while a menu is open
   let wasPlaying = false;
   const frame = (now) => {
     if (last !== null && game.state === 'playing') {
