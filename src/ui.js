@@ -1,23 +1,31 @@
 // DOM side of the game: HUD values, overlays and the sound/touch toggles.
 // Values are cached so the DOM is only touched when something changes.
 import { drawText, textWidth } from './sprites.js';
+import { displayText } from './names.js';
 
 // Menu headings are drawn with the game's own 3x5 bitmap font (the same one the canvas uses for
 // banners), so the menus share the picture's pixel typography without any web font. Each
-// <canvas data-pixel-text> gets its text at data-scale pixels per glyph pixel, with a one-pixel
-// dark shadow; the glow and sizing are CSS.
+// <canvas data-pixel-text> gets its text at data-scale pixels per glyph pixel. data-shadow="layered"
+// gives the title's magenta and purple offsets; otherwise a one-pixel dark shadow.
 function paintPixelText(canvas) {
   const text = canvas.dataset.pixelText || '';
   const scale = Math.max(1, Number(canvas.dataset.scale) || 4);
-  const color = canvas.dataset.color || '#ffffff';
+  const color = canvas.dataset.color || '#f3ead8';
+  const layered = canvas.dataset.shadow === 'layered';
   const pad = scale;
-  const w = textWidth(text.toUpperCase(), scale) + pad * 2;
-  const h = 5 * scale + pad * 2;
-  canvas.width = w; canvas.height = h;
-  canvas.style.width = `${w}px`;
+  const w = textWidth(text.toUpperCase(), scale) + pad * 2 + (layered ? scale : 0);
+  const h = 5 * scale + pad * 2 + (layered ? scale : 0);
+  canvas.width = w; canvas.height = h; // drawn 1:1; the stylesheet may scale it on small screens
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, w, h);
-  drawText(ctx, text, pad, pad, { color, scale, shadow: '#0a0614' });
+  if (layered) {
+    const far = Math.max(1, Math.round(scale * 0.66)), near = Math.max(1, Math.round(scale * 0.33));
+    drawText(ctx, text, pad + far, pad + far, { color: '#a12e78', scale });
+    drawText(ctx, text, pad + near, pad + near, { color: '#594478', scale });
+    drawText(ctx, text, pad, pad, { color, scale });
+  } else {
+    drawText(ctx, text, pad, pad, { color, scale, shadow: '#0a0614' });
+  }
 }
 
 export function createUi(root) {
@@ -60,7 +68,7 @@ export function createUi(root) {
   function renderScreen() {
     stopTyping();
     const lines = active.screens[active.index];
-    active.full = lines.join('\n');
+    active.full = lines.map(displayText).join('\n'); // dialogue speaker labels use display names
     if (reducedMotion) {
       storyText.textContent = active.full;
       return;
@@ -107,6 +115,8 @@ export function createUi(root) {
   if (story) {
     story.addEventListener('click', (e) => {
       if (skipButton && skipButton.contains(e.target)) { finishStory(true); return; }
+      // A keyboard-activated Continue button (click detail 0) was already handled by onStoryKey.
+      if (e.detail === 0 && e.target.closest && e.target.closest('[data-action="story-next"]')) return;
       advanceStory();
     });
   }
@@ -187,11 +197,11 @@ export function createUi(root) {
         const mode = kiai.active ? 'active' : kiai.ready ? 'ready' : 'cooling';
         if (force || last.kiaiPct !== pct) {
           hud.kiai.style.width = `${pct}%`;
-          // The touch meter is the Ajsich button itself: its fill shows the same charge.
+          // The touch meter is the Kiai button itself: its fill shows the same charge.
           if (hud.touchKiaiFill) hud.touchKiaiFill.style.width = `${pct}%`;
         }
         if (force || last.kiaiMode !== mode) {
-          const label = mode === 'active' ? 'AJSICH!' : mode === 'ready' ? 'Ready' : 'Charging';
+          const label = mode === 'active' ? 'Active' : mode === 'ready' ? 'Ready' : 'Charging';
           hud.kiai.classList.toggle('is-ready', mode === 'ready');
           hud.kiai.classList.toggle('is-active', mode === 'active');
           if (hud.kiaiText) {
@@ -204,7 +214,7 @@ export function createUi(root) {
             hud.kiaiButton.classList.toggle('is-active', mode === 'active');
             hud.kiaiButton.classList.toggle('is-cooling', mode === 'cooling');
           }
-          if (hud.touchKiaiText) hud.touchKiaiText.textContent = mode === 'ready' ? 'Ajsich: tap!' : mode === 'active' ? 'AJSICH!' : 'Ajsich charging';
+          if (hud.touchKiaiText) hud.touchKiaiText.textContent = mode === 'ready' ? 'Kiai: tap!' : mode === 'active' ? 'Kiai active' : 'Kiai charging';
         }
         last.kiaiPct = pct; last.kiaiMode = mode;
       }
