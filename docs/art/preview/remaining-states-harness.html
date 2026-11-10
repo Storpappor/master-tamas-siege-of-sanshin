@@ -1,0 +1,268 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Remaining-state review harness</title>
+<!--
+  Review harness for the Kage / Thrower remaining-state batch: real simulation, real renderer, production
+  loader. ?kind=boss|thrower runs scripted fights in both facings and captures a panel on every frame
+  where the enemy's resolved cell changes (phase boundaries) plus explicit frames; ?kind=…&clip=1&facing=1|-1
+  records one normal-speed clip with effects. Diagnostic tooling only; nothing here is loaded by the game.
+-->
+<style>body { margin: 0; background: #222; color: #ddd; font: 12px monospace; } canvas { display: block; image-rendering: pixelated; }</style>
+<p id="status">loading…</p>
+<script type="module">
+import { Game } from '../../../src/game.js';
+import { Enemy } from '../../../src/entities.js';
+import { Renderer } from '../../../src/renderer.js';
+import { HeroSprite, SpriteSheet, heroState, resolveFrame } from '../../../src/heroSprite.js';
+import { enemyState, ENEMY_SHEETS } from '../../../src/enemySprite.js';
+import { BACKGROUNDS, loadBackground } from '../../../src/background.js';
+import { ART_SCALE } from '../../../src/artScale.js';
+import { STEP, FLOOR_TOP, GROUND_Y, DEPTH } from '../../../src/constants.js';
+
+const q = new URLSearchParams(location.search);
+const kind = q.get('kind') || 'boss';
+const KIND = kind === 'boss' ? 'Kage' : 'Thrower';
+const status = document.getElementById('status');
+const NONE = { left: false, right: false, up: false, down: false, duck: false, block: false, jump: false, punch: false, kick: false, kiai: false };
+const press = (keys) => ({ ...NONE, ...keys });
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+const sha = async (buf) => hex(await crypto.subtle.digest('SHA-256', buf));
+
+// Served bytes, fetched fresh, then the production loader.
+const jsonUrl = new URL(ENEMY_SHEETS[kind], new URL('../../../src/', location.href)).href;
+const jsonBytes = await (await fetch(jsonUrl, { cache: 'no-store' })).arrayBuffer();
+const map = JSON.parse(new TextDecoder().decode(jsonBytes));
+const pngUrl = new URL(map.image, jsonUrl).href;
+const pngBytes = await (await fetch(pngUrl, { cache: 'no-store' })).arrayBuffer();
+const served = { jsonUrl, jsonSha256: await sha(jsonBytes), pngUrl, pngSha256: await sha(pngBytes), pngBytesLength: pngBytes.byteLength };
+const sheet = new SpriteSheet();
+await sheet.load(jsonUrl);
+const lc = document.createElement('canvas'); lc.width = sheet.image.width; lc.height = sheet.image.height;
+const lg = lc.getContext('2d'); lg.imageSmoothingEnabled = false; lg.drawImage(sheet.image, 0, 0);
+const LD = lg.getImageData(0, 0, lc.width, lc.height);
+const loaded = { width: lc.width, height: lc.height, rgbaSha256: await sha(LD.data.buffer), cell: sheet.cell, anchor: sheet.anchor, states: Object.fromEntries(Object.entries(sheet.states)) };
+
+const display = document.createElement('canvas'); display.width = 640; display.height = 360;
+const hero = new HeroSprite({ artScale: ART_SCALE });
+await hero.load('../../../assets/tamas-hero-spritesheet.png');
+const heroSheet = new SpriteSheet();
+await heroSheet.load(new URL('../../../assets/sprites/tamas.json', location.href).href);
+const enemySheets = { [kind]: sheet };
+const renderer = new Renderer(display, { hero, heroSheet, enemySheets });
+const backgrounds = {};
+for (const [art, path] of Object.entries(BACKGROUNDS)) { try { backgrounds[art] = await loadBackground(new URL(path, new URL('../../../src/', location.href)).href); } catch { /* procedural zone */ } }
+renderer.setBackgrounds(backgrounds);
+renderer.resize(640, 1);
+
+// Tamas at x 160 facing `facing`; the enemy `d` units in front, `dz` deeper, facing him.
+function fight({ d, dz = 0, facing = 1, rng = 0.9, cooldown = 99, hp = null }) {
+  const game = new Game({ input: null, rng: () => 0.5 });
+  game.start();
+  game.banner = null;
+  game.elapsed = 3; // past the FIGHT! card
+  game.spawner.waveIndex = game.level.waves.length;
+  const p = game.player;
+  p.x = 160; p.facing = facing;
+  const e = new Enemy(kind, p.x + facing * d, -facing, () => rng, Math.max(0, Math.min(DEPTH, p.z + dz)));
+  e.cooldown = cooldown;
+  if (hp !== null) e.hp = hp;
+  game.enemies.push(e);
+  return { game, p, e };
+}
+const fadeAlpha = (e) => (e.dead && e.deadTimer > 0.5 ? Math.max(0, 1 - (e.deadTimer - 0.5) / 0.4) : 1);
+const grabAt1 = (f) => (f === 1 ? press({ punch: true, kick: true }) : NONE);
+
+const COMMON = [
+  { name: 'hurt', setup: { d: 14 }, input: (f) => (f === 1 ? press({ punch: true }) : NONE), frames: 45, zoom: true },
+  { name: 'KO', setup: { d: 16, hp: 5 }, input: (f) => (f === 1 ? press({ kick: true }) : NONE), frames: 75,
+    when: { 'fade 0.6 s': (e) => e.dead && e.deadTimer >= 0.6, 'fade 0.75 s': (e) => e.dead && e.deadTimer >= 0.75, 'fade 0.88 s': (e) => e.dead && e.deadTimer >= 0.88 } },
+  { name: 'throw', setup: { d: 12 }, input: grabAt1, frames: 90, at: { 11: 'mid hold', 23: 'first normal-colour frame', 27: 'falling', 30: 'last airborne', 50: 'lying', 78: 'mid getUp' } },
+  { name: 'lethal throw', setup: { d: 12, hp: 15 }, input: grabAt1, frames: 90, at: { 30: 'last airborne', 50: 'lying dead' },
+    when: { 'fade 0.6 s': (e) => e.dead && e.deadTimer >= 0.6, 'fade 0.8 s': (e) => e.dead && e.deadTimer >= 0.8 } },
+];
+const SCENARIOS = kind === 'boss' ? [
+  { name: 'walk in, then attack', setup: { d: 70, cooldown: 0 }, frames: 66 },
+  { name: 'strike blocked, step back', setup: { d: 20, cooldown: 0 }, input: () => press({ block: true }), frames: 70 },
+  { name: 'walk in depth', setup: { d: 20, dz: 20 }, frames: 40 },
+  { name: 'guard, then counter', setup: { d: 20, rng: 0.5 }, input: (f) => (f === 1 ? press({ punch: true }) : NONE), frames: 70 },
+  ...COMMON,
+] : [
+  { name: 'walk in, then throw', setup: { d: 160, cooldown: 0 }, frames: 100 },
+  { name: 'back off (inside 60)', setup: { d: 40 }, frames: 50 },
+  { name: 'walk in depth', setup: { d: 80, dz: 20 }, frames: 40 },
+  ...COMMON,
+];
+
+const PW = 300, PH = 170, CAP = 26;
+function panel(run, f, label, facing, s) {
+  const { p, e } = run; const es = enemyState(e), hs = heroState(p);
+  const ec = resolveFrame(sheet, es), tc = resolveFrame(heroSheet, hs);
+  const cx = ((p.x + e.x) / 2 - renderer.camX) * ART_SCALE;
+  const floorY = (FLOOR_TOP + e.z) * ART_SCALE;
+  const c = document.createElement('canvas'); c.width = PW; c.height = PH;
+  c.getContext('2d').drawImage(renderer.buffer, Math.round(cx - PW / 2), Math.round(floorY - (PH - 14)), PW, PH, 0, 0, PW, PH);
+  const a = fadeAlpha(e);
+  const cap1 = `${KIND} faces ${facing === 1 ? 'L (mirrored)' : 'R (as drawn)'} | ${s.name} | k${f} ${label}`;
+  const cap2 = `T ${hs.state}${hs.phase ? '/' + hs.phase : ''} c${tc} | E ${es.state}${es.phase ? '/' + es.phase : ''}${ec === null ? ' FALLBACK' : ' c' + ec} dx ${((e.x - p.x) * facing).toFixed(1)} up ${(GROUND_Y - e.y).toFixed(1)}${a < 1 ? ' alpha ' + a.toFixed(2) : ''}${e.remove ? ' REMOVED' : ''}`;
+  let zoom = null;
+  if (s.zoom) {
+    const Z = 3, W = 110, H = 110; zoom = document.createElement('canvas'); zoom.width = W * Z; zoom.height = H * Z + CAP;
+    const zg = zoom.getContext('2d'); zg.imageSmoothingEnabled = false; zg.fillStyle = '#111'; zg.fillRect(0, 0, zoom.width, zoom.height);
+    zg.drawImage(renderer.buffer, Math.round((e.x - renderer.camX) * ART_SCALE - W / 2), Math.round(floorY - (H - 8)), W, H, 0, CAP, W * Z, H * Z);
+    zg.font = '11px monospace'; zg.fillStyle = '#ffd166'; zg.textBaseline = 'top'; zg.fillText(cap1, 2, 1, zoom.width - 4); zg.fillText(cap2, 2, 13, zoom.width - 4);
+  }
+  return { c, cap1, cap2, zoom };
+}
+
+function runScenario(s, facing) {
+  const run = fight({ ...s.setup, facing }); const { game, p, e } = run;
+  let lastCell = 'start'; const once = new Set(); const panels = []; const log = [];
+  for (let f = 1; f <= s.frames; f++) {
+    game.step(STEP, s.input ? s.input(f, run) : NONE);
+    const es = enemyState(e); const cell = e.remove ? 'removed' : resolveFrame(sheet, es);
+    const labels = [];
+    if (cell !== lastCell) { labels.push(cell === 'removed' ? 'removed' : cell === null ? 'FALLBACK (unmapped)' : `cell ${cell} begins`); lastCell = cell; }
+    if (s.at && s.at[f]) labels.push(s.at[f]);
+    for (const [name, cond] of Object.entries(s.when || {})) if (!once.has(name) && cond(e, p, f)) { once.add(name); labels.push(name); }
+    log.push({ k: f, cell, state: es.state, phase: es.phase, progress: es.progress === undefined ? undefined : +es.progress.toFixed(3), loop: es.loop === undefined ? undefined : +es.loop.toFixed(3), dx: +((e.x - p.x) * facing).toFixed(2), up: +(GROUND_Y - e.y).toFixed(2), dz: +(e.z - p.z).toFixed(1), alpha: +fadeAlpha(e).toFixed(3), T: heroState(p).state, Tcell: resolveFrame(heroSheet, heroState(p)), boundary: labels.length ? labels.join('; ') : undefined });
+    if (!labels.length) continue;
+    renderer.render(game, f / 60);
+    panels.push(panel(run, f, labels.join('; '), facing, s));
+  }
+  return { panels, log };
+}
+
+// Hand audit at k30 of the throw: the declared palm/fingers component of the last-airborne cell, mapped to the
+// screen, compared between a render with Tamas and one without him (flash off, normal draw order).
+const HAND = {
+  boss: { cell: 36, box: [60, 100, 13, 17], seed: [66, 108], skin: ['#803f2c', '#b05330', '#d57239', '#e78b53', '#fba662', '#fec373', '#562a29', '#c08160', '#d79d82'] },
+  thrower: { cell: 28, box: [61, 68, 16, 19], seed: [68, 78], skin: ['#fcb36c', '#e68648', '#9e4732', '#ed9c5d', '#c1653c', '#5d2f2b', '#794234', '#fece7b', '#421c1c', '#906450', '#aa7c5e', '#c2824a'] },
+}[kind];
+{ const hdx = Number(q.get('hdx') || 0), hdy = Number(q.get('hdy') || 0); HAND.box = [HAND.box[0] + hdx, HAND.box[1] + hdy, HAND.box[2], HAND.box[3]]; HAND.seed = [HAND.seed[0] + hdx, HAND.seed[1] + hdy]; HAND.shift = [hdx, hdy]; }
+function sheetPixel(cell, px, py) {
+  const cx = cell % sheet.columns, cy = Math.floor(cell / sheet.columns);
+  const o = ((cy * sheet.cell.h + py) * LD.width + cx * sheet.cell.w + px) * 4;
+  return LD.data[o + 3] ? '#' + [LD.data[o], LD.data[o + 1], LD.data[o + 2]].map((v) => v.toString(16).padStart(2, '0')).join('') : null;
+}
+function handPixels() {
+  const [bx, by, bw, bh] = HAND.box; const skin = new Set(HAND.skin); const seen = new Set(); const out = [];
+  const inBox = (x, y) => x >= bx && x < bx + bw && y >= by && y < by + bh;
+  const key = (x, y) => x * 1000 + y;
+  const stack = [HAND.seed];
+  while (stack.length) {
+    const [x, y] = stack.pop(); if (!inBox(x, y) || seen.has(key(x, y))) continue; seen.add(key(x, y));
+    const col = sheetPixel(HAND.cell, x, y); if (!col || !skin.has(col)) continue;
+    out.push({ x, y, col });
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (dx || dy) stack.push([x + dx, y + dy]);
+  }
+  return out;
+}
+function handAudit(facing) {
+  const run = fight({ d: 12, facing }); const { game, p, e } = run;
+  for (let f = 1; f <= 30; f++) game.step(STEP, grabAt1(f));
+  e.flashTimer = 0; p.flashTimer = 0;
+  const es = enemyState(e); const cell = resolveFrame(sheet, es); const hs = heroState(p); const tc = resolveFrame(heroSheet, hs);
+  const grab = () => renderer.bctx.getImageData(0, 0, renderer.buffer.width, renderer.buffer.height);
+  renderer.render(game, 0.5); const withT = grab();
+  p.remove = true; renderer.render(game, 0.5); const without = grab(); p.remove = false;
+  const at = (img, X, Y) => { const o = (Y * img.width + X) * 4; return '#' + [img.data[o], img.data[o + 1], img.data[o + 2]].map((v) => v.toString(16).padStart(2, '0')).join(''); };
+  const X0 = Math.round((e.x - renderer.camX) * ART_SCALE), Y0 = Math.round((e.y - GROUND_Y + FLOOR_TOP + e.z) * ART_SCALE);
+  const toScreen = (px, py) => [e.facing < 0 ? X0 + sheet.anchor.x - px - 1 : X0 - sheet.anchor.x + px, Y0 - sheet.anchor.y - 1 + py];
+  const hand = handPixels(); let mapped = 0, visible = 0; const hidden = []; let minX = 1e9, maxX = -1, minY = 1e9, maxY = -1;
+  for (const h of hand) {
+    const [X, Y] = toScreen(h.x, h.y); minX = Math.min(minX, X); maxX = Math.max(maxX, X); minY = Math.min(minY, Y); maxY = Math.max(maxY, Y);
+    if (at(without, X, Y) === h.col) mapped++;
+    if (at(withT, X, Y) === at(without, X, Y)) visible++; else hidden.push([h.x, h.y]);
+  }
+  const rows = [...new Set(hand.map((h) => h.y))].sort((a, b) => a - b);
+  // Zoomed views: without Tamas, with Tamas, with Tamas and hidden hand pixels marked red.
+  const Z = 6, W = 64, H = 48; const cx = Math.round((minX + maxX) / 2), cy = Math.round((minY + maxY) / 2);
+  const out = document.createElement('canvas'); out.width = 3 * (W * Z + 6); out.height = H * Z + CAP + 14;
+  const g = out.getContext('2d'); g.imageSmoothingEnabled = false; g.fillStyle = '#111'; g.fillRect(0, 0, out.width, out.height);
+  const sx = cx - W / 2, sy = cy - H / 2;
+  const draw = (img, i, title) => { const t = document.createElement('canvas'); t.width = img.width; t.height = img.height; t.getContext('2d').putImageData(img, 0, 0); g.drawImage(t, sx, sy, W, H, i * (W * Z + 6), CAP, W * Z, H * Z); g.fillStyle = '#ffd166'; g.font = '11px monospace'; g.textBaseline = 'top'; g.fillText(title, i * (W * Z + 6) + 2, CAP + H * Z + 2); };
+  draw(without, 0, 'victim only (Tamas removed)'); draw(withT, 1, 'as drawn in the game (Tamas on top)'); draw(withT, 2, `hidden hand pixels marked red (${hidden.length} of ${hand.length})`);
+  g.fillStyle = 'rgba(255,40,40,0.85)'; for (const [px, py] of hidden) { const [X, Y] = toScreen(px, py); g.fillRect(2 * (W * Z + 6) + (X - sx) * Z, CAP + (Y - sy) * Z, Z, Z); }
+  g.fillStyle = '#ffd166'; g.fillText(`${KIND} faces ${facing === 1 ? 'L (mirrored)' : 'R (as drawn)'} | throw k30 | T ${hs.state}${hs.phase ? '/' + hs.phase : ''} c${tc} | E ${es.state} c${cell} dx ${((e.x - p.x) * facing).toFixed(2)} up ${(GROUND_Y - e.y).toFixed(2)} | hand ${hand.length} px rows ${rows[0]}-${rows[rows.length - 1]} (${sheet.anchor.y - rows[rows.length - 1]}-${sheet.anchor.y - rows[0]} px up) | visible ${visible}/${hand.length}`, 2, 1, out.width - 4);
+  g.fillText(`mapping check: ${mapped}/${hand.length} hand pixels found at the predicted screen position with their sheet colour; flash off; draw order as in the game`, 2, 13, out.width - 4);
+  return { canvas: out, result: { facing, k: 30, handDefinitionShift: HAND.shift, box: HAND.box, seed: HAND.seed, enemyState: es.state, cell, expectedCell: HAND.cell, tamasState: hs.state, tamasPhase: hs.phase, tamasCell: tc, dxUnits: +((e.x - p.x) * facing).toFixed(2), upUnits: +(GROUND_Y - e.y).toFixed(2), handPixels: hand.length, handRows: [rows[0], rows[rows.length - 1]], handUpPx: [sheet.anchor.y - rows[rows.length - 1], sheet.anchor.y - rows[0]], mappingMatches: mapped, visible, hidden: hidden.length, hiddenPixels: hidden } };
+}
+
+if (q.get('clip')) {
+  // One normal-speed clip with effects: walk → attack → hurt → throw → knockout, Tamas driven by a small controller.
+  const facing = Number(q.get('facing') || 1);
+  const throwOnly = q.get('clip') === 'throw';
+  const run = fight(throwOnly ? { d: 12, facing } : kind === 'boss' ? { d: 70, facing, cooldown: 0 } : { d: 150, facing, cooldown: 0 }); const { game, p, e } = run;
+  // Left-facing clips: lock the camera at the wave position (as the game does during a wave) and start Tamas at the
+  // right of the view, so a throw toward the left has room: the camera never scrolls back and enemies are confined
+  // to the visible area (confineEnemy), which otherwise clamps the victim's flight.
+  if (facing === -1) { Object.defineProperty(game.spawner, 'lockX', { get: () => 0 }); const d0 = p.x - e.x; p.x = 300; e.x = p.x - d0; }
+  const toward = facing === 1 ? { right: true } : { left: true };
+  const dist = () => Math.abs(e.x - p.x);
+  let phase = 0, t0 = 0, f = 0, attacked = false, hurtSeen = false, downSeen = false, kicked = false; const events = [];
+  const mark = (s) => events.push({ k: f, t: +(f / 60).toFixed(2), event: s });
+  const trace = []; let lastSig = ''; let heldSeen = false;
+  function control() {
+    f++;
+    if (throwOnly) { if (f === 1) mark('grab'); if (f === 100) { phase = 8; t0 = f; mark('throw over'); } const sig0 = `${e.state}|${e.held ? 'held' : ''}${e.thrown ? 'thrown' : ''}${e.down ? 'down' : ''}`; if (sig0 !== lastSig) { trace.push({ k: f, sig: sig0, dist: +dist().toFixed(1), up: +(GROUND_Y - e.y).toFixed(2) }); lastSig = sig0; } return grabAt1(f); }
+    const sig = `${e.state}|${e.held ? 'held' : ''}${e.thrown ? 'thrown' : ''}${e.down ? 'down' : ''}|${e.attack ? e.attack.name : ''}|T:${p.attack ? p.attack.name + '/' + p.attackPhase : p.state}`;
+    if (sig !== lastSig) { trace.push({ k: f, sig, dist: +dist().toFixed(1), up: +(GROUND_Y - e.y).toFixed(2), ex: +e.x.toFixed(1), px: +p.x.toFixed(1), camX: +renderer.camX.toFixed(1) }); lastSig = sig; }
+    if (e.held) heldSeen = true;
+    if (e.attack) attacked = true;
+    if (e.state === 'hurt' && !e.down && !e.thrown && !e.held) hurtSeen = hurtSeen || phase === 3;
+    if (e.down) downSeen = true;
+    switch (phase) {
+      case 0: // let the enemy walk in and attack; Tamas keeps his guard up
+        if (attacked && !e.attack && (kind === 'boss' || game.projectiles.length === 0)) { phase = 1; t0 = f; e.cooldown = 99; mark('enemy attack over; cooldown held'); }
+        return press({ block: true });
+      case 1: // wait for the step back / back-off to show
+        if (f - t0 > (kind === 'boss' ? 40 : 25)) { phase = 2; mark('Tamas walks in'); }
+        return NONE;
+      case 2: if (dist() <= 14) { phase = 3; t0 = f; mark('punch'); return press({ punch: true }); } return press(toward);
+      case 3: if (hurtSeen && e.state !== 'hurt' && f - t0 > 40) { phase = 4; if (e.hp < 40) { e.hp = 100; mark('hp topped up to 100 so the throw is not lethal (Thrower hp 30 would die)'); } mark('hurt over; Tamas closes for the grab'); } return NONE;
+      case 4: if (dist() <= 12) { phase = 5; t0 = f; mark('grab'); return press({ punch: true, kick: true }); } return press(toward);
+      case 5: if (!heldSeen && f - t0 > 40) { phase = 4; mark('grab missed; retry'); return NONE; } if (downSeen && !e.down && e.state !== 'hurt' && !e.held && !e.thrown && f - t0 > 60) { phase = 6; e.hp = 5; mark('enemy up again; hp set to 5 for the knockout'); } return NONE;
+      case 6: if (dist() <= 16) { phase = 7; t0 = f; kicked = true; mark('kick'); return press({ kick: true }); } return press(toward);
+      case 7: if (e.remove || f - t0 > 90) { phase = 8; t0 = f; mark('knockout faded'); } return NONE;
+      default: return NONE;
+    }
+  }
+  // Timer-driven loop with explicit frame requests: the pane may be hidden, where requestAnimationFrame never fires.
+  const stream = renderer.buffer.captureStream(0); const track = stream.getVideoTracks()[0];
+  const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8e6 });
+  const chunks = []; rec.ondataavailable = (ev) => chunks.push(ev.data);
+  rec.onstop = () => { const blob = new Blob(chunks, { type: 'video/webm' }); const r = new FileReader(); r.onload = () => { window.__clip = r.result; window.__clipLog = { kind, facing, frames: f, seconds: +(f / 60).toFixed(2), events, trace, served, loaded: { rgbaSha256: loaded.rgbaSha256 } }; window.__done = true; status.textContent = `clip ${KIND} facing ${facing}: ${f} frames`; }; r.readAsDataURL(blob); };
+  document.body.appendChild(display);
+  rec.start();
+  let last = performance.now(), acc = 0, t = 0;
+  function loop(now) {
+    acc += Math.min(0.1, (now - last) / 1000); last = now;
+    while (acc >= STEP) { game.step(STEP, control()); acc -= STEP; t += STEP; }
+    renderer.render(game, t); if (track.requestFrame) track.requestFrame();
+    if (phase === 8 && f - t0 > (throwOnly ? 5 : 30)) { rec.stop(); return; }
+    if (f > 60 * 20) { mark('timeout'); rec.stop(); return; }
+    setTimeout(() => loop(performance.now()), 15);
+  }
+  setTimeout(() => loop(performance.now()), 15);
+} else {
+  const panels = [], zooms = [], logs = {}, hands = [];
+  for (const facing of [1, -1]) {
+    for (const s of SCENARIOS) { const r = runScenario(s, facing); panels.push(...r.panels); zooms.push(...r.panels.filter((x) => x.zoom).map((x) => x.zoom)); logs[`${s.name} | facing ${facing}`] = r.log; }
+    hands.push(handAudit(facing));
+  }
+  const COLS = 4, rows = Math.ceil(panels.length / COLS);
+  const out = document.createElement('canvas'); out.width = COLS * PW; out.height = rows * (PH + CAP);
+  const g = out.getContext('2d'); g.fillStyle = '#111'; g.fillRect(0, 0, out.width, out.height);
+  g.font = '10px monospace'; g.fillStyle = '#ffd166'; g.textBaseline = 'top';
+  panels.forEach((pnl, i) => { const x = (i % COLS) * PW, y = Math.floor(i / COLS) * (PH + CAP); g.fillText(pnl.cap1, x + 2, y + 1, PW - 4); g.fillText(pnl.cap2, x + 2, y + 13, PW - 4); g.drawImage(pnl.c, x, y + CAP); });
+  document.body.appendChild(out);
+  const zc = document.createElement('canvas'); const ZC = 4; zc.width = ZC * (zooms[0]?.width || 1); zc.height = Math.ceil(zooms.length / ZC) * (zooms[0]?.height || 1);
+  const zg = zc.getContext('2d'); zg.fillStyle = '#111'; zg.fillRect(0, 0, zc.width, zc.height); zooms.forEach((z, i) => zg.drawImage(z, (i % ZC) * z.width, Math.floor(i / ZC) * z.height));
+  const hc = document.createElement('canvas'); hc.width = hands[0].canvas.width; hc.height = hands.reduce((a, h) => a + h.canvas.height + 4, 0);
+  const hg = hc.getContext('2d'); hg.fillStyle = '#111'; hg.fillRect(0, 0, hc.width, hc.height); let hy = 0; for (const h of hands) { hg.drawImage(h.canvas, 0, hy); hy += h.canvas.height + 4; }
+  window.__main = out.toDataURL('image/png'); window.__zoom = zc.toDataURL('image/png'); window.__hand = hc.toDataURL('image/png');
+  window.__out = { kind, served, loaded, panels: panels.length, hand: hands.map((h) => h.result), logs };
+  window.__done = true;
+  status.textContent = `${panels.length} panels; served png ${served.pngSha256.slice(0, 16)}; loaded rgba ${loaded.rgbaSha256.slice(0, 16)}; states ${Object.keys(loaded.states).join(',')}`;
+}
+</script>

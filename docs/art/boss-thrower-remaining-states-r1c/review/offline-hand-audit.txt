@@ -1,0 +1,5 @@
+# Offline k30 hand audit of the staged sheets against Tamas cell 61 (victim at +24 units), definitions as moved with the hands
+sprites/boss.png cell 36 facing 1: hand 44 px rows 107-112 (15-20 px up), hidden by Tamas cell 61: 0 []
+sprites/boss.png cell 36 facing -1: hand 44 px rows 107-112 (15-20 px up), hidden by Tamas cell 61: 0 []
+sprites/thrower.png cell 28 facing 1: hand 41 px rows 75-80 (15-20 px up), hidden by Tamas cell 61: 0 []
+sprites/thrower.png cell 28 facing -1: hand 41 px rows 75-80 (15-20 px up), hidden by Tamas cell 61: 0 []

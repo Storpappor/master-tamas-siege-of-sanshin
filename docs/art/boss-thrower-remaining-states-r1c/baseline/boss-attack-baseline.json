@@ -1,0 +1,30 @@
+{
+  "image": "boss.png",
+  "cell": {
+    "w": 128,
+    "h": 128
+  },
+  "anchor": {
+    "x": 64,
+    "y": 127
+  },
+  "columns": 4,
+  "states": {
+    "idle": [
+      0
+    ],
+    "bossPunch": [
+      8,
+      9,
+      10
+    ],
+    "bossKick": [
+      12,
+      13,
+      14
+    ],
+    "block": [
+      16
+    ]
+  }
+}

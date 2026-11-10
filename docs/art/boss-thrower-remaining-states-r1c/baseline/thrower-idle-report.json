@@ -1,0 +1,287 @@
+{
+  "status": "native one-cell idle candidate, UNAPPROVED for visual review",
+  "character": "thrower",
+  "displayName": "Thrower",
+  "method": "Kicker idle-r2 area-weighted block-mode sampling; study-derived palette; alpha threshold 128; minimum opaque coverage 0.5; inherited dark-edge recolouring; no anatomy painting",
+  "provenance": {
+    "adaptedFrom": [
+      "kicker-idle-r2/sample-idle.mjs",
+      "kicker-idle-r2/sample-studies.mjs"
+    ],
+    "script": {
+      "file": "sample-idle.mjs",
+      "sha256": "1f8fc2c753cf1b3897dd44a5d75db5bdc88c50ae8d91501efb8f1076a8d62d44"
+    },
+    "node": "v24.22.1",
+    "pngjs": "7.0.0",
+    "zlib": "1.3.2.1-motley-285e94b"
+  },
+  "study": {
+    "file": "thrower-idle-study-r1.png",
+    "sha256": "c7f53141181db95c6b493a9abf3a69098bba6bb78fe68fff1cc6e4be2fbddd15",
+    "size": [
+      1230,
+      1278
+    ],
+    "figureBounds": {
+      "x": [
+        210,
+        944
+      ],
+      "y": [
+        38,
+        1234
+      ],
+      "w": 735,
+      "h": 1197,
+      "alphaAtLeast128Pixels": 471183,
+      "fullyTransparentPixels": 1079249,
+      "semiTransparentPixels": 490254,
+      "alphaAtLeast128PixelsOnCanvasEdge": 0
+    }
+  },
+  "contract": {
+    "cell": {
+      "w": 128,
+      "h": 96
+    },
+    "anchor": {
+      "x": 64,
+      "y": 95
+    },
+    "targetHeight": 78,
+    "facing": "right, supplied by source study; not automatically inferred",
+    "states": {
+      "idle": [
+        0
+      ]
+    }
+  },
+  "sampling": {
+    "anchorSrcX": 582,
+    "anchorSource": "explicit caller-provided source coordinate",
+    "alphaThreshold": 128,
+    "coverage": 0.5,
+    "nominalScale": 0.06516290726817042,
+    "nominalSourcePxPerNativePx": 15.346153846153847,
+    "chosenScale": 0.06516290726817042,
+    "sourcePxPerNativePx": 15.346153846153847,
+    "relativeScaleChangePercent": 0,
+    "phaseUpNative": 0,
+    "groundBottomOriginal": 1235,
+    "groundBottomEffective": 1235,
+    "projectedSourceBounds": {
+      "left": 39.75939849624061,
+      "rightExclusive": 87.65413533834587,
+      "top": 18,
+      "bottomExclusive": 96
+    },
+    "calibration": {
+      "maxExtraProjectedHeightNative": 2,
+      "candidateExtraHeights": [
+        0,
+        0.125,
+        0.25,
+        0.5,
+        0.75,
+        1,
+        1.25,
+        1.5,
+        2
+      ],
+      "candidatePhasesUpNative": [
+        0,
+        0.125,
+        0.25,
+        0.375,
+        0.49
+      ],
+      "attempts": [
+        {
+          "extraProjectedHeightNative": 0,
+          "phaseUpNative": 0,
+          "scale": 0.06516290726817042,
+          "nativeBounds": {
+            "cols": [
+              40,
+              87
+            ],
+            "rows": [
+              18,
+              95
+            ],
+            "w": 48,
+            "h": 78,
+            "pixels": 1990,
+            "dx": [
+              -24,
+              23
+            ],
+            "up": [
+              0,
+              77
+            ]
+          },
+          "accepted": true
+        }
+      ]
+    },
+    "lightEdgePixelsDarkened": 25
+  },
+  "palette": [
+    "#230e25",
+    "#513d65",
+    "#31233f",
+    "#fcb36c",
+    "#fba927",
+    "#e68648",
+    "#fbe0b4",
+    "#9e4732",
+    "#d37918",
+    "#dab289",
+    "#ed9c5d",
+    "#c1653c",
+    "#6b5f6a",
+    "#060010",
+    "#eec99c",
+    "#c09473",
+    "#fcfbf4",
+    "#5d2f2b",
+    "#794234",
+    "#fece7b",
+    "#b15f16",
+    "#421c1c",
+    "#e49320",
+    "#906450",
+    "#fef8d1",
+    "#684848",
+    "#8d7b7b",
+    "#875823",
+    "#aa7c5e",
+    "#c2824a",
+    "#ddd6d3",
+    "#fdc925"
+  ],
+  "paletteCap": 32,
+  "paletteMethod": {
+    "binBitsPerChannel": 5,
+    "distanceWeights": [
+      2,
+      3,
+      1.5
+    ],
+    "mergeDistanceSquared": 2028
+  },
+  "reuseForFuturePoses": {
+    "scale": 0.06516290726817042,
+    "phaseUpNative": 0,
+    "palette": [
+      "#230e25",
+      "#513d65",
+      "#31233f",
+      "#fcb36c",
+      "#fba927",
+      "#e68648",
+      "#fbe0b4",
+      "#9e4732",
+      "#d37918",
+      "#dab289",
+      "#ed9c5d",
+      "#c1653c",
+      "#6b5f6a",
+      "#060010",
+      "#eec99c",
+      "#c09473",
+      "#fcfbf4",
+      "#5d2f2b",
+      "#794234",
+      "#fece7b",
+      "#b15f16",
+      "#421c1c",
+      "#e49320",
+      "#906450",
+      "#fef8d1",
+      "#684848",
+      "#8d7b7b",
+      "#875823",
+      "#aa7c5e",
+      "#c2824a",
+      "#ddd6d3",
+      "#fdc925"
+    ],
+    "cell": {
+      "w": 128,
+      "h": 96
+    },
+    "anchor": {
+      "x": 64,
+      "y": 95
+    },
+    "note": "Keep this scale/palette/phase fixed per character; each future study supplies its own stance/hip anchor X."
+  },
+  "validation": {
+    "passed": true,
+    "checks": {
+      "exactNativeHeight": true,
+      "solesOnAnchorRow": true,
+      "expectedTopRow": true,
+      "wholeSourceProjectionInsideCell": true,
+      "expectedPngDimensions": true,
+      "binaryAlpha": true,
+      "paletteWithinCap": true,
+      "losslessPngRoundTrip": true
+    },
+    "errors": []
+  },
+  "output": {
+    "png": {
+      "file": "thrower-idle.png",
+      "width": 128,
+      "height": 96,
+      "sha256": "9494218ffd15b5335dca691041bd4727bffb15b804951523c904b649cc80580e"
+    },
+    "map": {
+      "file": "thrower-idle.json",
+      "sha256": "92a5e917e88fe2dcf4123ba52ac7f661bc41244e2731639bd7cd53c8ebc5e784"
+    },
+    "report": {
+      "file": "thrower-idle-report.json"
+    }
+  },
+  "nativeBounds": {
+    "cols": [
+      40,
+      87
+    ],
+    "rows": [
+      18,
+      95
+    ],
+    "w": 48,
+    "h": 78,
+    "pixels": 1990,
+    "dx": [
+      -24,
+      23
+    ],
+    "up": [
+      0,
+      77
+    ]
+  },
+  "coloursUsed": 12,
+  "usedPalette": [
+    "#060010",
+    "#230e25",
+    "#31233f",
+    "#513d65",
+    "#6b5f6a",
+    "#9e4732",
+    "#d37918",
+    "#dab289",
+    "#e68648",
+    "#fba927",
+    "#fbe0b4",
+    "#fcb36c"
+  ]
+}
