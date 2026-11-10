@@ -16,16 +16,17 @@ import { installGestureGuard } from './gestures.js';
 const SPRITE_URL = new URL('../assets/tamas-hero-spritesheet.png', import.meta.url).href;
 const HERO_SHEET_URL = new URL('../assets/sprites/tamas.json', import.meta.url).href;
 
-// Opening story, one card per entry. Lines are drawn exactly as written.
+// Opening story, one card per entry. Lines are drawn exactly as written. Story, narration and
+// character lines are Swedish; menus and system UI are English (docs/ui-display-names.md).
 export const INTRO_SCREENS = [
-  ['STOCKHOLM. MIDNIGHT.'],
-  ['BUDAPEST 1942. ALGERIA 1960.', 'STOCKHOLM TONIGHT.'],
-  ['TWO ARMIES. ONE DOJO.', 'HE IS NOT DONE.'],
-  ['HIS BEST STUDENT LEFT.', 'HE TOOK FIVE DOJOS WITH HIM.'],
-  ['THEY CALL THEMSELVES', 'THE SHADOW LEAGUE.'],
-  ['TONIGHT THEY COME FOR', 'THE SANSHINKAN NAME.'],
-  ['THREE HEARTS:', 'COURAGE. FOCUS. DISCIPLINE.'],
-  ['AT 84, TAMAS WEBER', 'TIES HIS BELT ONE MORE TIME.'],
+  ['STOCKHOLM. MIDNATT.'],
+  ['BUDAPEST 1942. ALGERIET 1960.', 'STOCKHOLM I NATT.'],
+  ['TVÅ ARMÉER. EN DOJO.', 'HAN ÄR INTE FÄRDIG.'],
+  ['HANS BÄSTA ELEV GICK.', 'HAN TOG FEM DOJOR MED SIG.'],
+  ['DE KALLAR SIG', 'SKUGGLIGAN.'],
+  ['I NATT KOMMER DE FÖR', 'NAMNET SANSHINKAN.'],
+  ['TRE HJÄRTAN:', 'MOD. FOKUS. DISCIPLIN.'],
+  ['VID 84 KNYTER TAMAS WEBER', 'BÄLTET EN GÅNG TILL.'],
 ];
 
 const SOUND_KEY = 'karate-challenge-sound';
@@ -280,6 +281,9 @@ export function boot(root) {
     // the buttons (Space must activate a focused button, not queue a jump for the resume).
     if (input.active !== playing) input.active = playing;
     root.classList.toggle('kg-root--title', game.state === 'start');
+    // While a menu owns the screen the root must not clip: on phones the menu layer is fixed to
+    // the viewport, and Safari clips a fixed descendant at an overflow-clipped ancestor's box.
+    root.classList.toggle('kg-root--menu', !playing);
     syncPauseStatus();
     syncResultStats();
     // While playing, the whole game area is a touch surface (no scroll or zoom gestures).

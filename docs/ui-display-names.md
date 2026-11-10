@@ -1,4 +1,4 @@
-# Display names (player-facing) versus internal identifiers
+# Player-facing copy: display names and the language rule
 
 Decided 10 November 2026 (design document "Master Tamas: samlad UI-design"). The code, the enemy
 types, the dialogue constants, the sound cues and the asset files keep their internal names;
@@ -14,3 +14,18 @@ types, the dialogue constants, the sound cues and the asset files keep their int
 For the enemy-art workstream: the boss sheet, its JSON and the `kage` head palette keep their
 names. A boss sprite sheet delivered under the internal name needs no renaming; the name the
 player sees comes from this mapping.
+
+## Language rule (decided 10 November 2026)
+
+- **Menus, controls and system UI are English**: PLAY, PAUSE, RESUME, SCORE, ENEMIES, KIAI, HOW TO PLAY,
+  JUMP, PUNCH, KICK, THROW, the HUD, the help, the result statistics, hints and key prompts.
+- **Story, stage narration and character dialogue are Swedish**: the intro cards (`INTRO_SCREENS` in
+  `src/main.js`), the zone cards and the boss exchange (`ZONE_CARDS`, `KAGE_DIALOGUE` in `src/game.js`),
+  the stage announcements (`RÅTTFÄLLAN NÄRMAR SIG`, `SLÅSS!`), Tamas's lines, and the result headings and
+  quotes (`Tamas är nere`, `Knuten håller`).
+- The game title `Master Tamas: Siege of Sanshin` stays English.
+
+The narrative lines that live in the gameplay files stay as written there (those files are identical
+to `main`); `NARRATIVE` in `src/names.js` translates them when they are shown: the banner
+`MASTER KAGE APPROACHES` and the line `MASTER KAGE: POWER CREATES RESPECT.`. New narrative copy should
+be written in Swedish directly where it lives.
