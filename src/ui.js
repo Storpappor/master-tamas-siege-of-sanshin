@@ -1,6 +1,7 @@
 // DOM side of the game: HUD values, overlays and the sound/touch toggles.
 // Values are cached so the DOM is only touched when something changes.
 import { drawText, textWidth } from './sprites.js';
+import { displayText } from './names.js';
 
 // Menu headings are drawn with the game's own 3x5 bitmap font (the same one the canvas uses for
 // banners), so the menus share the picture's pixel typography without any web font. Each
@@ -58,7 +59,7 @@ export function createUi(root) {
   function renderScreen() {
     stopTyping();
     const lines = active.screens[active.index];
-    active.full = lines.join('\n');
+    active.full = lines.map(displayText).join('\n'); // dialogue speaker labels use display names
     if (reducedMotion) {
       storyText.textContent = active.full;
       return;
@@ -188,7 +189,7 @@ export function createUi(root) {
           hud.kiai.classList.toggle('is-ready', mode === 'ready');
           hud.kiai.classList.toggle('is-active', mode === 'active');
           if (hud.kiaiText) {
-            hud.kiaiText.textContent = mode === 'active' ? 'AJSICH!' : mode === 'ready' ? 'Ready' : 'Charging';
+            hud.kiaiText.textContent = mode === 'active' ? 'Active' : mode === 'ready' ? 'Ready' : 'Charging';
             hud.kiaiText.classList.toggle('is-ready', mode === 'ready');
             hud.kiaiText.classList.toggle('is-active', mode === 'active');
           }
