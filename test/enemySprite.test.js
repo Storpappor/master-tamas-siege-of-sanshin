@@ -248,6 +248,59 @@ test('the staged kicker.json and kicker.png follow the brief\'s partial-delivery
   assert.deepEqual(['startup', 'active', 'recovery'].map((phase) => resolveFrame(sheet, { state: 'enemyLowSweep', phase })), [12, 13, 14], 'the sweep\'s crouch is its own startup cell');
 });
 
+// The approved Master Kage and Thrower sheets (remaining-state batch R1c, approved 10 November 2026):
+// complete maps, every state of the enemy state machine mapped, each populated slot its own drawing.
+// The record (hashes, the two recorded hand edits, the review) is docs/art/boss-thrower-remaining-states-r1c/.
+const COMPLETE_SHEETS = {
+  boss: { cell: { w: 128, h: 128 }, anchor: { x: 64, y: 127 }, height: 1536, idleTop: 19, cells: 22,
+    states: { idle: [0], walk: [4, 5, 6, 7], bossPunch: [8, 9, 10], bossKick: [12, 13, 14], block: [16], hurt: [20, 21], knockdown: [24, 25, 26], held: [28], thrownDown1: [32], thrownDown2: [36], fallen: [40], getUp: [44] } },
+  thrower: { cell: { w: 128, h: 96 }, anchor: { x: 64, y: 95 }, height: 960, idleTop: 18, cells: 18,
+    states: { idle: [0], walk: [4, 5, 6, 7], enemyThrow: [8, 9, 10], hurt: [12, 13], knockdown: [16, 17, 18], held: [20], thrownDown1: [24], thrownDown2: [28], fallen: [32], getUp: [36] } },
+};
+
+for (const [kind, spec] of Object.entries(COMPLETE_SHEETS)) {
+  test(`the shipped ${kind}.json and ${kind}.png are the approved complete sheet`, () => {
+    const map = JSON.parse(readFileSync(new URL(`../assets/sprites/${kind}.json`, import.meta.url), 'utf8'));
+    const sheet = new SpriteSheet({ map });
+    assert.deepEqual(sheet.cell, spec.cell);
+    assert.deepEqual(sheet.anchor, spec.anchor);
+    assert.equal(sheet.columns, 4);
+    assert.deepEqual(map.states, spec.states, 'the code-derived map: one state per row');
+    const png = decodePng(readFileSync(new URL(`../assets/sprites/${kind}.png`, import.meta.url)));
+    assert.equal(png.width, 512);
+    assert.equal(png.height, spec.height);
+    let semi = 0;
+    for (let i = 3; i < png.rgba.length; i += 4) if (png.rgba[i] !== 0 && png.rgba[i] !== 255) semi++;
+    assert.equal(semi, 0, 'binary alpha');
+    const { w, h } = spec.cell;
+    const alphaAt = (x, y) => png.rgba[(y * png.width + x) * 4 + 3];
+    const bounds = (c) => {
+      const ox = (c % 4) * w, oy = Math.floor(c / 4) * h;
+      let top = h, bottom = -1, any = false;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (alphaAt(ox + x, oy + y)) { any = true; top = Math.min(top, y); bottom = Math.max(bottom, y); }
+      return any ? { top, bottom } : null;
+    };
+    assert.deepEqual(bounds(0), { top: spec.idleTop, bottom: h - 1 }, 'the approved idle stands with its soles on the anchor row');
+    const populated = Object.values(map.states).flat();
+    assert.equal(populated.length, spec.cells);
+    for (let c = 0; c < (spec.height / h) * 4; c++) {
+      if (populated.includes(c)) assert.notEqual(bounds(c), null, `cell ${c} is drawn`);
+      else assert.equal(bounds(c), null, `unused slot ${c} stays transparent`);
+    }
+    const pixels = (c) => { const ox = (c % 4) * w, oy = Math.floor(c / 4) * h; let s = ''; for (let y = 0; y < h; y++) s += png.rgba.subarray(((oy + y) * png.width + ox) * 4, ((oy + y) * png.width + ox + w) * 4).toString('hex'); return s; };
+    assert.equal(new Set(populated.map(pixels)).size, spec.cells, 'every populated slot is its own drawing');
+    // Every state the enemy state machine can produce for this kind resolves to a cell: no procedural fallback.
+    const game = new Game({ input: null, rng: () => 0.5 });
+    game.start();
+    const p = game.player;
+    const e = new Enemy(kind, p.x + 12, -1, () => 0.5, p.z);
+    for (const attack of ENEMY_TYPES[kind].attacks) for (const phase of ['startup', 'active', 'recovery']) assert.notEqual(resolveFrame(sheet, { state: attack, phase, progress: 0 }), null, `${attack}/${phase}`);
+    for (const state of ['idle', 'walk', 'hurt', 'knockdown', 'held', 'thrownDown1', 'thrownDown2', 'fallen', 'getUp']) assert.notEqual(resolveFrame(sheet, { state, progress: 0.5, loop: 1 }), null, `${state} resolves`);
+    assert.equal(resolveFrame(sheet, { state: 'block', progress: 0 }), kind === 'boss' ? 16 : null, 'only Master Kage blocks');
+    assert.notEqual(resolveFrame(sheet, enemyState(e)), null, 'a freshly spawned enemy resolves');
+  });
+}
+
 // A recording 2D context: enough for drawFighter (fillRect) and SpriteSheet.draw (drawImage).
 function recordingContext() {
   const calls = { fillRect: 0, drawImage: 0, scale: [] };

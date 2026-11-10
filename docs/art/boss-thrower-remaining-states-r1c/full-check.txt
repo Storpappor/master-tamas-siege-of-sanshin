@@ -1,0 +1,50 @@
+
+== kage: boss.png 512x1536 sha256 a4678d6bdb9c08c6ddc9ab6dabd0ad66a67dfadf44c6775ac74402ebe200cedf  (expected 512x1536: OK); palette entries from idle report: 32
+   map cell 128x128 anchor (64,127) columns 4: OK
+   non-binary alpha pixels: 0; off-palette colours: 0
+   cell  0 idle[0]          71x109 cols 30-100 rows 19-127 dx -34..36 floor                  BASELINE identical 
+   cell  4 walk[0]          79x108 cols 21-99 rows 20-127 dx -43..35 floor                  new 
+   cell  5 walk[1]          52x108 cols 35-86 rows 20-127 dx -29..22 floor                  new 
+   cell  6 walk[2]          80x109 cols 22-101 rows 19-127 dx -42..37 floor                  new 
+   cell  7 walk[3]          57x109 cols 33-89 rows 19-127 dx -31..25 floor                  new 
+   cell  8 bossPunch[0]     81x113 cols 25-105 rows 15-127 dx -39..41 floor                  BASELINE identical  !! height 113 vs idle 109
+   cell  9 bossPunch[1]     78x111 cols 27-104 rows 17-127 dx -37..40 floor                  BASELINE identical 
+   cell 10 bossPunch[2]     76x114 cols 27-102 rows 14-127 dx -37..38 floor                  BASELINE identical  !! height 114 vs idle 109
+   cell 12 bossKick[0]      61x114 cols 48-108 rows 14-127 dx -16..44 floor                  BASELINE identical  !! height 114 vs idle 109
+   cell 13 bossKick[1]      76x110 cols 37-112 rows 18-127 dx -27..48 floor                  BASELINE identical 
+   cell 14 bossKick[2]      58x111 cols 43-100 rows 17-127 dx -21..36 floor                  BASELINE identical 
+   cell 16 block[0]         81x113 cols 25-105 rows 15-127 dx -39..41 floor                  BASELINE identical  !! height 113 vs idle 109
+   cell 20 hurt[0]          80x108 cols 22-101 rows 20-127 dx -42..37 floor                  new 
+   cell 21 hurt[1]          66x108 cols 31-96 rows 20-127 dx -33..32 floor                  new 
+   cell 24 knockdown[0]    103x 89 cols 16-118 rows 39-127 dx -48..54 floor                  new 
+   cell 25 knockdown[1]    114x 65 cols 5-118 rows 63-127 dx -59..54 floor                  new 
+   cell 26 knockdown[2]    115x 42 cols 3-117 rows 86-127 dx -61..53 floor                  new 
+   cell 28 held[0]          56x109 cols 36-91 rows 19-127 dx -28..27 floor                  new 
+   cell 32 thrownDown1[0]  106x 69 cols 12-117 rows 59-127 dx -52..53 floor                  new 
+   cell 36 thrownDown2[0]  117x 54 cols 3-119 rows 74-127 dx -61..55 floor                  new 
+   cell 40 fallen[0]       118x 46 cols 5-122 rows 82-127 dx -59..58 floor                  new 
+   cell 44 getUp[0]         76x 68 cols 29-104 rows 60-127 dx -35..40 floor                  new 
+   populated cells: 22 [0,4,5,6,7,8,9,10,12,13,14,16,20,21,24,25,26,28,32,36,40,44]; mapped: 22
+
+== thrower: thrower.png 512x960 sha256 950b2222eefc5984b4ed4671b71d521ff1f3c3930c732527e868ca7463b48f64  (expected 512x960: OK); palette entries from idle report: 32
+   map cell 128x96 anchor (64,95) columns 4: OK
+   non-binary alpha pixels: 0; off-palette colours: 0
+   cell  0 idle[0]          48x 78 cols 40-87 rows 18-95 dx -24..23 floor                  BASELINE identical 
+   cell  4 walk[0]          48x 78 cols 35-82 rows 18-95 dx -29..18 floor                  new 
+   cell  5 walk[1]          38x 76 cols 44-81 rows 20-95 dx -20..17 floor                  new 
+   cell  6 walk[2]          48x 79 cols 39-86 rows 17-95 dx -25..22 floor                  new 
+   cell  7 walk[3]          38x 78 cols 44-81 rows 18-95 dx -20..17 floor                  new 
+   cell  8 enemyThrow[0]    51x 78 cols 38-88 rows 18-95 dx -26..24 floor                  BASELINE identical 
+   cell  9 enemyThrow[1]    51x 77 cols 38-88 rows 19-95 dx -26..24 floor                  BASELINE identical 
+   cell 10 enemyThrow[2]    51x 77 cols 38-88 rows 19-95 dx -26..24 floor                  BASELINE identical 
+   cell 12 hurt[0]          45x 75 cols 40-84 rows 21-95 dx -24..20 floor                  new  !! height 75 vs idle 78
+   cell 13 hurt[1]          46x 81 cols 39-84 rows 15-95 dx -25..20 floor                  new  !! height 81 vs idle 78
+   cell 16 knockdown[0]     71x 64 cols 30-100 rows 32-95 dx -34..36 floor                  new 
+   cell 17 knockdown[1]     88x 39 cols 19-106 rows 57-95 dx -45..42 floor                  new 
+   cell 18 knockdown[2]     88x 29 cols 18-105 rows 67-95 dx -46..41 floor                  new 
+   cell 20 held[0]          46x 77 cols 47-92 rows 19-95 dx -17..28 floor                  new 
+   cell 24 thrownDown1[0]   83x 51 cols 33-115 rows 45-95 dx -31..51 floor                  new 
+   cell 28 thrownDown2[0]   89x 44 cols 19-107 rows 52-95 dx -45..43 floor                  new 
+   cell 32 fallen[0]        86x 34 cols 17-102 rows 62-95 dx -47..38 floor                  new 
+   cell 36 getUp[0]         57x 53 cols 35-91 rows 43-95 dx -29..27 floor                  new 
+   populated cells: 18 [0,4,5,6,7,8,9,10,12,13,16,17,18,20,24,28,32,36]; mapped: 18

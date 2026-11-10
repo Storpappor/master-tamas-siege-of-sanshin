@@ -1,0 +1,41 @@
+{
+ "character": "thrower",
+ "cell": {
+  "w": 128,
+  "h": 96
+ },
+ "columns": 4,
+ "expectInputSha256": "55254d10babce2cbbcfa1c9e0a0b86f60ca986653ce881d093b6d46a89aa3f9d",
+ "edits": [
+  {
+   "cell": 28,
+   "op": "shift",
+   "dx": -1,
+   "dy": 0,
+   "region": {
+    "box": [
+     59,
+     74,
+     16,
+     8
+    ],
+    "seed": [
+     68,
+     78
+    ],
+    "colours": [
+     "#fcb36c",
+     "#e68648",
+     "#230e25",
+     "#060010"
+    ]
+   },
+   "note": "Founder correction 10 Nov 2026: controlled hand with its dark edge and the adjoining cuff line (rows 74-81, x 59-74) moved -1 px in x (unmirrored) so the fingertip (71,75) clears Tamas's cell-61 fingertip outline at k30.",
+   "expectBefore": "f6d6576022a27928df3a1b7422bd501889233300ab704112f14b252d45258a30",
+   "expectAfter": "299ab990926d120f1cf73f1cb980f567c367c7d80191235502887792b2a1997d"
+  }
+ ],
+ "expectOutputSha256": "950b2222eefc5984b4ed4671b71d521ff1f3c3930c732527e868ca7463b48f64",
+ "expectOutputRgbaSha256": "ec07a2156d7c740073c971351bdc60edb1c154a4743e26ee55f031fcba5bc269",
+ "hashNote": "expectInputSha256 / expectOutputSha256 are PNG file hashes of the exact R1 input and the approved output as encoded by the repository encoder with Node v26.8.1; expectBefore / expectAfter are sha256 of the cell's decoded RGBA and hold under any PNG encoder; expectOutputRgbaSha256 is the sha256 of the whole decoded sheet."
+}

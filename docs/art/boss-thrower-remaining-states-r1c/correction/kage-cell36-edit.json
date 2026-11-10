@@ -1,0 +1,51 @@
+{
+ "character": "boss",
+ "cell": {
+  "w": 128,
+  "h": 128
+ },
+ "columns": 4,
+ "expectInputSha256": "61c24712ec36736a4a34e6bbd61ff61205a1eca2c35cefbd2a1c7fa57c5aa23f",
+ "edits": [
+  {
+   "cell": 36,
+   "op": "shift",
+   "dx": 0,
+   "dy": 1,
+   "region": {
+    "box": [
+     53,
+     104,
+     20,
+     13
+    ],
+    "seed": [
+     66,
+     108
+    ],
+    "colours": [
+     "#fba662",
+     "#e78b53",
+     "#d57239",
+     "#12041d"
+    ],
+    "extra": [
+     [
+      62,
+      106
+     ],
+     [
+      63,
+      106
+     ]
+    ]
+   },
+   "note": "Founder correction 10 Nov 2026: the controlled hand with its dark edge and the whole visible forearm (skin from the belt at x 53 to the fingertips at x 70, rows 106-115, plus the two hakama edge pixels left of the hand edge) moved down 1 px, so the fingertips (68-70,106) clear the outline of Tamas's dangling fingertips in cell 61 at k30. The cut is where the forearm meets the gold belt.",
+   "expectBefore": "01918e36c355c8daf565812286f3f539bccb59884b80eed06682770f78d39cbf",
+   "expectAfter": "757b3410572a191b563b4669ec826ee2f6242e95525a565d2cb6ae21007eee11"
+  }
+ ],
+ "expectOutputSha256": "a4678d6bdb9c08c6ddc9ab6dabd0ad66a67dfadf44c6775ac74402ebe200cedf",
+ "expectOutputRgbaSha256": "50bcfb5a9f7438062f9a9d016331e26d39b0efcb872004f1fa34ccf5f0d4f4ab",
+ "hashNote": "expectInputSha256 / expectOutputSha256 are PNG file hashes of the exact R1 input and the approved output as encoded by the repository encoder with Node v26.8.1; expectBefore / expectAfter are sha256 of the cell's decoded RGBA and hold under any PNG encoder; expectOutputRgbaSha256 is the sha256 of the whole decoded sheet."
+}
