@@ -40,6 +40,9 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  /* No double-tap zoom anywhere in the game (HUD included); menus may still pan with one finger.
+     While a round is played the root switches to `none` (see .kg-root--playing). */
+  touch-action: manipulation;
 }
 /* Corner marks: cyan top-left, magenta bottom-right, the identity colours of the title. */
 .kg-root::before, .kg-root::after {
@@ -303,6 +306,7 @@
 .kg-only-touch { display: none; }
 .kg-root--touch .kg-only-touch { display: block; }
 .kg-root--touch .kg-help__note .kg-only-touch { display: inline; }
+.kg-root--touch .kg-help__note strong.kg-only-keys { display: none; }
 .kg-root--touch .kg-only-keys { display: none; }
 .kg-root--touch .kg-key { display: none; }
 .kg-root--touch .kg-btn--primary .kg-key { display: none; }
@@ -386,6 +390,21 @@
 .kg-touch__pad.is-right { --kg-nub-x: 24%; }
 .kg-touch__pad.is-up { --kg-nub-y: -24%; }
 .kg-touch__pad.is-down { --kg-nub-y: 24%; }
+/* The run zone (controls 1b): drag the thumb past the dotted ring (80 % of the radius) to run;
+   back inside 60 % to walk again. The ring and the nub take the Kiai amber while running. */
+.kg-touch__pad::before {
+  content: '';
+  position: absolute;
+  left: 10%; top: 10%; width: 80%; height: 80%;
+  border: 1px dotted var(--kg-line);
+  border-radius: 50%;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.kg-touch__pad.is-running { border-color: var(--kg-kiai); }
+.kg-touch__pad.is-running::before { border-style: solid; border-color: var(--kg-kiai); box-shadow: 0 0 8px rgba(243, 182, 84, 0.45); }
+.kg-touch__pad.is-running .kg-touch__nub { background: var(--kg-kiai); border-color: #fff1c2; }
+.kg-touch__pad.is-running .kg-touch__arrow { color: var(--kg-kiai); }
 
 /* Diamond: JUMP on top, PUNCH and KICK side by side, THROW below. One thumb rolls between them. */
 .kg-touch__actions {
