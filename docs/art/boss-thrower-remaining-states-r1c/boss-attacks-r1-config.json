@@ -1,0 +1,146 @@
+{
+ "character": "boss",
+ "cell": {
+  "w": 128,
+  "h": 128
+ },
+ "anchor": {
+  "x": 64,
+  "y": 127
+ },
+ "columns": 4,
+ "rows": 12,
+ "states": {
+  "idle": [
+   0
+  ],
+  "walk": [
+   4,
+   5,
+   6,
+   7
+  ],
+  "bossPunch": [
+   8,
+   9,
+   10
+  ],
+  "bossKick": [
+   12,
+   13,
+   14
+  ],
+  "block": [
+   16
+  ],
+  "hurt": [
+   20,
+   21
+  ],
+  "knockdown": [
+   24,
+   25,
+   26
+  ],
+  "held": [
+   28
+  ],
+  "thrownDown1": [
+   32
+  ],
+  "thrownDown2": [
+   36
+  ],
+  "fallen": [
+   40
+  ],
+  "getUp": [
+   44
+  ]
+ },
+ "scale": 0.08776167471819646,
+ "palette": [
+  "#4b365c",
+  "#281932",
+  "#fbaa34",
+  "#fba662",
+  "#f5ddd0",
+  "#d57239",
+  "#e48b2a",
+  "#b05330",
+  "#12041d",
+  "#b2939b",
+  "#927384",
+  "#d3b7b4",
+  "#e78b53",
+  "#745565",
+  "#803f2c",
+  "#562a29",
+  "#fef6e9",
+  "#ae6f3b",
+  "#905b40",
+  "#2e255f",
+  "#fec373",
+  "#42131b",
+  "#644347",
+  "#c08160",
+  "#f51e1a",
+  "#feca35",
+  "#f85235",
+  "#c66d15",
+  "#c58f38",
+  "#964f19",
+  "#9e6664",
+  "#d79d82"
+ ],
+ "studies": [
+  {
+   "file": "../bt-r1/boss-thrower-idle-r1-review/studies/boss-idle-study-r1.png",
+   "cell": 0,
+   "state": "idle",
+   "anchorX": 570
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/kage/bossPunch-startup.png",
+   "cell": 8,
+   "state": "bossPunch",
+   "anchorX": 503.03999999999996
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/kage/bossPunch-active.png",
+   "cell": 9,
+   "state": "bossPunch",
+   "anchorX": 492.47999999999996
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/kage/bossPunch-recovery.png",
+   "cell": 10,
+   "state": "bossPunch",
+   "anchorX": 521.28
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/kage/bossKick-startup.png",
+   "cell": 12,
+   "state": "bossKick",
+   "anchorX": 345.59999999999997
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/kage/bossKick-active.png",
+   "cell": 13,
+   "state": "bossKick",
+   "anchorX": 401.28
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/kage/bossKick-recovery.png",
+   "cell": 14,
+   "state": "bossKick",
+   "anchorX": 380.88
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/kage/block.png",
+   "cell": 16,
+   "state": "block",
+   "anchorX": 516.48
+  }
+ ]
+}

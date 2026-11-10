@@ -1,0 +1,22 @@
+{
+  "image": "thrower.png",
+  "cell": {
+    "w": 128,
+    "h": 96
+  },
+  "anchor": {
+    "x": 64,
+    "y": 95
+  },
+  "columns": 4,
+  "states": {
+    "idle": [
+      0
+    ],
+    "enemyThrow": [
+      8,
+      9,
+      10
+    ]
+  }
+}

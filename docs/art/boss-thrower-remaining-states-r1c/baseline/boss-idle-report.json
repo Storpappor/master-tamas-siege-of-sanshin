@@ -1,0 +1,294 @@
+{
+  "status": "native one-cell idle candidate, UNAPPROVED for visual review",
+  "character": "kage",
+  "displayName": "Master Kage",
+  "method": "Kicker idle-r2 area-weighted block-mode sampling; study-derived palette; alpha threshold 128; minimum opaque coverage 0.5; inherited dark-edge recolouring; no anatomy painting",
+  "provenance": {
+    "adaptedFrom": [
+      "kicker-idle-r2/sample-idle.mjs",
+      "kicker-idle-r2/sample-studies.mjs"
+    ],
+    "script": {
+      "file": "sample-idle.mjs",
+      "sha256": "1f8fc2c753cf1b3897dd44a5d75db5bdc88c50ae8d91501efb8f1076a8d62d44"
+    },
+    "node": "v24.22.1",
+    "pngjs": "7.0.0",
+    "zlib": "1.3.2.1-motley-285e94b"
+  },
+  "study": {
+    "file": "boss-idle-study-r1.png",
+    "sha256": "2b0c062a1669c43d087206d6aa5c3d1af7ad089a2f51d2ef30f4b4e0ba0e1ceb",
+    "size": [
+      1205,
+      1305
+    ],
+    "figureBounds": {
+      "x": [
+        177,
+        996
+      ],
+      "y": [
+        34,
+        1275
+      ],
+      "w": 820,
+      "h": 1242,
+      "alphaAtLeast128Pixels": 651923,
+      "fullyTransparentPixels": 891960,
+      "semiTransparentPixels": 678658,
+      "alphaAtLeast128PixelsOnCanvasEdge": 0
+    }
+  },
+  "contract": {
+    "cell": {
+      "w": 128,
+      "h": 128
+    },
+    "anchor": {
+      "x": 64,
+      "y": 127
+    },
+    "targetHeight": 109,
+    "facing": "right, supplied by source study; not automatically inferred",
+    "states": {
+      "idle": [
+        0
+      ]
+    }
+  },
+  "sampling": {
+    "anchorSrcX": 570,
+    "anchorSource": "explicit caller-provided source coordinate",
+    "alphaThreshold": 128,
+    "coverage": 0.5,
+    "nominalScale": 0.08776167471819646,
+    "nominalSourcePxPerNativePx": 11.394495412844037,
+    "chosenScale": 0.08776167471819646,
+    "sourcePxPerNativePx": 11.394495412844037,
+    "relativeScaleChangePercent": 0,
+    "phaseUpNative": 0,
+    "groundBottomOriginal": 1276,
+    "groundBottomEffective": 1276,
+    "projectedSourceBounds": {
+      "left": 29.509661835748794,
+      "rightExclusive": 101.47423510466989,
+      "top": 19,
+      "bottomExclusive": 128
+    },
+    "calibration": {
+      "maxExtraProjectedHeightNative": 2,
+      "candidateExtraHeights": [
+        0,
+        0.125,
+        0.25,
+        0.5,
+        0.75,
+        1,
+        1.25,
+        1.5,
+        2
+      ],
+      "candidatePhasesUpNative": [
+        0,
+        0.125,
+        0.25,
+        0.375,
+        0.49
+      ],
+      "attempts": [
+        {
+          "extraProjectedHeightNative": 0,
+          "phaseUpNative": 0,
+          "scale": 0.08776167471819646,
+          "nativeBounds": {
+            "cols": [
+              30,
+              100
+            ],
+            "rows": [
+              19,
+              127
+            ],
+            "w": 71,
+            "h": 109,
+            "pixels": 5011,
+            "dx": [
+              -34,
+              36
+            ],
+            "up": [
+              0,
+              108
+            ]
+          },
+          "accepted": true
+        }
+      ]
+    },
+    "lightEdgePixelsDarkened": 14
+  },
+  "palette": [
+    "#4b365c",
+    "#281932",
+    "#fbaa34",
+    "#fba662",
+    "#f5ddd0",
+    "#d57239",
+    "#e48b2a",
+    "#b05330",
+    "#12041d",
+    "#b2939b",
+    "#927384",
+    "#d3b7b4",
+    "#e78b53",
+    "#745565",
+    "#803f2c",
+    "#562a29",
+    "#fef6e9",
+    "#ae6f3b",
+    "#905b40",
+    "#2e255f",
+    "#fec373",
+    "#42131b",
+    "#644347",
+    "#c08160",
+    "#f51e1a",
+    "#feca35",
+    "#f85235",
+    "#c66d15",
+    "#c58f38",
+    "#964f19",
+    "#9e6664",
+    "#d79d82"
+  ],
+  "paletteCap": 32,
+  "paletteMethod": {
+    "binBitsPerChannel": 5,
+    "distanceWeights": [
+      2,
+      3,
+      1.5
+    ],
+    "mergeDistanceSquared": 2028
+  },
+  "reuseForFuturePoses": {
+    "scale": 0.08776167471819646,
+    "phaseUpNative": 0,
+    "palette": [
+      "#4b365c",
+      "#281932",
+      "#fbaa34",
+      "#fba662",
+      "#f5ddd0",
+      "#d57239",
+      "#e48b2a",
+      "#b05330",
+      "#12041d",
+      "#b2939b",
+      "#927384",
+      "#d3b7b4",
+      "#e78b53",
+      "#745565",
+      "#803f2c",
+      "#562a29",
+      "#fef6e9",
+      "#ae6f3b",
+      "#905b40",
+      "#2e255f",
+      "#fec373",
+      "#42131b",
+      "#644347",
+      "#c08160",
+      "#f51e1a",
+      "#feca35",
+      "#f85235",
+      "#c66d15",
+      "#c58f38",
+      "#964f19",
+      "#9e6664",
+      "#d79d82"
+    ],
+    "cell": {
+      "w": 128,
+      "h": 128
+    },
+    "anchor": {
+      "x": 64,
+      "y": 127
+    },
+    "note": "Keep this scale/palette/phase fixed per character; each future study supplies its own stance/hip anchor X."
+  },
+  "validation": {
+    "passed": true,
+    "checks": {
+      "exactNativeHeight": true,
+      "solesOnAnchorRow": true,
+      "expectedTopRow": true,
+      "wholeSourceProjectionInsideCell": true,
+      "expectedPngDimensions": true,
+      "binaryAlpha": true,
+      "paletteWithinCap": true,
+      "losslessPngRoundTrip": true
+    },
+    "errors": []
+  },
+  "output": {
+    "png": {
+      "file": "boss-idle.png",
+      "width": 128,
+      "height": 128,
+      "sha256": "470bbd8f451396a8ee05a0497c03a0a41fd7d80cbc8a48ac8d240159028089a8"
+    },
+    "map": {
+      "file": "boss-idle.json",
+      "sha256": "c52107236092759979430285a50633278c976df3b35367e68d57d9dc4ccbd0f8"
+    },
+    "report": {
+      "file": "boss-idle-report.json"
+    }
+  },
+  "nativeBounds": {
+    "cols": [
+      30,
+      100
+    ],
+    "rows": [
+      19,
+      127
+    ],
+    "w": 71,
+    "h": 109,
+    "pixels": 5011,
+    "dx": [
+      -34,
+      36
+    ],
+    "up": [
+      0,
+      108
+    ]
+  },
+  "coloursUsed": 19,
+  "usedPalette": [
+    "#12041d",
+    "#281932",
+    "#2e255f",
+    "#4b365c",
+    "#745565",
+    "#803f2c",
+    "#927384",
+    "#964f19",
+    "#b05330",
+    "#b2939b",
+    "#c66d15",
+    "#d3b7b4",
+    "#d57239",
+    "#e48b2a",
+    "#e78b53",
+    "#f51e1a",
+    "#f5ddd0",
+    "#fba662",
+    "#fbaa34"
+  ]
+}

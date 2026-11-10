@@ -1,0 +1,173 @@
+{
+ "character": "thrower",
+ "cell": {
+  "w": 128,
+  "h": 96
+ },
+ "anchor": {
+  "x": 64,
+  "y": 95
+ },
+ "columns": 4,
+ "rows": 10,
+ "states": {
+  "idle": [
+   0
+  ],
+  "walk": [
+   4,
+   5,
+   6,
+   7
+  ],
+  "enemyThrow": [
+   8,
+   9,
+   10
+  ],
+  "hurt": [
+   12,
+   13
+  ],
+  "knockdown": [
+   16,
+   17,
+   18
+  ],
+  "held": [
+   20
+  ],
+  "thrownDown1": [
+   24
+  ],
+  "thrownDown2": [
+   28
+  ],
+  "fallen": [
+   32
+  ],
+  "getUp": [
+   36
+  ]
+ },
+ "scale": 0.06516290726817042,
+ "palette": [
+  "#230e25",
+  "#513d65",
+  "#31233f",
+  "#fcb36c",
+  "#fba927",
+  "#e68648",
+  "#fbe0b4",
+  "#9e4732",
+  "#d37918",
+  "#dab289",
+  "#ed9c5d",
+  "#c1653c",
+  "#6b5f6a",
+  "#060010",
+  "#eec99c",
+  "#c09473",
+  "#fcfbf4",
+  "#5d2f2b",
+  "#794234",
+  "#fece7b",
+  "#b15f16",
+  "#421c1c",
+  "#e49320",
+  "#906450",
+  "#fef8d1",
+  "#684848",
+  "#8d7b7b",
+  "#875823",
+  "#aa7c5e",
+  "#c2824a",
+  "#ddd6d3",
+  "#fdc925"
+ ],
+ "studies": [
+  {
+   "file": "../bt-r1/boss-thrower-idle-r1-review/studies/thrower-idle-study-r1.png",
+   "cell": 0,
+   "state": "idle",
+   "anchorX": 582
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/thrower/thrower-enemyThrow-windup.png",
+   "cell": 8,
+   "state": "enemyThrow",
+   "anchorX": 572
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/thrower/thrower-enemyThrow-release.png",
+   "cell": 9,
+   "state": "enemyThrow",
+   "anchorX": 488.02500000000003
+  },
+  {
+   "file": "../bt-att/boss-thrower-attacks-r1-UNAPPROVED/studies/thrower/thrower-enemyThrow-recovery.png",
+   "cell": 10,
+   "state": "enemyThrow",
+   "anchorX": 485.1
+  }
+ ],
+ "patches": [
+  {
+   "cell": 8,
+   "x": 51,
+   "y": 23,
+   "from": "#060010",
+   "to": "#ddd6d3"
+  },
+  {
+   "cell": 8,
+   "x": 52,
+   "y": 23,
+   "from": "#060010",
+   "to": "#ddd6d3"
+  },
+  {
+   "cell": 8,
+   "x": 50,
+   "y": 24,
+   "from": "#513d65",
+   "to": "#ddd6d3"
+  },
+  {
+   "cell": 8,
+   "x": 51,
+   "y": 24,
+   "from": "#230e25",
+   "to": "#fcfbf4"
+  },
+  {
+   "cell": 8,
+   "x": 52,
+   "y": 24,
+   "from": "#060010",
+   "to": "#ddd6d3"
+  },
+  {
+   "cell": 8,
+   "x": 51,
+   "y": 25,
+   "from": "#513d65",
+   "to": "#ddd6d3"
+  },
+  {
+   "cell": 8,
+   "x": 52,
+   "y": 25,
+   "from": "#060010",
+   "to": "#ddd6d3"
+  },
+  {
+   "cell": 8,
+   "x": 51,
+   "y": 26,
+   "from": "#060010",
+   "to": "#ddd6d3"
+  }
+ ],
+ "patchNote": "Founder-requested readability correction, 9 Nov 2026: held shuriken in enemyThrow wind-up brightened with palette colours; hand, arm, silhouette and registration unchanged."
+}
